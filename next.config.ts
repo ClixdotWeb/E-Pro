@@ -9,7 +9,10 @@ const nextConfig: NextConfig = {
 
   images: {
     remotePatterns: [
-      // Product photography CDN - narrow this to the real host on launch.
+      // Imported product photography still lives on Shopify's CDN. Move
+      // these files to our own storage before switching the domain over,
+      // or the new site depends on the old store staying alive.
+      { protocol: "https", hostname: "cdn.shopify.com" },
       { protocol: "https", hostname: "res.cloudinary.com" },
     ],
   },

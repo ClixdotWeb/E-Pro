@@ -149,14 +149,6 @@ function modelsFor(product) {
 
 const toPaise = (price) => Math.round(Number(price) * 100);
 
-function slugify(s) {
-  return String(s)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-}
-
 /* ---------- transform ---------- */
 
 const imported = [];
@@ -167,20 +159,24 @@ for (const p of products) {
 
   if (JUNK_TITLE.test(p.title.trim())) reasons.push("placeholder title");
 
+  // Prices are imported exactly as Shopify has them, including 0.00 and
+  // obvious test values, on the store owner's instruction. Suspicious
+  // ones are flagged per product instead of dropped, so nothing vanishes
+  // silently and they can be corrected in Shopify afterwards.
+  const variants = p.variants ?? [];
+  if (variants.length === 0) reasons.push("no variants at all");
+
   const category = categoryFor(p);
   if (!category) reasons.push("no device category");
-
-  const variants = (p.variants ?? []).filter(
-    (v) => Number(v.price) > 0 && !/^default title$/i.test(v.title ?? ""),
-  );
-  if (variants.length === 0) reasons.push("no priced variants");
 
   const images = (p.images ?? []).map((im) => im.src);
   if (images.length === 0) reasons.push("no images");
 
-  // Images alone are not fatal — the design can fall back to a swatch —
-  // so only hard problems block the import.
-  const blocking = reasons.filter((r) => r !== "no images");
+  // Only a placeholder title or a total absence of variants blocks the
+  // import. A missing category or photo is carried through as a flag.
+  const blocking = reasons.filter(
+    (r) => r === "placeholder title" || r === "no variants at all",
+  );
 
   if (blocking.length > 0) {
     skipped.push({ title: p.title, reasons });
@@ -189,12 +185,17 @@ for (const p of products) {
 
   const prices = variants.map((v) => toPaise(v.price));
 
+  const SUSPICIOUS_PAISE = 10000; // anything under ₹100 is almost certainly a test value
+
   imported.push({
     slug: p.handle,
     shopifyId: p.id,
     title: p.title.trim(),
     category,
     finish: finishFor(p),
+    suspiciousPrices: variants
+      .filter((v) => toPaise(v.price) < SUSPICIOUS_PAISE)
+      .map((v) => ({ variant: String(v.title).trim(), price: v.price })),
     description: (p.body_html ?? "").replace(/<[^>]*>/g, "").trim(),
     images,
     models: modelsFor(p),
@@ -235,7 +236,7 @@ export type ImportedProduct = {
   slug: string;
   shopifyId: number;
   title: string;
-  category: string;
+  category: string | null;
   finish: string | null;
   description: string;
   images: string[];
@@ -247,6 +248,8 @@ export type ImportedProduct = {
   missingImages: boolean;
   /** true when no collection told us the finish - needs a human */
   needsFinish: boolean;
+  /** variants priced under 100 rupees - imported as-is, verify in Shopify */
+  suspiciousPrices: { variant: string; price: string }[];
 };
 `;
 
@@ -264,6 +267,8 @@ export const IMPORT_STATS = {
   skipped: ${skipped.length},
   missingImages: ${imported.filter((p) => p.missingImages).length},
   needsFinish: ${imported.filter((p) => p.needsFinish).length},
+  needsCategory: ${imported.filter((p) => !p.category).length},
+  withSuspiciousPrices: ${imported.filter((p) => p.suspiciousPrices.length > 0).length},
   totalVariants: ${imported.reduce((n, p) => n + p.variants.length, 0)},
 } as const;
 `;
@@ -281,11 +286,13 @@ for (const p of imported) {
   const flags = [
     p.missingImages ? "NO IMAGE" : null,
     p.needsFinish ? "NO FINISH" : null,
+    p.category ? null : "NO CATEGORY",
+    p.suspiciousPrices.length ? `${p.suspiciousPrices.length} LOW PRICE` : null,
   ]
     .filter(Boolean)
     .join(", ");
   console.log(
-    `  ${p.title.padEnd(22)} ${p.category.padEnd(10)} ${String(p.variants.length).padStart(3)} variants  ₹${(p.minPriceInPaise / 100).toFixed(0)}-${(p.maxPriceInPaise / 100).toFixed(0)}${flags ? "  [" + flags + "]" : ""}`,
+    `  ${p.title.padEnd(22)} ${(p.category ?? "-").padEnd(10)} ${String(p.variants.length).padStart(3)} variants  ₹${(p.minPriceInPaise / 100).toFixed(0)}-${(p.maxPriceInPaise / 100).toFixed(0)}${flags ? "  [" + flags + "]" : ""}`,
   );
 }
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
+import { SkinFinder } from "@/components/SkinFinder";
 import { SkinVisual } from "@/components/SkinVisual";
 import {
   DEVICE_CATEGORIES,
@@ -77,12 +78,18 @@ function Hero({
             device.
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-3">
+          {/* Device search sits in the hero so the first click can be
+              "add to cart" rather than "browse a category". */}
+          <div className="mt-8">
+            <SkinFinder compact />
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              href="/collections/phone"
+              href="/find"
               className="rounded-[var(--r-md)] bg-accent px-5 py-3 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
             >
-              Shop skins
+              Open full finder
             </Link>
             <Link
               href="/request-model"

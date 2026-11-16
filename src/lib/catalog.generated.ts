@@ -2,8 +2,8 @@
 // Source: Shopify public storefront JSON (jaka1n-rd.myshopify.com)
 // Regenerate: node scripts/import-shopify.mjs <raw-dir>
 //
-// Imported 17 of 26 products.
-// Skipped 9 (see import report).
+// Imported 21 of 26 products.
+// Skipped 5 (see import report).
 
 export type ImportedVariant = {
   shopifyId: number;
@@ -17,7 +17,7 @@ export type ImportedProduct = {
   slug: string;
   shopifyId: number;
   title: string;
-  category: string;
+  category: string | null;
   finish: string | null;
   description: string;
   images: string[];
@@ -29,6 +29,8 @@ export type ImportedProduct = {
   missingImages: boolean;
   /** true when no collection told us the finish - needs a human */
   needsFinish: boolean;
+  /** variants priced under 100 rupees - imported as-is, verify in Shopify */
+  suspiciousPrices: { variant: string; price: string }[];
 };
 
 export const IMPORTED_PRODUCTS: ImportedProduct[] = [
@@ -38,6 +40,7 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "cam skin",
     "category": "camera",
     "finish": null,
+    "suspiciousPrices": [],
     "description": "",
     "images": [
       "https://cdn.shopify.com/s/files/1/1019/3233/5398/files/Screenshot_2026-09-07-18-49-54-93_1c337646f29875672b5a61192b9010f9.jpg?v=1793859261"
@@ -105,6 +108,12 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "Canon Lens Skin",
     "category": "lens",
     "finish": "texture",
+    "suspiciousPrices": [
+      {
+        "variant": "test",
+        "price": "79.00"
+      }
+    ],
     "description": "Premium vinyl skin for Canon camera lenses. Precision cut with perfect fit and texture.",
     "images": [],
     "models": [
@@ -330,6 +339,7 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "Fujifilm Lens Skin",
     "category": "lens",
     "finish": "texture",
+    "suspiciousPrices": [],
     "description": "Premium vinyl skin for Fujifilm camera lenses. Precision cut with perfect fit and texture.",
     "images": [],
     "models": [
@@ -451,6 +461,12 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "Nikon Lens Skin",
     "category": "lens",
     "finish": "texture",
+    "suspiciousPrices": [
+      {
+        "variant": "NIKKOR Z 24-70mm f/2.8 S",
+        "price": "8.00"
+      }
+    ],
     "description": "Premium vinyl skin for Nikon camera lenses. Precision cut with perfect fit and texture.",
     "images": [],
     "models": [
@@ -668,6 +684,7 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "Panasonic Lens Skin",
     "category": "lens",
     "finish": "texture",
+    "suspiciousPrices": [],
     "description": "Premium vinyl skin for Panasonic camera lenses. Precision cut with perfect fit and texture.",
     "images": [],
     "models": [
@@ -709,6 +726,7 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "Samyang Lens Skin",
     "category": "lens",
     "finish": "texture",
+    "suspiciousPrices": [],
     "description": "Premium vinyl skin for Samyang camera lenses. Precision cut with perfect fit and texture.",
     "images": [],
     "models": [
@@ -774,6 +792,7 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "Sigma Lens Skin",
     "category": "lens",
     "finish": "texture",
+    "suspiciousPrices": [],
     "description": "Premium vinyl skin for Sigma camera lenses. Precision cut with perfect fit and texture.",
     "images": [],
     "models": [
@@ -943,6 +962,7 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "Tamron Lens Skin",
     "category": "lens",
     "finish": "texture",
+    "suspiciousPrices": [],
     "description": "Premium vinyl skin for Tamron camera lenses. Precision cut with perfect fit and texture.",
     "images": [],
     "models": [
@@ -1072,6 +1092,7 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "Viltrox Lens Skin",
     "category": "lens",
     "finish": "texture",
+    "suspiciousPrices": [],
     "description": "Premium vinyl skin for Viltrox camera lenses. Precision cut with perfect fit and texture.",
     "images": [],
     "models": [
@@ -1121,6 +1142,7 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "Sony Lens Skin",
     "category": "lens",
     "finish": "texture",
+    "suspiciousPrices": [],
     "description": "Premium vinyl skin for Sony camera lenses. Precision cut with perfect fit and texture.",
     "images": [],
     "models": [
@@ -1490,6 +1512,7 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "forged carbon",
     "category": "camera",
     "finish": "texture",
+    "suspiciousPrices": [],
     "description": "",
     "images": [
       "https://cdn.shopify.com/s/files/1/1019/3233/5398/files/Screenshot_2026-09-07-18-48-01-64_1c337646f29875672b5a61192b9010f9.jpg?v=1792652693"
@@ -1552,11 +1575,45 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "needsFinish": false
   },
   {
+    "slug": "black-lether",
+    "shopifyId": 10815263080742,
+    "title": "Black lether",
+    "category": null,
+    "finish": "texture",
+    "suspiciousPrices": [],
+    "description": "",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/1019/3233/5398/files/Screenshot_2026-09-07-18-46-17-86_1c337646f29875672b5a61192b9010f9.jpg?v=1792652242"
+    ],
+    "models": [],
+    "minPriceInPaise": 110000,
+    "maxPriceInPaise": 150000,
+    "variants": [
+      {
+        "shopifyId": 54171788017958,
+        "title": "price 1100",
+        "priceInPaise": 110000,
+        "available": false,
+        "sku": null
+      },
+      {
+        "shopifyId": 54171788050726,
+        "title": "1500",
+        "priceInPaise": 150000,
+        "available": false,
+        "sku": null
+      }
+    ],
+    "missingImages": false,
+    "needsFinish": false
+  },
+  {
     "slug": "sony-lens-31",
     "shopifyId": 10803387597094,
     "title": "Sony Lens 31",
     "category": "lens",
     "finish": null,
+    "suspiciousPrices": [],
     "description": "",
     "images": [
       "https://cdn.shopify.com/s/files/1/1019/3233/5398/files/ChatGPTImageSep28_2026_07_31_06PM.png?v=1792068502"
@@ -1612,11 +1669,39 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "needsFinish": true
   },
   {
+    "slug": "neon-dragon",
+    "shopifyId": 10791314620710,
+    "title": "Neon Dragon",
+    "category": null,
+    "finish": "printed-designs",
+    "suspiciousPrices": [],
+    "description": "",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/1019/3233/5398/files/WhatsAppImage2026-10-05at4.11.11PM.jpg?v=1791363700",
+      "https://cdn.shopify.com/s/files/1/1019/3233/5398/files/ChatGPT_Image_Sep_28_2026_07_31_13_PM.png?v=1790686754"
+    ],
+    "models": [],
+    "minPriceInPaise": 89000,
+    "maxPriceInPaise": 89000,
+    "variants": [
+      {
+        "shopifyId": 54038233776422,
+        "title": "Default Title",
+        "priceInPaise": 89000,
+        "available": true,
+        "sku": null
+      }
+    ],
+    "missingImages": false,
+    "needsFinish": false
+  },
+  {
     "slug": "camera-honey",
     "shopifyId": 10757093425446,
     "title": "Camera Honey",
     "category": "camera",
     "finish": null,
+    "suspiciousPrices": [],
     "description": "",
     "images": [],
     "models": [],
@@ -1677,11 +1762,36 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "needsFinish": true
   },
   {
+    "slug": "honey",
+    "shopifyId": 10756988305702,
+    "title": "Phone Honey",
+    "category": "phone",
+    "finish": null,
+    "suspiciousPrices": [],
+    "description": "",
+    "images": [],
+    "models": [],
+    "minPriceInPaise": 80000,
+    "maxPriceInPaise": 80000,
+    "variants": [
+      {
+        "shopifyId": 53867481563430,
+        "title": "Default Title",
+        "priceInPaise": 80000,
+        "available": true,
+        "sku": null
+      }
+    ],
+    "missingImages": true,
+    "needsFinish": true
+  },
+  {
     "slug": "lap-2nd",
     "shopifyId": 10667681186086,
     "title": "Lap  2nd",
     "category": "laptop",
     "finish": null,
+    "suspiciousPrices": [],
     "description": "",
     "images": [],
     "models": [],
@@ -1712,6 +1822,7 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "lap sticker",
     "category": "laptop",
     "finish": null,
+    "suspiciousPrices": [],
     "description": "",
     "images": [
       "https://cdn.shopify.com/s/files/1/1019/3233/5398/files/LOQ_Top_Mokups_copy.jpg?v=1785227308",
@@ -1746,6 +1857,7 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "Black Honeycomb",
     "category": "camera",
     "finish": "texture",
+    "suspiciousPrices": [],
     "description": "",
     "images": [
       "https://cdn.shopify.com/s/files/1/1019/3233/5398/files/BlackHoneycombCameraSkinFront_33a01fa3-a853-40c3-a6ff-6a249bf0a493.jpg?v=1784788122",
@@ -1814,6 +1926,7 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     "title": "MOBILE  STICKER",
     "category": "phone",
     "finish": null,
+    "suspiciousPrices": [],
     "description": "",
     "images": [],
     "models": [],
@@ -1879,15 +1992,46 @@ export const IMPORTED_PRODUCTS: ImportedProduct[] = [
     ],
     "missingImages": true,
     "needsFinish": true
+  },
+  {
+    "slug": "printed-skin",
+    "shopifyId": 10625367540006,
+    "title": "EMBOSSE",
+    "category": null,
+    "finish": "embossed",
+    "suspiciousPrices": [],
+    "description": "",
+    "images": [
+      "https://cdn.shopify.com/s/files/1/1019/3233/5398/files/ChatGPTImageSep29_2026_03_45_40PM.png?v=1790676976",
+      "https://cdn.shopify.com/s/files/1/1019/3233/5398/files/ChatGPT_Image_Sep_28_2026_07_31_13_PM.png?v=1790686754"
+    ],
+    "models": [
+      "iPhone 5"
+    ],
+    "minPriceInPaise": 89000,
+    "maxPriceInPaise": 89000,
+    "variants": [
+      {
+        "shopifyId": 53973475557670,
+        "title": "iPhone 5 / Full Wrap",
+        "priceInPaise": 89000,
+        "available": false,
+        "sku": null
+      }
+    ],
+    "missingImages": false,
+    "needsFinish": false
   }
 ];
 
 export const IMPORT_STATS = {
   sourceProducts: 26,
   sourceCollections: 30,
-  imported: 17,
-  skipped: 9,
-  missingImages: 12,
-  needsFinish: 6,
-  totalVariants: 200,
+  imported: 21,
+  skipped: 5,
+  missingImages: 13,
+  needsFinish: 7,
+  needsCategory: 3,
+  withSuspiciousPrices: 2,
+  totalVariants: 205,
 } as const;

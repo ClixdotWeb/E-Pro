@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { DEVICE_CATEGORIES, FINISH_LABEL } from "@/lib/catalog";
 
 const NAV = [
+  { label: "Find my device", href: "/find" },
   { label: "Request Model", href: "/request-model" },
   { label: "Material", href: "/material" },
   { label: "How to apply", href: "/how-to-apply" },
