@@ -1,26 +1,214 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Epro Gadgets design tokens
+   Dark-first: skins are photographed on dark surfaces, and the
+   brand logo ships as a light-on-dark mark.
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* surfaces, darkest to lightest */
+  --surface-0: #07080a;
+  --surface-1: #0d0f13;
+  --surface-2: #14171d;
+  --surface-3: #1c2027;
+  --hairline: #262b34;
+  --hairline-strong: #353b46;
+
+  /* text */
+  --text-hi: #f4f6f8;
+  --text-mid: #a6aeba;
+  --text-low: #6d7684;
+
+  /* brand accent - warm amber reads as "premium hardware",
+     and survives on both dark and light surfaces */
+  --accent: #f0a93b;
+  --accent-hover: #ffbe55;
+  --accent-ink: #1a1203;
+  --accent-soft: rgba(240, 169, 59, 0.12);
+
+  /* status */
+  --success: #3fbf7f;
+  --danger: #f2585b;
+  --warning: #f0a93b;
+
+  /* radii + shadow */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-pop: 0 12px 48px rgba(0, 0, 0, 0.55);
+
+  /* layout */
+  --page-max: 1320px;
+  --header-h: 64px;
+}
+
+/* Light mode is opt-in via [data-theme="light"] so the default
+   experience stays dark regardless of OS setting. */
+:root[data-theme="light"] {
+  --surface-0: #ffffff;
+  --surface-1: #f7f8fa;
+  --surface-2: #eff1f5;
+  --surface-3: #e5e8ee;
+  --hairline: #dce0e8;
+  --hairline-strong: #c2c8d4;
+
+  --text-hi: #0d1117;
+  --text-mid: #4c5563;
+  --text-low: #7b8493;
+
+  --accent: #b5751a;
+  --accent-hover: #965f12;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(181, 117, 26, 0.1);
+
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.06);
+  --shadow-pop: 0 12px 48px rgba(16, 24, 40, 0.14);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+
+  --color-text-hi: var(--text-hi);
+  --color-text-mid: var(--text-mid);
+  --color-text-low: var(--text-low);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+
+  --font-sans: var(--font-sans-stack);
+  --font-mono: var(--font-mono-stack);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface-0);
+  color: var(--text-hi);
+  font-family: var(--font-sans-stack), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Respect users who ask for less motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Visible keyboard focus everywhere, not just where we remember */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* ---- utilities ---- */
+
+.page {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+@media (min-width: 768px) {
+  .page {
+    padding-inline: 32px;
+  }
+}
+
+/* Eyebrow / kicker label above headings */
+.kicker {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-low);
+}
+
+/* Subtle top-lit card surface */
+.card {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+}
+
+/* Thin scrollbar for horizontal rails */
+.rail {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hairline-strong) transparent;
+}
+.rail::-webkit-scrollbar {
+  height: 6px;
+}
+.rail::-webkit-scrollbar-thumb {
+  background: var(--hairline-strong);
+  border-radius: 99px;
+}
+
+/* Skeleton shimmer for loading states */
+@keyframes epro-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  animation: epro-shimmer 1.4s infinite;
 }
