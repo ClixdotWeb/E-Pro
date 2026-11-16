@@ -9,7 +9,12 @@ export const metadata: Metadata = {
     "Type your device and add the right skin to your cart on one screen. No category browsing.",
 };
 
-export default function FindPage() {
+export default async function FindPage({
+  searchParams,
+}: PageProps<"/find">) {
+  const sp = await searchParams;
+  const device = typeof sp.device === "string" ? sp.device : undefined;
+
   return (
     <div className="page grid gap-10 py-12 lg:grid-cols-[1fr_minmax(0,620px)]">
       <div>
@@ -54,7 +59,7 @@ export default function FindPage() {
       </div>
 
       <div>
-        <SkinFinder />
+        <SkinFinder initialCategory={device} />
       </div>
     </div>
   );

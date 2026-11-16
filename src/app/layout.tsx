@@ -1,12 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Poppins, JetBrains_Mono } from "next/font/google";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import "./globals.css";
 
-const sans = Inter({
+// The live theme sets Poppins with an -apple-system fallback chain.
+const sans = Poppins({
   variable: "--font-sans-stack",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -31,10 +33,11 @@ export const metadata: Metadata = {
     siteName: "Epro Gadgets",
     locale: "en_IN",
   },
+  icons: { icon: "/brand/Epro_gadgets_Favicon_image.png" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#07080a",
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
 };

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { DEVICE_CATEGORIES, FINISH_LABEL } from "@/lib/catalog";
 
@@ -254,15 +255,16 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
 }
 
 function Logo() {
+  // The real mark, as served by the live theme (light-on-dark, 2833x942).
   return (
-    <span className="flex items-center gap-2">
-      <span className="grid h-7 w-7 place-items-center rounded-[7px] bg-accent text-[13px] font-black text-accent-ink">
-        E
-      </span>
-      <span className="text-[15px] font-semibold tracking-tight text-text-hi">
-        Epro<span className="text-text-low"> Gadgets</span>
-      </span>
-    </span>
+    <Image
+      src="/brand/Epro_LOGO_LIGHT-01.png"
+      alt="Epro Gadgets"
+      width={2833}
+      height={942}
+      priority
+      className="h-7 w-auto md:h-8"
+    />
   );
 }
 

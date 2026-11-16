@@ -1,322 +1,93 @@
 import Link from "next/link";
-import { ProductCard } from "@/components/ProductCard";
-import { SkinFinder } from "@/components/SkinFinder";
-import { SkinVisual } from "@/components/SkinVisual";
-import {
-  DEVICE_CATEGORIES,
-  bestsellers,
-  newArrivals,
-  getProduct,
-} from "@/lib/catalog";
+import { VideoHero } from "@/components/home/VideoHero";
+import { RealCustomers } from "@/components/home/RealCustomers";
+import { BeforeAfter } from "@/components/home/BeforeAfter";
+import { CATEGORIES, CATEGORY_LABEL } from "@/lib/realCatalog";
+
+/**
+ * Section order mirrors the live Shopify homepage:
+ *
+ *   video_banner -> custom_liquid (Categories) -> moving_image_banner
+ *   ("Real Customers - Real Skins") -> image_comparison ->
+ *   collapsible_content (FAQ) -> newsletter + icon_with_text (in Footer)
+ *
+ * The one addition is the device finder, carried inside the hero, which
+ * replaces the old three-page path to a buyable item.
+ */
 
 export default function HomePage() {
-  const hero = getProduct("carbon-fibre-black")!;
-  const secondary = getProduct("leather-grain-cognac")!;
-  const tertiary = getProduct("aurora-holo")!;
-
   return (
     <>
-      <Hero hero={hero} secondary={secondary} tertiary={tertiary} />
+      <VideoHero />
       <CategoryGrid />
-      <Rail
-        kicker="Most wrapped"
-        title="Bestsellers"
-        href="/collections/phone"
-        products={bestsellers()}
-      />
-      <RequestModelBanner />
-      <Rail
-        kicker="Just landed"
-        title="New arrivals"
-        href="/collections/phone"
-        products={newArrivals()}
-      />
-      <HowItWorks />
+      <RealCustomers />
+      <BeforeAfter />
       <Faq />
     </>
   );
 }
 
-/* ---------------- hero ---------------- */
-
-function Hero({
-  hero,
-  secondary,
-  tertiary,
-}: {
-  hero: ReturnType<typeof getProduct>;
-  secondary: ReturnType<typeof getProduct>;
-  tertiary: ReturnType<typeof getProduct>;
-}) {
-  if (!hero || !secondary || !tertiary) return null;
-
-  return (
-    <section className="relative overflow-hidden border-b border-hairline">
-      {/* ambient glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(90% 60% at 75% 0%, rgba(240,169,59,0.14), transparent 70%)",
-        }}
-      />
-
-      <div className="page relative grid items-center gap-12 py-16 md:grid-cols-2 md:py-24">
-        <div>
-          <p className="kicker">Since 2013 · Every day is an evolution</p>
-
-          <h1 className="mt-4 text-4xl font-semibold leading-[1.05] tracking-tight text-text-hi md:text-5xl lg:text-6xl">
-            Skins cut for
-            <br />
-            <span className="text-accent">your exact</span> device.
-          </h1>
-
-          <p className="mt-5 max-w-md text-[15px] leading-relaxed text-text-mid">
-            Not a case. A 0.2&nbsp;mm precision-cut film that protects every
-            edge, port and lens cutout — then peels off clean when you sell the
-            device.
-          </p>
-
-          {/* Device search sits in the hero so the first click can be
-              "add to cart" rather than "browse a category". */}
-          <div className="mt-8">
-            <SkinFinder compact />
-          </div>
-
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/find"
-              className="rounded-[var(--r-md)] bg-accent px-5 py-3 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
-            >
-              Open full finder
-            </Link>
-            <Link
-              href="/request-model"
-              className="rounded-[var(--r-md)] border border-hairline-strong px-5 py-3 text-sm font-semibold text-text-hi transition-colors hover:bg-surface-2"
-            >
-              Request your model
-            </Link>
-          </div>
-
-          <dl className="mt-10 grid max-w-sm grid-cols-3 gap-4 border-t border-hairline pt-6">
-            {[
-              ["260+", "device models"],
-              ["1–2 days", "to dispatch"],
-              ["0", "adhesive residue"],
-            ].map(([stat, label]) => (
-              <div key={label}>
-                <dt className="text-lg font-semibold tabular-nums text-text-hi">
-                  {stat}
-                </dt>
-                <dd className="mt-0.5 text-[11px] leading-tight text-text-low">
-                  {label}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-
-        {/* staggered product collage */}
-        <div className="relative mx-auto grid w-full max-w-md grid-cols-5 grid-rows-6 gap-3">
-          <div className="col-span-3 row-span-6">
-            <SkinVisual
-              product={hero}
-              shape="phone"
-              className="h-full !aspect-auto shadow-pop"
-            />
-          </div>
-          <div className="col-span-2 row-span-3 col-start-4">
-            <SkinVisual
-              product={secondary}
-              shape="square"
-              className="h-full !aspect-auto shadow-card"
-            />
-          </div>
-          <div className="col-span-2 row-span-3 col-start-4 row-start-4">
-            <SkinVisual
-              product={tertiary}
-              shape="square"
-              className="h-full !aspect-auto shadow-card"
-            />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 /* ---------------- categories ---------------- */
 
+/** The full device range the store sells, in the theme's tile order. */
+const TILE_ORDER = [
+  "phone",
+  "camera",
+  "lens",
+  "laptop",
+  "gimbal",
+  "tablet",
+  "gaming-consoles",
+  "drone",
+  "charger",
+  "wireless-earbuds",
+];
+
 function CategoryGrid() {
+  const liveCounts = new Map(CATEGORIES.map((c) => [c.slug, c.count]));
+
   return (
     <section className="page py-16 md:py-20">
       <header className="mb-7">
         <p className="kicker">Shop by device</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-text-hi">
-          Pick your gear
+        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-text-hi md:text-3xl">
+          Categories
         </h2>
       </header>
 
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {DEVICE_CATEGORIES.map((cat) => (
-          <li key={cat.slug}>
-            <Link
-              href={`/collections/${cat.slug}`}
-              className="group flex h-full flex-col justify-between gap-6 rounded-[var(--r-lg)] border border-hairline bg-surface-1 p-4 transition-colors hover:border-accent hover:bg-surface-2"
-            >
-              <span className="text-text-low transition-colors group-hover:text-accent">
-                <CategoryIcon slug={cat.slug} />
-              </span>
-              <span>
-                <span className="block text-sm font-medium text-text-hi">
-                  {cat.name}
+        {TILE_ORDER.map((slug) => {
+          const count = liveCounts.get(slug) ?? 0;
+          const label = CATEGORY_LABEL[slug] ?? slug;
+
+          return (
+            <li key={slug}>
+              <Link
+                href={count > 0 ? `/find?device=${slug}` : "/request-model"}
+                className="group flex h-full flex-col justify-between gap-6 rounded-[var(--r-lg)] border border-hairline bg-surface-1 p-4 transition-colors hover:border-accent hover:bg-surface-2"
+              >
+                <span className="text-text-low transition-colors group-hover:text-accent">
+                  <CategoryIcon slug={slug} />
                 </span>
-                <span className="mt-0.5 block text-[11px] text-text-low">
-                  {cat.finishes.length} finishes
+                <span>
+                  <span className="block text-sm font-medium text-text-hi">
+                    {label}
+                  </span>
+                  {/* Honest counts: most categories have nothing in them yet,
+                      and saying "coming soon" beats showing an empty grid. */}
+                  <span
+                    className={`mt-0.5 block text-[11px] ${
+                      count > 0 ? "text-text-low" : "text-accent"
+                    }`}
+                  >
+                    {count > 0 ? `${count} options` : "Request a cut"}
+                  </span>
                 </span>
-              </span>
-            </Link>
-          </li>
-        ))}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
-    </section>
-  );
-}
-
-/* ---------------- product rails ---------------- */
-
-function Rail({
-  kicker,
-  title,
-  href,
-  products,
-}: {
-  kicker: string;
-  title: string;
-  href: string;
-  products: ReturnType<typeof bestsellers>;
-}) {
-  return (
-    <section className="page py-10">
-      <header className="mb-6 flex items-end justify-between gap-4">
-        <div>
-          <p className="kicker">{kicker}</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-text-hi">
-            {title}
-          </h2>
-        </div>
-        <Link
-          href={href}
-          className="shrink-0 text-[13px] font-medium text-accent hover:underline"
-        >
-          View all →
-        </Link>
-      </header>
-
-      <ul className="rail -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
-        {products.map((p) => (
-          <li
-            key={p.slug}
-            className="w-[58%] shrink-0 snap-start sm:w-[38%] md:w-auto"
-          >
-            <ProductCard product={p} />
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-/* ---------------- request model ---------------- */
-
-function RequestModelBanner() {
-  return (
-    <section className="page py-10">
-      <div className="card relative overflow-hidden px-6 py-12 md:px-12">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(60% 120% at 100% 50%, rgba(240,169,59,0.12), transparent 70%)",
-          }}
-        />
-        <div className="relative max-w-lg">
-          <p className="kicker">Can&apos;t find your device?</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-text-hi md:text-3xl">
-            We&apos;ll cut it for you.
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-text-mid">
-            Send us the model and we&apos;ll template it. Most requests ship
-            within a week, and once a model is cut it joins the catalogue for
-            everyone else too.
-          </p>
-          <Link
-            href="/request-model"
-            className="mt-6 inline-block rounded-[var(--r-md)] bg-accent px-5 py-3 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
-          >
-            Request a model
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ---------------- how it works ---------------- */
-
-function HowItWorks() {
-  const steps = [
-    {
-      n: "01",
-      title: "Clean the surface",
-      body: "Wipe the device down with the included alcohol pad and let it dry fully. Dust under film shows.",
-    },
-    {
-      n: "02",
-      title: "Align one edge",
-      body: "Start from a single edge or cutout, peel back slowly and let the adhesive find the surface.",
-    },
-    {
-      n: "03",
-      title: "Heat the curves",
-      body: "A hairdryer on low makes the film relax into corners and camera rings without lifting later.",
-    },
-  ];
-
-  return (
-    <section className="page py-16 md:py-20">
-      <header className="mb-8 flex items-end justify-between gap-4">
-        <div>
-          <p className="kicker">Takes about five minutes</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-text-hi">
-            How to apply
-          </h2>
-        </div>
-        <Link
-          href="/how-to-apply"
-          className="shrink-0 text-[13px] font-medium text-accent hover:underline"
-        >
-          Full guide →
-        </Link>
-      </header>
-
-      <ol className="grid gap-3 md:grid-cols-3">
-        {steps.map((s) => (
-          <li key={s.n} className="card p-6">
-            <span className="font-mono text-xs font-semibold text-accent">
-              {s.n}
-            </span>
-            <h3 className="mt-3 text-base font-semibold text-text-hi">
-              {s.title}
-            </h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-text-mid">
-              {s.body}
-            </p>
-          </li>
-        ))}
-      </ol>
     </section>
   );
 }
@@ -352,7 +123,7 @@ function Faq() {
       <div className="grid gap-10 md:grid-cols-[minmax(0,320px)_1fr]">
         <header>
           <p className="kicker">Got questions?</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-text-hi">
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-text-hi md:text-3xl">
             We&apos;ve got answers
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-text-mid">

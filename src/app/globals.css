@@ -2,70 +2,88 @@
 
 /* ============================================================
    Epro Gadgets design tokens
-   Dark-first: skins are photographed on dark surfaces, and the
-   brand logo ships as a light-on-dark mark.
+
+   Values are lifted from the live Shopify theme so this build is
+   visually the same brand, not a reinterpretation:
+
+     accent / buttons   #00A44F        (--color-button-bg-rgb 0,164,79)
+     button text        #ffffff        (--color-button-text)
+     dark surface       #000000        (color-scheme-3)
+     grey surface       #45484C        (color-scheme-1)
+     light surface      #ffffff, text #1F1F21   (color-scheme-2)
+     field background   #17161A / #1F1F21
+     error              #EB544A        (--color-error)
+     corner radius      8px            (--button-border-radius)
+     type               Poppins
+
+   The theme's muted text is the body colour at 60% and 40% opacity
+   (--color-light-text, --color-disable-text), which is reproduced here
+   rather than hand-picked greys.
    ============================================================ */
 
 :root {
   /* surfaces, darkest to lightest */
-  --surface-0: #07080a;
-  --surface-1: #0d0f13;
-  --surface-2: #14171d;
-  --surface-3: #1c2027;
-  --hairline: #262b34;
-  --hairline-strong: #353b46;
+  --surface-0: #000000;
+  --surface-1: #0c0c0e;
+  --surface-2: #17161a;
+  --surface-3: #1f1f21;
+  --surface-grey: #45484c;
 
-  /* text */
-  --text-hi: #f4f6f8;
-  --text-mid: #a6aeba;
-  --text-low: #6d7684;
+  --hairline: rgba(255, 255, 255, 0.11);
+  --hairline-strong: rgba(255, 255, 255, 0.22);
 
-  /* brand accent - warm amber reads as "premium hardware",
-     and survives on both dark and light surfaces */
-  --accent: #f0a93b;
-  --accent-hover: #ffbe55;
-  --accent-ink: #1a1203;
-  --accent-soft: rgba(240, 169, 59, 0.12);
+  /* text — theme uses opacity steps off the body colour */
+  --text-hi: #ffffff;
+  --text-mid: rgba(255, 255, 255, 0.6);
+  --text-low: rgba(255, 255, 255, 0.4);
+
+  /* brand green */
+  --accent: #00a44f;
+  --accent-hover: #00bd5b;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(0, 164, 79, 0.15);
 
   /* status */
-  --success: #3fbf7f;
-  --danger: #f2585b;
-  --warning: #f0a93b;
+  --success: #00a44f;
+  --danger: #eb544a;
+  --warning: #e38c09;
 
-  /* radii + shadow */
+  /* radii + shadow — theme is a flat 8px */
   --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 16px;
-  --r-xl: 24px;
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
-  --shadow-pop: 0 12px 48px rgba(0, 0, 0, 0.55);
+  --r-md: 8px;
+  --r-lg: 8px;
+  --r-xl: 16px;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-pop: 0 12px 48px rgba(0, 0, 0, 0.6);
 
   /* layout */
-  --page-max: 1320px;
-  --header-h: 64px;
+  --page-max: 1360px;
+  --header-h: 68px;
 }
 
-/* Light mode is opt-in via [data-theme="light"] so the default
-   experience stays dark regardless of OS setting. */
+/* Light mode mirrors the theme's color-scheme-2. Opt-in, because the
+   logo is a light-on-dark mark and the storefront runs dark. */
 :root[data-theme="light"] {
   --surface-0: #ffffff;
-  --surface-1: #f7f8fa;
-  --surface-2: #eff1f5;
-  --surface-3: #e5e8ee;
-  --hairline: #dce0e8;
-  --hairline-strong: #c2c8d4;
+  --surface-1: #f7f7f8;
+  --surface-2: #efeff1;
+  --surface-3: #e4e4e7;
+  --surface-grey: #45484c;
 
-  --text-hi: #0d1117;
-  --text-mid: #4c5563;
-  --text-low: #7b8493;
+  --hairline: rgba(9, 12, 38, 0.12);
+  --hairline-strong: rgba(9, 12, 38, 0.24);
 
-  --accent: #b5751a;
-  --accent-hover: #965f12;
+  --text-hi: #1f1f21;
+  --text-mid: rgba(31, 31, 33, 0.6);
+  --text-low: rgba(31, 31, 33, 0.4);
+
+  --accent: #00a44f;
+  --accent-hover: #008a42;
   --accent-ink: #ffffff;
-  --accent-soft: rgba(181, 117, 26, 0.1);
+  --accent-soft: rgba(0, 164, 79, 0.1);
 
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.06);
-  --shadow-pop: 0 12px 48px rgba(16, 24, 40, 0.14);
+  --shadow-card: 0 1px 2px rgba(9, 12, 38, 0.06), 0 8px 24px rgba(9, 12, 38, 0.06);
+  --shadow-pop: 0 12px 48px rgba(9, 12, 38, 0.14);
 }
 
 @theme inline {
@@ -73,6 +91,7 @@
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
+  --color-surface-grey: var(--surface-grey);
   --color-hairline: var(--hairline);
   --color-hairline-strong: var(--hairline-strong);
 
@@ -113,12 +132,12 @@ html {
 body {
   background: var(--surface-0);
   color: var(--text-hi);
-  font-family: var(--font-sans-stack), system-ui, sans-serif;
+  font-family: var(--font-sans-stack), -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Respect users who ask for less motion */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -132,7 +151,6 @@ body {
   }
 }
 
-/* Visible keyboard focus everywhere, not just where we remember */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -159,7 +177,6 @@ body {
   }
 }
 
-/* Eyebrow / kicker label above headings */
 .kicker {
   font-size: 0.6875rem;
   font-weight: 600;
@@ -168,14 +185,12 @@ body {
   color: var(--text-low);
 }
 
-/* Subtle top-lit card surface */
 .card {
-  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  background: var(--surface-2);
   border: 1px solid var(--hairline);
   border-radius: var(--r-lg);
 }
 
-/* Thin scrollbar for horizontal rails */
 .rail {
   scrollbar-width: thin;
   scrollbar-color: var(--hairline-strong) transparent;
@@ -188,7 +203,6 @@ body {
   border-radius: 99px;
 }
 
-/* Skeleton shimmer for loading states */
 @keyframes epro-shimmer {
   100% {
     transform: translateX(100%);
@@ -211,4 +225,23 @@ body {
     transparent
   );
   animation: epro-shimmer 1.4s infinite;
+}
+
+/* Continuous marquee for the "Real Customers - Real Skins" rail,
+   mirroring the theme's moving image banner. */
+@keyframes epro-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: epro-marquee 40s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
 }
