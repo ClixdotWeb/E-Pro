@@ -71,7 +71,7 @@ export function CheckoutView({
   lines: CartLine[];
   payment: PaymentInfo;
 }) {
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<React.ReactNode | null>(null);
 
   const totals = useMemo(
     () =>
@@ -88,7 +88,18 @@ export function CheckoutView({
   function pay(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setNotice(
-      "No order was placed. Checkout needs a database connection and a payment gateway before it can take money.",
+      <>
+        No order was placed — checkout needs a database connection and a
+        payment gateway before it can take money. To see where a real
+        purchase lands,{" "}
+        <Link
+          href="/order/EPRO-1042"
+          className="text-accent hover:underline"
+        >
+          open a sample confirmation
+        </Link>
+        .
+      </>,
     );
   }
 

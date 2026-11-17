@@ -2,6 +2,7 @@ import Link from "next/link";
 import { NAV_CATEGORIES } from "@/lib/realCatalog";
 
 const HELP = [
+  { label: "FAQ", href: "/faq" },
   { label: "Return and exchange policy", href: "/policies/returns" },
   { label: "Shipping Policy", href: "/policies/shipping" },
   { label: "Privacy Policy", href: "/policies/privacy" },
@@ -15,6 +16,7 @@ const COMPANY = [
   { label: "How to apply", href: "/how-to-apply" },
   { label: "Request a model", href: "/request-model" },
   { label: "Track order", href: "/track" },
+  { label: "All collections", href: "/collections" },
 ];
 
 export function Footer() {

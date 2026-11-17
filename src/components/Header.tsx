@@ -8,6 +8,7 @@ import { FINISH_LABEL, NAV_CATEGORIES } from "@/lib/realCatalog";
 
 const NAV = [
   { label: "Find my device", href: "/find" },
+  { label: "FAQ", href: "/faq" },
   { label: "Request Model", href: "/request-model" },
   { label: "Material", href: "/material" },
   { label: "How to apply", href: "/how-to-apply" },
@@ -278,6 +279,12 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
                 className="block rounded-[var(--r-sm)] px-3 py-2.5 text-sm text-text-mid"
               >
                 Account
+              </Link>
+              <Link
+                href="/login"
+                className="block rounded-[var(--r-sm)] px-3 py-2.5 text-sm text-accent"
+              >
+                Sign in
               </Link>
             </nav>
           </div>
