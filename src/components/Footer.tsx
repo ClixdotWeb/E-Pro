@@ -38,7 +38,12 @@ export function Footer() {
       <IconWithText />
 
       <footer className="bg-surface-0">
-        <div className="page grid gap-10 py-14 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        {/* The footer columns are NOT three equal thirds stretched across
+            the container - on the live site they sit narrow and packed
+            to the left, with the right of the row left empty. And the
+            gap above the footer is larger than the gap between ordinary
+            sections. */}
+        <div className="page grid gap-10 pb-14 pt-24 md:grid-cols-[minmax(0,400px)_minmax(0,200px)_minmax(0,320px)] md:gap-x-16 md:pt-36">
           {/* brand */}
           <div>
             <Image
