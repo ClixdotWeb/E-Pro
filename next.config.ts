@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Emits .next/standalone - a self-contained server with only the
+  // node_modules it actually traced. Coolify builds this in Docker, and
+  // it takes the image from ~1.2 GB to ~200 MB.
+  output: "standalone",
+
   // Evaluated once when the build starts, so the footer can print a
   // copyright year without calling new Date() during prerender.
   env: {
