@@ -74,6 +74,72 @@ const SKIN_MENU = SKIN_ORDER.map(({ slug, label }) => ({
   })),
 }));
 
+/**
+ * The dropdown panel itself.
+ *
+ * Not a full-width mega menu: on the live site it is one grey panel
+ * hanging off the "Skin" link. It is positioned against the wrapper
+ * around that button, so it tracks the word rather than sitting in the
+ * middle of the header.
+ */
+function SkinDropdown({ open }: { open: boolean }) {
+  if (!open) return null;
+
+  return (
+    <div className="absolute left-0 top-full z-50 hidden w-[360px] pt-2 md:block">
+      <div className="overflow-hidden rounded-lg bg-[#4a4a4a] py-2 shadow-pop">
+        {SKIN_MENU.map((item) => {
+          const href =
+            item.count > 0 ? `/collections/${item.slug}` : "/request-model";
+
+          return item.finishes.length === 0 ? (
+            <Link
+              key={item.slug}
+              href={href}
+              className="block px-6 py-2.5 text-[17px] font-bold text-white transition-colors hover:text-accent"
+            >
+              {item.label}
+            </Link>
+          ) : (
+            <details key={item.slug} className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-2.5 text-[17px] font-bold text-white marker:content-none hover:text-accent">
+                {item.label}
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden
+                  className="shrink-0 transition-transform group-open:rotate-180"
+                >
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M19.7071 9.00421L18.2929 7.59L12 13.8829L5.70712 7.59L4.29291 9.00421L12 16.7113L19.7071 9.00421Z"
+                  />
+                </svg>
+              </summary>
+
+              <ul className="pb-1 pl-9 pr-6">
+                {item.finishes.map((f) => (
+                  <li key={f.label}>
+                    <Link
+                      href={f.href}
+                      className="block py-1.5 text-[14px] text-white/75 transition-colors hover:text-white"
+                    >
+                      {f.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 const NAV = [
   { label: "Request Model", href: "/request-model" },
   { label: "Material", href: "/material" },
@@ -145,20 +211,29 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
             className="hidden items-center justify-center gap-1 md:flex"
             onMouseLeave={() => setSkinOpen(false)}
           >
-            <button
-              type="button"
-              onClick={() => setSkinOpen((v) => !v)}
-              onMouseEnter={() => setSkinOpen(true)}
-              className="flex items-center gap-1 rounded-[var(--r-sm)] px-3 py-2 text-sm font-semibold text-text-hi transition-colors hover:text-accent"
-              aria-expanded={skinOpen}
-              aria-haspopup="true"
-            >
-              Skin
-              <Icon
-                name="chevron"
-                className={`transition-transform ${skinOpen ? "rotate-180" : ""}`}
-              />
-            </button>
+            {/* The panel is anchored to this wrapper, so it hangs
+                directly under the word "Skin" rather than under the
+                centre of the header. */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setSkinOpen((v) => !v)}
+                onMouseEnter={() => setSkinOpen(true)}
+                className={`flex items-center gap-1 rounded-[var(--r-sm)] px-3 py-2 text-sm font-semibold transition-colors hover:text-accent ${
+                  skinOpen ? "text-accent" : "text-text-hi"
+                }`}
+                aria-expanded={skinOpen}
+                aria-haspopup="true"
+              >
+                Skin
+                <Icon
+                  name="chevron"
+                  className={`transition-transform ${skinOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              <SkinDropdown open={skinOpen} />
+            </div>
 
             {NAV.map((item) => (
               <Link
@@ -203,71 +278,6 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
           </div>
         </div>
 
-        {/* Skin dropdown.
-            Not a full-width mega menu: on the live site it is a single
-            grey panel anchored under the "Skin" link, listing the ten
-            devices in the store's own order. Six of them expand to a
-            finish list; Gaming consoles, Drone and Charger have no
-            children and carry no chevron. */}
-        {skinOpen && (
-          <div
-            className="absolute left-1/2 top-full z-50 hidden w-[380px] -translate-x-1/2 md:block"
-            onMouseEnter={() => setSkinOpen(true)}
-            onMouseLeave={() => setSkinOpen(false)}
-          >
-            <div className="mt-1 overflow-hidden rounded-lg bg-[#4a4a4a] py-2 shadow-pop">
-              {SKIN_MENU.map((item) => {
-                const href =
-                  item.count > 0
-                    ? `/collections/${item.slug}`
-                    : "/request-model";
-
-                return item.finishes.length === 0 ? (
-                  <Link
-                    key={item.slug}
-                    href={href}
-                    className="block px-6 py-2.5 text-[17px] font-bold text-white transition-colors hover:text-accent"
-                  >
-                    {item.label}
-                  </Link>
-                ) : (
-                  <details key={item.slug} className="group">
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-2.5 text-[17px] font-bold text-white marker:content-none hover:text-accent">
-                      {item.label}
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        aria-hidden
-                        className="shrink-0 transition-transform group-open:rotate-180"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                          d="M19.7071 9.00421L18.2929 7.59L12 13.8829L5.70712 7.59L4.29291 9.00421L12 16.7113L19.7071 9.00421Z"
-                        />
-                      </svg>
-                    </summary>
-
-                    <ul className="pb-1 pl-9 pr-6">
-                      {item.finishes.map((f) => (
-                        <li key={f.label}>
-                          <Link
-                            href={f.href}
-                            className="block py-1.5 text-[14px] text-white/75 transition-colors hover:text-white"
-                          >
-                            {f.label}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </header>
 
       {/* mobile sheet */}
