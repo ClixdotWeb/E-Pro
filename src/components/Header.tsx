@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { FINISH_LABEL, NAV_CATEGORIES } from "@/lib/realCatalog";
+import { NAV_CATEGORIES } from "@/lib/realCatalog";
 
 /**
  * The live store's desktop nav, in its order: a "Skin" dropdown then
@@ -16,6 +16,64 @@ import { FINISH_LABEL, NAV_CATEGORIES } from "@/lib/realCatalog";
  * "header-logo header-nav header-icons" with the nav centred in the
  * page, not packed against the logo.
  */
+/**
+ * The Skin dropdown, read off the live header's own markup: the ten
+ * devices in the store's order, and the finish list under each.
+ *
+ * Six expand; Gaming consoles, Drone and Charger have no children and
+ * so get no chevron.
+ *
+ * Two deliberate differences. The store's finish labels contain typos
+ * ("Solid  Pattern" with two spaces, "Solid pattern" lower-cased on
+ * Gimbal) which are normalised here. And every finish link on the live
+ * site is href="#" - a dead placeholder - so these point at the finish
+ * collection instead.
+ */
+const SKIN_SUBMENUS: Record<string, string[]> = {
+  phone: ["Design Patterns", "Printed Designs", "Solid Pattern", "Texture"],
+  camera: ["Design Patterns", "Solid Pattern", "Texture"],
+  lens: ["Design Patterns", "Solid Pattern", "Texture"],
+  laptop: ["Embossed", "Printed Designs", "Design Patterns", "Solid Pattern"],
+  gimbal: ["Design Patterns", "Solid Pattern", "Texture"],
+  tablet: ["Printed Designs", "Design Patterns", "Solid Pattern"],
+  "gaming-consoles": [],
+  drone: [],
+  "wireless-earbuds": ["Printed Designs", "Design Patterns", "Solid Pattern"],
+  charger: [],
+};
+
+const FINISH_SLUG: Record<string, string> = {
+  "Design Patterns": "design-patterns",
+  "Printed Designs": "printed-designs",
+  "Solid Pattern": "solid-pattern",
+  Texture: "texture",
+  Embossed: "embossed",
+};
+
+/** Device order and labels exactly as the live menu prints them. */
+const SKIN_ORDER: { slug: string; label: string }[] = [
+  { slug: "phone", label: "Phone" },
+  { slug: "camera", label: "Camera" },
+  { slug: "lens", label: "Lens" },
+  { slug: "laptop", label: "Laptop" },
+  { slug: "gimbal", label: "Gimbal" },
+  { slug: "tablet", label: "Tablet" },
+  { slug: "gaming-consoles", label: "Gaming consoles" },
+  { slug: "drone", label: "Drone" },
+  { slug: "wireless-earbuds", label: "Wireless Earbuds" },
+  { slug: "charger", label: "Charger" },
+];
+
+const SKIN_MENU = SKIN_ORDER.map(({ slug, label }) => ({
+  slug,
+  label,
+  count: NAV_CATEGORIES.find((c) => c.slug === slug)?.count ?? 0,
+  finishes: (SKIN_SUBMENUS[slug] ?? []).map((f) => ({
+    label: f,
+    href: `/collections/${FINISH_SLUG[f]}`,
+  })),
+}));
+
 const NAV = [
   { label: "Request Model", href: "/request-model" },
   { label: "Material", href: "/material" },
@@ -145,57 +203,68 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
           </div>
         </div>
 
-        {/* desktop mega menu */}
+        {/* Skin dropdown.
+            Not a full-width mega menu: on the live site it is a single
+            grey panel anchored under the "Skin" link, listing the ten
+            devices in the store's own order. Six of them expand to a
+            finish list; Gaming consoles, Drone and Charger have no
+            children and carry no chevron. */}
         {skinOpen && (
           <div
-            className="absolute inset-x-0 top-full hidden border-b border-hairline bg-surface-1 shadow-pop md:block"
+            className="absolute left-1/2 top-full z-50 hidden w-[380px] -translate-x-1/2 md:block"
             onMouseEnter={() => setSkinOpen(true)}
             onMouseLeave={() => setSkinOpen(false)}
           >
-            <div className="page grid grid-cols-5 gap-x-6 gap-y-7 py-8">
-              {NAV_CATEGORIES.map((cat) => (
-                <div key={cat.slug}>
-                  <Link
-                    href={`/collections/${cat.slug}`}
-                    className="text-sm font-semibold text-text-hi hover:text-accent"
-                  >
-                    {cat.name}
-                  </Link>
-                  {/* Most categories carry no finish option in the source
-                      catalog, so the count and a direct route into the
-                      finder are more use than an invented sub-list. */}
-                  <p className="mt-1 text-[11px] text-text-low tabular-nums">
-                    {cat.count > 0
-                      ? `${cat.count} option${cat.count === 1 ? "" : "s"}`
-                      : "Not cut yet"}
-                  </p>
+            <div className="mt-1 overflow-hidden rounded-lg bg-[#4a4a4a] py-2 shadow-pop">
+              {SKIN_MENU.map((item) => {
+                const href =
+                  item.count > 0
+                    ? `/collections/${item.slug}`
+                    : "/request-model";
 
-                  <ul className="mt-2 space-y-1.5">
-                    {cat.finishes.map((f) => (
-                      <li key={f}>
-                        <Link
-                          href={`/collections/${f}`}
-                          className="text-[13px] text-text-mid hover:text-text-hi"
-                        >
-                          {FINISH_LABEL[f]}
-                        </Link>
-                      </li>
-                    ))}
-                    <li>
-                      <Link
-                        href={
-                          cat.count > 0
-                            ? `/find?device=${cat.slug}`
-                            : "/request-model"
-                        }
-                        className="text-[13px] text-accent hover:underline"
+                return item.finishes.length === 0 ? (
+                  <Link
+                    key={item.slug}
+                    href={href}
+                    className="block px-6 py-2.5 text-[17px] font-bold text-white transition-colors hover:text-accent"
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <details key={item.slug} className="group">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-2.5 text-[17px] font-bold text-white marker:content-none hover:text-accent">
+                      {item.label}
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        aria-hidden
+                        className="shrink-0 transition-transform group-open:rotate-180"
                       >
-                        {cat.count > 0 ? "Find my model" : "Request a cut"}
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
-              ))}
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M19.7071 9.00421L18.2929 7.59L12 13.8829L5.70712 7.59L4.29291 9.00421L12 16.7113L19.7071 9.00421Z"
+                        />
+                      </svg>
+                    </summary>
+
+                    <ul className="pb-1 pl-9 pr-6">
+                      {item.finishes.map((f) => (
+                        <li key={f.label}>
+                          <Link
+                            href={f.href}
+                            className="block py-1.5 text-[14px] text-white/75 transition-colors hover:text-white"
+                          >
+                            {f.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                );
+              })}
             </div>
           </div>
         )}
@@ -224,50 +293,55 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
             </div>
 
             <nav className="flex-1 px-2 py-4">
-              <p className="kicker px-3 pb-2">Shop by device</p>
-              {NAV_CATEGORIES.map((cat) => (
-                <details key={cat.slug} className="group">
-                  <summary className="flex cursor-pointer items-center justify-between rounded-[var(--r-sm)] px-3 py-2.5 text-sm text-text-hi marker:content-none">
-                    {cat.name}
-                    <Icon
-                      name="chevron"
-                      className="text-text-low transition-transform group-open:rotate-180"
-                    />
-                  </summary>
-                  <ul className="pb-2 pl-3">
-                    <li>
-                      <Link
-                        href={`/collections/${cat.slug}`}
-                        className="block py-2 pl-3 text-[13px] text-accent"
-                      >
-                        All {cat.name}
-                      </Link>
-                    </li>
-                    {cat.finishes.map((f) => (
-                      <li key={f}>
+              {/* Same menu as the desktop dropdown, so the two cannot
+                  drift apart the way they did before. */}
+              <p className="kicker px-3 pb-2">Skin</p>
+              {SKIN_MENU.map((item) => {
+                const href =
+                  item.count > 0
+                    ? `/collections/${item.slug}`
+                    : "/request-model";
+
+                return item.finishes.length === 0 ? (
+                  <Link
+                    key={item.slug}
+                    href={href}
+                    className="block rounded-[var(--r-sm)] px-3 py-2.5 text-sm text-text-hi"
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <details key={item.slug} className="group">
+                    <summary className="flex cursor-pointer items-center justify-between rounded-[var(--r-sm)] px-3 py-2.5 text-sm text-text-hi marker:content-none">
+                      {item.label}
+                      <Icon
+                        name="chevron"
+                        className="text-text-low transition-transform group-open:rotate-180"
+                      />
+                    </summary>
+                    <ul className="pb-2 pl-3">
+                      <li>
                         <Link
-                          href={`/collections/${f}`}
-                          className="block py-2 pl-3 text-[13px] text-text-mid"
+                          href={href}
+                          className="block py-2 pl-3 text-[13px] text-accent"
                         >
-                          {FINISH_LABEL[f]}
+                          All {item.label}
                         </Link>
                       </li>
-                    ))}
-                    <li>
-                      <Link
-                        href={
-                          cat.count > 0
-                            ? `/find?device=${cat.slug}`
-                            : "/request-model"
-                        }
-                        className="block py-2 pl-3 text-[13px] text-text-mid"
-                      >
-                        {cat.count > 0 ? "Find my model" : "Request a cut"}
-                      </Link>
-                    </li>
-                  </ul>
-                </details>
-              ))}
+                      {item.finishes.map((f) => (
+                        <li key={f.label}>
+                          <Link
+                            href={f.href}
+                            className="block py-2 pl-3 text-[13px] text-text-mid"
+                          >
+                            {f.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                );
+              })}
 
               <div className="my-3 h-px bg-hairline" />
 
