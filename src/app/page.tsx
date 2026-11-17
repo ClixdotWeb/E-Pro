@@ -1,24 +1,34 @@
 import Link from "next/link";
 import { VideoHero } from "@/components/home/VideoHero";
+import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { RealCustomers } from "@/components/home/RealCustomers";
 import { BeforeAfter } from "@/components/home/BeforeAfter";
-import { CATEGORIES, CATEGORY_LABEL } from "@/lib/realCatalog";
+import { SkinFinder } from "@/components/SkinFinder";
 
 /**
- * Section order mirrors the live Shopify homepage:
+ * Homepage.
  *
- *   video_banner -> custom_liquid (Categories) -> moving_image_banner
- *   ("Real Customers - Real Skins") -> image_comparison ->
- *   collapsible_content (FAQ) -> newsletter + icon_with_text (in Footer)
+ * Section order and content are taken from the live Shopify page's own
+ * markup, section by section:
  *
- * The one addition is the device finder, carried inside the hero, which
- * replaces the old three-page path to a buyable item.
+ *   video_banner            -> VideoHero   (70vh rounded video, no text)
+ *   custom_liquid           -> CategoryGrid (10 photo tiles, 5 columns)
+ *   moving_image_banner     -> RealCustomers
+ *   image_comparison        -> BeforeAfter
+ *   collapsible_content     -> Faq
+ *   newsletter + icon_with_text -> in <Footer>
+ *
+ * The one addition is the finder. It used to sit inside the hero, which
+ * is a big part of why this page stopped resembling the real one — the
+ * live hero holds nothing at all. It now has its own band between the
+ * video and the categories, so the hero is faithful and the shortcut to
+ * a buyable item still arrives before any browsing.
  */
-
 export default function HomePage() {
   return (
     <>
       <VideoHero />
+      <FinderBand />
       <CategoryGrid />
       <RealCustomers />
       <BeforeAfter />
@@ -27,81 +37,36 @@ export default function HomePage() {
   );
 }
 
-/* ---------------- categories ---------------- */
-
-/** The full device range the store sells, in the theme's tile order. */
-const TILE_ORDER = [
-  "phone",
-  "camera",
-  "lens",
-  "laptop",
-  "gimbal",
-  "tablet",
-  "gaming-consoles",
-  "drone",
-  "charger",
-  "wireless-earbuds",
-];
-
-function CategoryGrid() {
-  const liveCounts = new Map(CATEGORIES.map((c) => [c.slug, c.count]));
-
+function FinderBand() {
   return (
-    <section className="page py-16 md:py-20">
-      <header className="mb-7">
-        <p className="kicker">Shop by device</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-text-hi md:text-3xl">
-          Categories
+    <section className="page py-8 md:py-10">
+      <div className="mx-auto max-w-2xl">
+        <h2 className="text-center text-lg font-semibold tracking-tight text-text-hi">
+          Find your skin in one step
         </h2>
-      </header>
-
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {TILE_ORDER.map((slug) => {
-          const count = liveCounts.get(slug) ?? 0;
-          const label = CATEGORY_LABEL[slug] ?? slug;
-
-          return (
-            <li key={slug}>
-              <Link
-                href={count > 0 ? `/find?device=${slug}` : "/request-model"}
-                className="group flex h-full flex-col justify-between gap-6 rounded-[var(--r-lg)] border border-hairline bg-surface-1 p-4 transition-colors hover:border-accent hover:bg-surface-2"
-              >
-                <span className="text-text-low transition-colors group-hover:text-accent">
-                  <CategoryIcon slug={slug} />
-                </span>
-                <span>
-                  <span className="block text-sm font-medium text-text-hi">
-                    {label}
-                  </span>
-                  {/* Honest counts: most categories have nothing in them yet,
-                      and saying "coming soon" beats showing an empty grid. */}
-                  <span
-                    className={`mt-0.5 block text-[11px] ${
-                      count > 0 ? "text-text-low" : "text-accent"
-                    }`}
-                  >
-                    {count > 0 ? `${count} options` : "Request a cut"}
-                  </span>
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+        <p className="mx-auto mt-1.5 max-w-md text-center text-[13px] leading-relaxed text-text-mid">
+          Type your device — a model, a brand, a focal length — and add it
+          straight to the cart.
+        </p>
+        <div className="mt-5">
+          <SkinFinder compact />
+        </div>
+      </div>
     </section>
   );
 }
 
 /* ---------------- faq ---------------- */
 
+/** Copy lifted from the live `collapsible_content` section. */
 const FAQS = [
   {
-    q: "How long does shipping take?",
-    a: "Orders are processed within 1–2 business days. Metro deliveries usually land in 2–4 days after dispatch, and the rest of India in 4–7. You get a tracking link by email and WhatsApp the moment it ships.",
+    q: "How long does your shipping take?",
+    a: "Once your order is placed, we strive to process and dispatch it within 1-2 business days. The estimated delivery time may vary depending on your location and the shipping method selected at checkout.",
   },
   {
-    q: "Is it hard to apply?",
-    a: "No. Every skin is precision-cut for one specific model, so there is no trimming and nothing to measure. Warming the film with a hairdryer on low helps it settle into curves — that is the only trick worth knowing.",
+    q: "Are the skins easy to apply?",
+    a: "Yes! Our skins are precision-cut for each specific device model, so there is nothing to trim and nothing to measure. Warming the film with a hairdryer on low helps it settle into curves — that is the only trick worth knowing.",
   },
   {
     q: "Will it damage my device or leave residue?",
@@ -119,22 +84,23 @@ const FAQS = [
 
 function Faq() {
   return (
-    <section className="page pb-20">
-      <div className="grid gap-10 md:grid-cols-[minmax(0,320px)_1fr]">
+    <section className="page py-16 md:py-20">
+      <div className="grid gap-10 md:grid-cols-[minmax(0,340px)_1fr]">
         <header>
-          <p className="kicker">Got questions?</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-text-hi md:text-3xl">
-            We&apos;ve got answers
+          <h2 className="text-2xl font-bold tracking-tight text-text-hi md:text-[28px]">
+            Got questions? We&apos;ve got answers!
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-text-mid">
-            Still stuck? Reach us on WhatsApp — we answer between 10am and 7pm
-            IST.
+            If you can&apos;t find the answer you&apos;re looking for,
+            don&apos;t hesitate to reach out to our friendly customer support
+            team. We&apos;re here to assist you and ensure you have the best
+            experience with our products and services.
           </p>
           <Link
             href="/contact"
-            className="mt-5 inline-block text-[13px] font-medium text-accent hover:underline"
+            className="mt-5 inline-block rounded-[var(--r-md)] bg-accent px-5 py-2.5 text-[13px] font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
           >
-            Contact us →
+            Contact us
           </Link>
         </header>
 
@@ -158,39 +124,13 @@ function Faq() {
           ))}
         </ul>
       </div>
+
+      <p className="mt-8 text-center text-[13px] text-text-mid">
+        More questions?{" "}
+        <Link href="/faq" className="text-accent hover:underline">
+          Read the full FAQ
+        </Link>
+      </p>
     </section>
-  );
-}
-
-/* ---------------- icons ---------------- */
-
-const CATEGORY_PATHS: Record<string, string> = {
-  phone: "M7 2.5h10a1.5 1.5 0 0 1 1.5 1.5v16a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 20V4A1.5 1.5 0 0 1 7 2.5zM10 19h4",
-  laptop: "M4.5 5.5h15v10h-15zM2 18.5h20l-1.5-3H3.5z",
-  camera: "M3 7.5h4L8.5 5h7L17 7.5h4v12H3zM12 17a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z",
-  lens: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zM19 6l-3 2",
-  tablet: "M5 3h14v18H5zM11 18.5h2",
-  gimbal: "M12 3v5M9 8h6v4H9zM12 12v4M7 20h10M12 16l-5 4M12 16l5 4",
-  "gaming-consoles": "M7 9h10a5 5 0 0 1 0 10H7a5 5 0 0 1 0-10zM9 12v4M7 14h4M15.5 13.5h.01M17.5 15.5h.01M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3",
-  drone: "M9 9h6v6H9zM9 9L5 5M15 9l4-4M9 15l-4 4M15 15l4 4M5 5a2 2 0 1 0-.01-.01M19 5a2 2 0 1 0-.01-.01M5 19a2 2 0 1 0-.01-.01M19 19a2 2 0 1 0-.01-.01",
-  "wireless-earbuds": "M8 4a4 4 0 0 1 4 4v6a3 3 0 0 1-6 0V9M16 4a4 4 0 0 0-4 4v6a3 3 0 0 0 6 0V9",
-  charger: "M9 2v4M15 2v4M7 6h10v6a5 5 0 0 1-10 0zM12 17v5",
-};
-
-function CategoryIcon({ slug }: { slug: string }) {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d={CATEGORY_PATHS[slug] ?? CATEGORY_PATHS.phone} />
-    </svg>
   );
 }

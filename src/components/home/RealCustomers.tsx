@@ -20,11 +20,16 @@ const STORIES = [
 export function RealCustomers() {
   return (
     <section className="border-y border-hairline bg-surface-1 py-14">
-      <div className="page">
-        <p className="kicker">Want to see real photos and videos?</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-text-hi md:text-3xl">
-          Real Customers — Real Skins
+      {/* Heading, then subtext, then the button - the order the live
+          section uses. An earlier version had the subtext above as a
+          kicker, which reads as a different page. */}
+      <div className="page text-center">
+        <h2 className="text-2xl font-bold tracking-tight text-text-hi md:text-[28px]">
+          Real Customers - Real Skins
         </h2>
+        <p className="mt-2.5 text-sm text-text-mid">
+          Want to see real photos and videos of our products?
+        </p>
       </div>
 
       <div className="marquee mt-8 overflow-hidden">
@@ -51,14 +56,14 @@ export function RealCustomers() {
         </div>
       </div>
 
-      <div className="page mt-8">
+      <div className="page mt-8 text-center">
         <a
           href="https://instagram.com"
           target="_blank"
           rel="noreferrer noopener"
-          className="text-[13px] font-medium text-accent hover:underline"
+          className="inline-block rounded-[var(--r-md)] bg-accent px-5 py-2.5 text-[13px] font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
         >
-          See more on Instagram →
+          Follow Us on Instagram
         </a>
       </div>
     </section>

@@ -18,17 +18,9 @@ export function BeforeAfter() {
 
   return (
     <section className="page py-16 md:py-20">
-      <header className="mb-7 max-w-lg">
-        <p className="kicker">See the difference</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-text-hi md:text-3xl">
-          Before and after
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-text-mid">
-          Drag to wipe between a bare device and the same one skinned. No
-          bulk, no lip around the screen — the shape does not change.
-        </p>
-      </header>
-
+      {/* The live `image_comparison` section carries no heading and no
+          copy - only the two labels on the image. An earlier version
+          added a title and a paragraph that do not exist there. */}
       <div
         ref={frame}
         className="relative aspect-[16/10] w-full overflow-hidden rounded-[var(--r-lg)] border border-hairline"

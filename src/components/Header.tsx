@@ -6,14 +6,21 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { FINISH_LABEL, NAV_CATEGORIES } from "@/lib/realCatalog";
 
+/**
+ * The live store's header carries exactly two menu items — "All
+ * Categories" and "Lens" — plus search, account and cart. An earlier
+ * version here listed seven, which made the header read as a different
+ * site. The rest of those links live in the footer, where the real
+ * store keeps them too.
+ *
+ * "Lens" gets its own slot on the real site because it is the only
+ * category that is properly built out, and that is still true of the
+ * catalogue we imported.
+ */
 const NAV = [
+  { label: "All Categories", href: "/collections" },
+  { label: "Lens", href: "/collections/lens" },
   { label: "Find my device", href: "/find" },
-  { label: "FAQ", href: "/faq" },
-  { label: "Request Model", href: "/request-model" },
-  { label: "Material", href: "/material" },
-  { label: "How to apply", href: "/how-to-apply" },
-  { label: "Contact us", href: "/contact" },
-  { label: "About us", href: "/about" },
 ];
 
 export function Header({ cartCount = 0 }: { cartCount?: number }) {
@@ -89,7 +96,7 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
               aria-expanded={skinOpen}
               aria-haspopup="true"
             >
-              Skin
+              Shop
               <Icon
                 name="chevron"
                 className={`transition-transform ${skinOpen ? "rotate-180" : ""}`}
