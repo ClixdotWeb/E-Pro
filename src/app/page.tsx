@@ -3,6 +3,7 @@ import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { RealCustomers } from "@/components/home/RealCustomers";
 import { BeforeAfter } from "@/components/home/BeforeAfter";
 import { Faq } from "@/components/home/Faq";
+import { Newsletter } from "@/components/home/Newsletter";
 
 /**
  * Homepage.
@@ -31,6 +32,7 @@ export default function HomePage() {
       <RealCustomers />
       <BeforeAfter />
       <Faq />
+      <Newsletter />
     </>
   );
 }
