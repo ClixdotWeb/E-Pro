@@ -57,8 +57,13 @@
   --shadow-pop: 0 12px 48px rgba(0, 0, 0, 0.6);
 
   /* layout */
-  --page-max: 1360px;
-  --header-h: 68px;
+  /* Matches the live theme's --content-max-width. The storefront was
+     at 1360px, which made every section visibly narrower than the real
+     site on a wide screen. */
+  --page-max: 1600px;
+  /* logo 100px wide at a 3.008 ratio = 33px tall, plus the theme's
+     --s-inner-small-p-y (1.5 * 20px gutter) above and below. */
+  --header-h: 92px;
 }
 
 /* Light mode mirrors the theme's color-scheme-2. Opt-in, because the
@@ -173,7 +178,7 @@ body {
 
 @media (min-width: 768px) {
   .page {
-    padding-inline: 32px;
+    padding-inline: 40px; /* theme: 2 * --gutter-base (20px at >=1681px) */
   }
 }
 

@@ -7,20 +7,21 @@ import { usePathname } from "next/navigation";
 import { FINISH_LABEL, NAV_CATEGORIES } from "@/lib/realCatalog";
 
 /**
- * The live store's header carries exactly two menu items — "All
- * Categories" and "Lens" — plus search, account and cart. An earlier
- * version here listed seven, which made the header read as a different
- * site. The rest of those links live in the footer, where the real
- * store keeps them too.
+ * The live store's desktop nav, in its order: a "Skin" dropdown then
+ * five links. I briefly cut this to two items after reading the mobile
+ * drawer markup instead of the desktop header - that was wrong, and
+ * this is what the real header shows.
  *
- * "Lens" gets its own slot on the real site because it is the only
- * category that is properly built out, and that is still true of the
- * catalogue we imported.
+ * The theme class is `logo-position--middle-center`, i.e. the grid is
+ * "header-logo header-nav header-icons" with the nav centred in the
+ * page, not packed against the logo.
  */
 const NAV = [
-  { label: "All Categories", href: "/collections" },
-  { label: "Lens", href: "/collections/lens" },
-  { label: "Find my device", href: "/find" },
+  { label: "Request Model", href: "/request-model" },
+  { label: "Material", href: "/material" },
+  { label: "How to apply", href: "/how-to-apply" },
+  { label: "Contact us", href: "/contact" },
+  { label: "About us", href: "/about" },
 ];
 
 export function Header({ cartCount = 0 }: { cartCount?: number }) {
@@ -59,15 +60,13 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
 
   return (
     <>
-      {/* announcement bar */}
-      <div className="border-b border-hairline bg-surface-2">
-        <p className="page flex h-8 items-center justify-center text-center text-[11px] tracking-wide text-text-mid">
-          Free shipping on orders over ₹499 · Precision-cut, residue-free
-        </p>
-      </div>
-
-      <header className="sticky top-0 z-50 border-b border-hairline bg-surface-0/85 backdrop-blur-xl">
-        <div className="page flex h-[var(--header-h)] items-center gap-3">
+      {/* The live store has no announcement bar, and no border under
+          the header either - it sits on flat black. Both were my
+          additions. */}
+      <header className="sticky top-0 z-50 bg-surface-0">
+        {/* Theme grid: "header-logo header-nav header-icons" - the nav
+            is centred in the page, not pushed up against the logo. */}
+        <div className="page grid h-[var(--header-h)] grid-cols-[auto_1fr_auto] items-center gap-3">
           {/* mobile menu button */}
           <button
             type="button"
@@ -83,20 +82,20 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
             <Logo />
           </Link>
 
-          {/* desktop nav */}
+          {/* desktop nav - centred */}
           <nav
-            className="ml-4 hidden items-center gap-1 md:flex"
+            className="hidden items-center justify-center gap-1 md:flex"
             onMouseLeave={() => setSkinOpen(false)}
           >
             <button
               type="button"
               onClick={() => setSkinOpen((v) => !v)}
               onMouseEnter={() => setSkinOpen(true)}
-              className="flex items-center gap-1 rounded-[var(--r-sm)] px-3 py-2 text-sm text-text-mid transition-colors hover:text-text-hi aria-expanded:text-text-hi"
+              className="flex items-center gap-1 rounded-[var(--r-sm)] px-3 py-2 text-sm font-semibold text-text-hi transition-colors hover:text-accent"
               aria-expanded={skinOpen}
               aria-haspopup="true"
             >
-              Shop
+              Skin
               <Icon
                 name="chevron"
                 className={`transition-transform ${skinOpen ? "rotate-180" : ""}`}
@@ -107,8 +106,8 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded-[var(--r-sm)] px-3 py-2 text-sm transition-colors hover:text-text-hi ${
-                  pathname === item.href ? "text-text-hi" : "text-text-mid"
+                className={`whitespace-nowrap rounded-[var(--r-sm)] px-3 py-2 text-sm font-semibold transition-colors hover:text-accent ${
+                  pathname === item.href ? "text-accent" : "text-text-hi"
                 }`}
               >
                 {item.label}
@@ -303,6 +302,8 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
 
 function Logo() {
   // The real mark, as served by the live theme (light-on-dark, 2833x942).
+  // The theme sizes it by WIDTH, not height:
+  //   --logo-width-mobile: 90px; --logo-width-desktop: 100px
   return (
     <Image
       src="/brand/Epro_LOGO_LIGHT-01.png"
@@ -310,7 +311,7 @@ function Logo() {
       width={2833}
       height={942}
       priority
-      className="h-7 w-auto md:h-8"
+      className="w-[90px] md:w-[100px]"
     />
   );
 }

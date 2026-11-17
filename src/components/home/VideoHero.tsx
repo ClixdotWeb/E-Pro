@@ -36,7 +36,11 @@ const HERO_POSTER_MOBILE =
 
 export function VideoHero() {
   return (
-    <section className="page pt-4">
+    /* The live hero is a `.s--banner-spacing` first section:
+       padding-block-start = --s-banner-outer-p-y / 2
+                           = (4 * 20px gutter) / 2 = 40px,
+       and padding-block-end = 80px. */
+    <section className="page pt-6 pb-10 md:pt-10 md:pb-20">
       <div className="relative h-[70vh] overflow-hidden rounded-[24px] bg-surface-1">
         {/* mobile */}
         <video
