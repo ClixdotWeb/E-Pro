@@ -208,3 +208,116 @@ export function swatchFor(seed: string): [string, string] {
   const alt = (hue + 28) % 360;
   return [`hsl(${hue} 18% 14%)`, `hsl(${alt} 22% 32%)`];
 }
+
+/** Known camera/lens brand names, used to name the variant axis. */
+const BRAND_WORDS = new Set([
+  "sony",
+  "canon",
+  "nikon",
+  "fujifilm",
+  "fuji",
+  "panasonic",
+  "olympus",
+  "sigma",
+  "tamron",
+  "leica",
+  "pentax",
+  "samyang",
+  "tokina",
+  "hp",
+  "dell",
+  "lenovo",
+  "asus",
+  "acer",
+  "apple",
+  "msi",
+  "samsung",
+]);
+
+/**
+ * What a product's variants actually name.
+ *
+ * The Shopify store is inconsistent about this - one product's variants
+ * are lens models, another's are camera brands, another's are price
+ * tiers - so it is derived from the values rather than trusted from the
+ * option name, which is often misspelt ("lap brand", "camera  brand").
+ */
+export function optionLabelFor(p: ImportedProduct): string {
+  const titles = p.variants.map((v) => v.title.trim().toLowerCase());
+  if (titles.length === 0) return "Option";
+
+  const brandHits = titles.filter((t) => BRAND_WORDS.has(t)).length;
+  if (brandHits >= Math.max(2, titles.length * 0.6)) return "Brand";
+
+  if (titles.every((t) => /^price\s|^\u20b9|^\d+$/.test(t))) return "Size";
+
+  return "Model";
+}
+
+/** Other products a customer might plausibly want next. */
+export function relatedProducts(
+  p: ImportedProduct,
+  limit = 4,
+): ImportedProduct[] {
+  const sameCategory = IMPORTED_PRODUCTS.filter(
+    (o) => o.slug !== p.slug && o.category === p.category,
+  );
+  const rest = IMPORTED_PRODUCTS.filter(
+    (o) => o.slug !== p.slug && o.category !== p.category,
+  );
+
+  // Prefer products with a photo - a related rail of grey swatches sells
+  // nothing.
+  const byPhoto = (a: ImportedProduct, b: ImportedProduct) =>
+    Number(Boolean(b.images[0])) - Number(Boolean(a.images[0]));
+
+  return [...sameCategory.sort(byPhoto), ...rest.sort(byPhoto)].slice(0, limit);
+}
+
+export const ALL_PRODUCTS = IMPORTED_PRODUCTS;
+
+/**
+ * Navigation shape for the header, footer and 404.
+ *
+ * Lists every device the store sells - including the ones with nothing
+ * in them yet - because the menu is also how a customer discovers that
+ * we cut drones at all. `count` is zero for those, and the UI sends them
+ * to /request-model instead of an empty grid.
+ *
+ * `finishes` holds only the finishes that genuinely exist within that
+ * category in the imported data. Most are empty: in Shopify the finish
+ * collections overlap and the products carry no finish option, so there
+ * is nothing honest to list.
+ */
+export const NAV_CATEGORIES: {
+  slug: string;
+  name: string;
+  count: number;
+  finishes: string[];
+}[] = Object.keys(CATEGORY_LABEL).map((slug) => {
+  const products = IMPORTED_PRODUCTS.filter((p) => p.category === slug);
+  const finishes = [
+    ...new Set(
+      products
+        .map((p) => p.finish)
+        .filter((f): f is string => Boolean(f && FINISH_LABEL[f])),
+    ),
+  ];
+
+  return {
+    slug,
+    name: CATEGORY_LABEL[slug],
+    count: offersForCategory(slug).length,
+    finishes,
+  };
+});
+
+/** Finish collections that have at least one product behind them. */
+export const NAV_FINISHES: { slug: string; name: string; count: number }[] =
+  Object.keys(FINISH_LABEL)
+    .map((slug) => ({
+      slug,
+      name: FINISH_LABEL[slug],
+      count: IMPORTED_PRODUCTS.filter((p) => p.finish === slug).length,
+    }))
+    .filter((f) => f.count > 0);

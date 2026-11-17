@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { DEVICE_CATEGORIES, FINISH_LABEL } from "@/lib/catalog";
+import { FINISH_LABEL, NAV_CATEGORIES } from "@/lib/realCatalog";
 
 const NAV = [
   { label: "Find my device", href: "/find" },
@@ -146,7 +146,7 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
             onMouseLeave={() => setSkinOpen(false)}
           >
             <div className="page grid grid-cols-5 gap-x-6 gap-y-7 py-8">
-              {DEVICE_CATEGORIES.map((cat) => (
+              {NAV_CATEGORIES.map((cat) => (
                 <div key={cat.slug}>
                   <Link
                     href={`/collections/${cat.slug}`}
@@ -154,17 +154,38 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
                   >
                     {cat.name}
                   </Link>
+                  {/* Most categories carry no finish option in the source
+                      catalog, so the count and a direct route into the
+                      finder are more use than an invented sub-list. */}
+                  <p className="mt-1 text-[11px] text-text-low tabular-nums">
+                    {cat.count > 0
+                      ? `${cat.count} option${cat.count === 1 ? "" : "s"}`
+                      : "Not cut yet"}
+                  </p>
+
                   <ul className="mt-2 space-y-1.5">
                     {cat.finishes.map((f) => (
                       <li key={f}>
                         <Link
-                          href={`/collections/${cat.slug}?finish=${f}`}
+                          href={`/collections/${f}`}
                           className="text-[13px] text-text-mid hover:text-text-hi"
                         >
                           {FINISH_LABEL[f]}
                         </Link>
                       </li>
                     ))}
+                    <li>
+                      <Link
+                        href={
+                          cat.count > 0
+                            ? `/find?device=${cat.slug}`
+                            : "/request-model"
+                        }
+                        className="text-[13px] text-accent hover:underline"
+                      >
+                        {cat.count > 0 ? "Find my model" : "Request a cut"}
+                      </Link>
+                    </li>
                   </ul>
                 </div>
               ))}
@@ -197,7 +218,7 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
 
             <nav className="flex-1 px-2 py-4">
               <p className="kicker px-3 pb-2">Shop by device</p>
-              {DEVICE_CATEGORIES.map((cat) => (
+              {NAV_CATEGORIES.map((cat) => (
                 <details key={cat.slug} className="group">
                   <summary className="flex cursor-pointer items-center justify-between rounded-[var(--r-sm)] px-3 py-2.5 text-sm text-text-hi marker:content-none">
                     {cat.name}
@@ -218,13 +239,25 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
                     {cat.finishes.map((f) => (
                       <li key={f}>
                         <Link
-                          href={`/collections/${cat.slug}?finish=${f}`}
+                          href={`/collections/${f}`}
                           className="block py-2 pl-3 text-[13px] text-text-mid"
                         >
                           {FINISH_LABEL[f]}
                         </Link>
                       </li>
                     ))}
+                    <li>
+                      <Link
+                        href={
+                          cat.count > 0
+                            ? `/find?device=${cat.slug}`
+                            : "/request-model"
+                        }
+                        className="block py-2 pl-3 text-[13px] text-text-mid"
+                      >
+                        {cat.count > 0 ? "Find my model" : "Request a cut"}
+                      </Link>
+                    </li>
                   </ul>
                 </details>
               ))}

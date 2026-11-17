@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DEVICE_CATEGORIES, FINISH_LABEL, PRODUCTS } from "@/lib/catalog";
+import { ALL_PRODUCTS, FINISH_LABEL, NAV_CATEGORIES } from "@/lib/realCatalog";
 
 export const metadata: Metadata = {
   title: "Request a model",
@@ -70,7 +70,7 @@ export default function RequestModelPage() {
             label="Device type"
             name="deviceType"
             required
-            options={DEVICE_CATEGORIES.map((c) => c.name)}
+            options={NAV_CATEGORIES.map((c) => c.name)}
           />
 
           <Input
@@ -85,7 +85,11 @@ export default function RequestModelPage() {
             label="Design you want"
             name="design"
             options={[
-              ...PRODUCTS.map((p) => `${p.title} (${FINISH_LABEL[p.finish]})`),
+              ...ALL_PRODUCTS.map((p) =>
+                p.finish
+                  ? `${p.title} (${FINISH_LABEL[p.finish] ?? p.finish})`
+                  : p.title,
+              ),
               "Not sure yet — suggest something",
             ]}
           />

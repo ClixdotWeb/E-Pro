@@ -1,5 +1,12 @@
-import { DiscountType } from "@/generated/prisma/client";
 import { applyPercent, sumPaise, type Paise } from "./money";
+
+/**
+ * Mirrors the DiscountType enum in schema.prisma, declared here rather
+ * than imported from the generated Prisma client so this module stays
+ * usable from client components too. The string values must match the
+ * schema exactly.
+ */
+export type DiscountType = "PERCENT" | "FIXED" | "FREE_SHIPPING";
 
 /**
  * SECURITY: totals are computed here, on the server, from database prices.
@@ -47,14 +54,14 @@ export function calculateTotals(
 
   if (discount && subtotalInPaise >= discount.minOrderInPaise) {
     switch (discount.type) {
-      case DiscountType.PERCENT:
+      case "PERCENT":
         discountInPaise = applyPercent(subtotalInPaise, discount.value);
         break;
-      case DiscountType.FIXED:
+      case "FIXED":
         // Never let a discount exceed the cart, or totals go negative.
         discountInPaise = Math.min(discount.value, subtotalInPaise);
         break;
-      case DiscountType.FREE_SHIPPING:
+      case "FREE_SHIPPING":
         freeShipping = true;
         break;
     }

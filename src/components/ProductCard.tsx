@@ -1,64 +1,72 @@
 import Link from "next/link";
-import { FINISH_LABEL, fromPriceInPaise, type Product } from "@/lib/catalog";
 import { formatPaise } from "@/lib/money";
-import { SkinVisual } from "./SkinVisual";
-import { Stars } from "./Stars";
+import { CatalogMedia } from "./CatalogMedia";
+import {
+  CATEGORY_LABEL,
+  FINISH_LABEL,
+  type ImportedProduct,
+} from "@/lib/realCatalog";
+
+/**
+ * Grid card for a real imported product.
+ *
+ * Shows a price RANGE rather than a single price, because a product's
+ * variants genuinely differ in price in this catalog (a camera skin is
+ * ₹849-₹1299 depending on brand). Collapsing that to "from ₹849" hid
+ * the spread badly enough that a customer could feel misled at checkout.
+ */
 
 type Props = {
-  product: Product;
-  /** preselect a device category on the product page */
-  categorySlug?: string;
-  shape?: "phone" | "laptop" | "square";
+  product: ImportedProduct;
+  priority?: boolean;
 };
 
-export function ProductCard({ product, categorySlug, shape = "square" }: Props) {
-  const href = categorySlug
-    ? `/products/${product.slug}?device=${categorySlug}`
-    : `/products/${product.slug}`;
-
-  const price = fromPriceInPaise(product);
+export function ProductCard({ product, priority = false }: Props) {
+  const { minPriceInPaise: min, maxPriceInPaise: max } = product;
+  const buyable = product.variants.filter((v) => v.available).length;
 
   return (
     <Link
-      href={href}
-      className="group block rounded-[var(--r-lg)] border border-hairline bg-surface-1 p-2.5 transition-colors hover:border-hairline-strong focus-visible:border-accent"
+      href={`/products/${product.slug}`}
+      className="group block overflow-hidden rounded-[var(--r-lg)] border border-hairline bg-surface-1 transition-colors hover:border-hairline-strong focus-visible:border-accent"
     >
-      <div className="relative">
-        <SkinVisual
-          product={product}
-          shape={shape}
-          className="transition-transform duration-500 group-hover:scale-[1.02]"
-        />
+      <CatalogMedia
+        src={product.images[0] ?? null}
+        seed={product.slug}
+        alt={product.title}
+        priority={priority}
+        className="aspect-square"
+      />
 
-        {(product.bestseller || product.newArrival) && (
-          <span
-            className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-              product.newArrival
-                ? "bg-accent text-accent-ink"
-                : "bg-surface-0/80 text-text-hi backdrop-blur"
-            }`}
-          >
-            {product.newArrival ? "New" : "Bestseller"}
-          </span>
-        )}
-      </div>
-
-      <div className="px-1 pb-1 pt-3">
-        <p className="kicker">{FINISH_LABEL[product.finish]}</p>
+      <div className="p-3.5">
+        <p className="kicker truncate">
+          {product.finish
+            ? (FINISH_LABEL[product.finish] ?? product.finish)
+            : product.category
+              ? (CATEGORY_LABEL[product.category] ?? product.category)
+              : "Skin"}
+        </p>
 
         <h3 className="mt-1 truncate text-sm font-medium text-text-hi">
           {product.title}
         </h3>
 
-        <div className="mt-1.5">
-          <Stars rating={product.rating} count={product.reviewCount} />
-        </div>
-
         <p className="mt-2 text-sm text-text-hi">
-          <span className="text-text-low">from </span>
           <span className="font-semibold tabular-nums">
-            {formatPaise(price)}
+            {formatPaise(min)}
           </span>
+          {max > min && (
+            <span className="text-text-low tabular-nums">
+              {" – "}
+              {formatPaise(max)}
+            </span>
+          )}
+        </p>
+
+        <p className="mt-1 text-[11px] text-text-low tabular-nums">
+          {buyable > 0
+            ? `${buyable} option${buyable === 1 ? "" : "s"}`
+            : "Currently unavailable"}
         </p>
       </div>
     </Link>

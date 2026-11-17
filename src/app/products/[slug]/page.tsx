@@ -1,192 +1,244 @@
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { DevicePicker } from "@/components/DevicePicker";
+import { notFound } from "next/navigation";
+import { CatalogMedia } from "@/components/CatalogMedia";
 import { ProductCard } from "@/components/ProductCard";
-import { SkinVisual } from "@/components/SkinVisual";
-import { Stars } from "@/components/Stars";
+import { VariantPicker } from "@/components/VariantPicker";
+import { formatPaise } from "@/lib/money";
 import {
+  ALL_PRODUCTS,
+  CATEGORY_LABEL,
   FINISH_LABEL,
-  PRODUCTS,
-  getCategory,
-  getProduct,
-} from "@/lib/catalog";
+  getProductBySlug,
+  optionLabelFor,
+  relatedProducts,
+} from "@/lib/realCatalog";
+
+/**
+ * Product page in the live theme's layout: media column on the left,
+ * a sticky buy box on the right, then assurances, specs and a related
+ * rail underneath.
+ */
 
 export function generateStaticParams() {
-  return PRODUCTS.map((p) => ({ slug: p.slug }));
+  return ALL_PRODUCTS.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({
   params,
 }: PageProps<"/products/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProduct(slug);
-  if (!product) return {};
+  const product = getProductBySlug(slug);
+  if (!product) return { title: "Product not found" };
+
+  const plain = product.description.replace(/\s+/g, " ").trim();
+
   return {
     title: product.title,
-    description: product.description,
+    description:
+      plain.slice(0, 155) ||
+      `${product.title} — precision-cut protective skin, from ${formatPaise(product.minPriceInPaise)}.`,
+    openGraph: product.images[0]
+      ? { images: [{ url: product.images[0] }] }
+      : undefined,
   };
 }
 
 export default async function ProductPage({
   params,
-  searchParams,
 }: PageProps<"/products/[slug]">) {
   const { slug } = await params;
-  const sp = await searchParams;
-
-  const product = getProduct(slug);
+  const product = getProductBySlug(slug);
   if (!product) notFound();
 
-  const device = typeof sp.device === "string" ? sp.device : undefined;
-  const category = device ? getCategory(device) : undefined;
-
-  const related = PRODUCTS.filter(
-    (p) => p.slug !== product.slug && p.finish === product.finish,
-  ).slice(0, 4);
+  const optionLabel = optionLabelFor(product);
+  const related = relatedProducts(product);
+  const categoryLabel = product.category
+    ? (CATEGORY_LABEL[product.category] ?? product.category)
+    : null;
 
   return (
-    <>
-      <div className="page grid gap-10 py-10 lg:grid-cols-2 lg:gap-16">
-        {/* gallery */}
-        <div className="lg:sticky lg:top-[calc(var(--header-h)+24px)] lg:self-start">
-          <nav aria-label="Breadcrumb" className="mb-4 text-[12px] text-text-low">
-            <Link href="/" className="hover:text-text-mid">
+    <div className="page py-8 md:py-10">
+      {/* breadcrumb */}
+      <nav aria-label="Breadcrumb" className="text-[12px] text-text-low">
+        <ol className="flex flex-wrap items-center gap-1.5">
+          <li>
+            <Link href="/" className="hover:text-text-hi">
               Home
             </Link>
-            <span className="px-1.5">/</span>
-            {category ? (
-              <>
+          </li>
+          <li aria-hidden>/</li>
+          {product.category && categoryLabel ? (
+            <>
+              <li>
                 <Link
-                  href={`/collections/${category.slug}`}
-                  className="hover:text-text-mid"
+                  href={`/collections/${product.category}`}
+                  className="hover:text-text-hi"
                 >
-                  {category.name}
+                  {categoryLabel}
                 </Link>
-                <span className="px-1.5">/</span>
-              </>
-            ) : null}
-            <span className="text-text-mid">{product.title}</span>
-          </nav>
+              </li>
+              <li aria-hidden>/</li>
+            </>
+          ) : null}
+          <li className="truncate text-text-mid">{product.title}</li>
+        </ol>
+      </nav>
 
-          <SkinVisual
-            product={product}
-            shape="square"
-            className="shadow-pop"
+      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] lg:gap-12">
+        {/* ---- media ---- */}
+        <div>
+          <CatalogMedia
+            src={product.images[0] ?? null}
+            seed={product.slug}
+            alt={product.title}
+            priority
+            sizes="(min-width: 1024px) 840px, 100vw"
+            className="aspect-square rounded-[var(--r-lg)] border border-hairline"
           />
 
-          {/* thumbnails — same design, different crops on launch */}
-          <ul className="mt-3 grid grid-cols-4 gap-3">
-            {Array.from({ length: 4 }, (_, i) => (
-              <li key={i}>
-                <button
-                  type="button"
-                  className={`block w-full overflow-hidden rounded-[var(--r-md)] border transition-colors ${
-                    i === 0
-                      ? "border-accent"
-                      : "border-hairline hover:border-hairline-strong"
-                  }`}
-                  aria-label={`View image ${i + 1}`}
-                >
-                  <SkinVisual product={product} shape="square" />
-                </button>
-              </li>
-            ))}
-          </ul>
+          {product.images.length > 1 && (
+            <ul className="mt-3 grid grid-cols-4 gap-2">
+              {product.images.slice(0, 8).map((src, i) => (
+                <li key={src}>
+                  <CatalogMedia
+                    src={src}
+                    seed={`${product.slug}-${i}`}
+                    alt={`${product.title}, view ${i + 2}`}
+                    sizes="200px"
+                    className="aspect-square rounded-[var(--r-md)] border border-hairline"
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {product.description && (
+            <div className="mt-8 border-t border-hairline pt-6">
+              <h2 className="text-sm font-semibold text-text-hi">
+                About this skin
+              </h2>
+              <p className="mt-3 whitespace-pre-line text-[13px] leading-relaxed text-text-mid">
+                {product.description}
+              </p>
+            </div>
+          )}
+
+          <SpecTable optionLabel={optionLabel} optionCount={product.variants.length} />
         </div>
 
-        {/* buy box */}
-        <div>
-          <p className="kicker">{FINISH_LABEL[product.finish]}</p>
+        {/* ---- buy box ---- */}
+        <div className="lg:sticky lg:top-[calc(var(--header-h)+24px)] lg:self-start">
+          <div className="card p-5">
+            <p className="kicker">
+              {product.finish
+                ? (FINISH_LABEL[product.finish] ?? product.finish)
+                : (categoryLabel ?? "Skin")}
+            </p>
 
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-text-hi">
-            {product.title}
-          </h1>
+            <h1 className="mt-2 text-2xl font-semibold leading-tight tracking-tight text-text-hi">
+              {product.title}
+            </h1>
 
-          <div className="mt-3">
-            <Stars
-              rating={product.rating}
-              count={product.reviewCount}
-              size="md"
-            />
+            <p className="mt-2 text-sm text-text-mid tabular-nums">
+              {formatPaise(product.minPriceInPaise)}
+              {product.maxPriceInPaise > product.minPriceInPaise && (
+                <> – {formatPaise(product.maxPriceInPaise)}</>
+              )}
+            </p>
+
+            <div className="mt-6 border-t border-hairline pt-5">
+              <VariantPicker
+                productSlug={product.slug}
+                productTitle={product.title}
+                variants={product.variants}
+                optionLabel={optionLabel}
+              />
+            </div>
           </div>
 
-          <p className="mt-5 text-[15px] leading-relaxed text-text-mid">
-            {product.description}
-          </p>
-
-          <div className="mt-7 h-px bg-hairline" />
-
-          <div className="mt-7">
-            <DevicePicker product={product} initialCategory={device} />
-          </div>
-
-          {/* assurances */}
-          <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-hairline pt-6">
+          <ul className="mt-4 grid gap-2.5">
             {[
-              "Dispatched in 1–2 business days",
-              "Residue-free removal",
-              "Precision-cut, no trimming",
-              "30-day replacement on lifting",
-            ].map((item) => (
+              ["Cut for one model", "No trimming, no measuring, no overhang."],
+              ["Peels off clean", "Removable adhesive, zero residue."],
+              ["Dispatched in 1–2 days", "Tracking by email and WhatsApp."],
+            ].map(([title, body]) => (
               <li
-                key={item}
-                className="flex gap-2 text-[12px] leading-snug text-text-mid"
+                key={title}
+                className="flex gap-3 rounded-[var(--r-md)] border border-hairline bg-surface-1 px-4 py-3"
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="mt-0.5 shrink-0 text-accent"
-                  aria-hidden
-                >
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-                {item}
+                <span aria-hidden className="mt-0.5 shrink-0 text-accent">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                </span>
+                <span>
+                  <span className="block text-[13px] font-medium text-text-hi">
+                    {title}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] leading-relaxed text-text-low">
+                    {body}
+                  </span>
+                </span>
               </li>
             ))}
           </ul>
 
-          {/* spec table */}
-          <dl className="mt-8 divide-y divide-hairline border-y border-hairline text-[13px]">
-            {[
-              ["Finish", FINISH_LABEL[product.finish]],
-              ["Thickness", "0.2 mm"],
-              ["Material", "Automotive-grade vinyl, removable adhesive"],
-              ["Cut for", `${product.categories.length} device types`],
-              ["Includes", "Alcohol prep pad, squeegee card"],
-            ].map(([k, v]) => (
-              <div key={k} className="flex gap-4 py-3">
-                <dt className="w-28 shrink-0 text-text-low">{k}</dt>
-                <dd className="text-text-mid">{v}</dd>
-              </div>
-            ))}
-          </dl>
+          <p className="mt-4 text-center text-[12px] text-text-low">
+            Not your {optionLabel.toLowerCase()}?{" "}
+            <Link href="/request-model" className="text-accent hover:underline">
+              Request a cut
+            </Link>
+          </p>
         </div>
       </div>
 
+      {/* ---- related ---- */}
       {related.length > 0 && (
-        <section className="page py-14">
-          <header className="mb-6">
-            <p className="kicker">Same finish</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-text-hi">
-              You might also like
-            </h2>
-          </header>
-          <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <section className="mt-16 border-t border-hairline pt-10">
+          <h2 className="text-lg font-semibold tracking-tight text-text-hi">
+            You might also like
+          </h2>
+          <ul className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
             {related.map((p) => (
               <li key={p.slug}>
-                <ProductCard product={p} categorySlug={device} />
+                <ProductCard product={p} />
               </li>
             ))}
           </ul>
         </section>
       )}
-    </>
+    </div>
+  );
+}
+
+function SpecTable({
+  optionLabel,
+  optionCount,
+}: {
+  optionLabel: string;
+  optionCount: number;
+}) {
+  const rows: [string, string][] = [
+    ["Material", "Cast vinyl film, 0.2 mm"],
+    ["Adhesive", "Removable, automotive-grade"],
+    ["Finish durability", "2–3 years of daily use"],
+    [`${optionLabel}s available`, String(optionCount)],
+    ["Coverage", "Back and side panels; cutouts for ports and lenses"],
+    ["Application", "Dry, no fluid; a hairdryer on low helps on curves"],
+  ];
+
+  return (
+    <div className="mt-8 border-t border-hairline pt-6">
+      <h2 className="text-sm font-semibold text-text-hi">Specifications</h2>
+      <dl className="mt-4 divide-y divide-hairline border-y border-hairline">
+        {rows.map(([k, v]) => (
+          <div key={k} className="grid grid-cols-[minmax(0,160px)_1fr] gap-4 py-3">
+            <dt className="text-[12px] text-text-low">{k}</dt>
+            <dd className="text-[13px] text-text-mid">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { DEVICE_CATEGORIES } from "@/lib/catalog";
+import { NAV_CATEGORIES } from "@/lib/realCatalog";
 
 export default function NotFound() {
   return (
@@ -16,7 +16,7 @@ export default function NotFound() {
       </p>
 
       <ul className="mt-8 flex max-w-lg flex-wrap justify-center gap-2">
-        {DEVICE_CATEGORIES.map((c) => (
+        {NAV_CATEGORIES.map((c) => (
           <li key={c.slug}>
             <Link
               href={`/collections/${c.slug}`}

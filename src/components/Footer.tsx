@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { DEVICE_CATEGORIES } from "@/lib/catalog";
+import { NAV_CATEGORIES } from "@/lib/realCatalog";
 
 const HELP = [
   { label: "Return and exchange policy", href: "/policies/returns" },
@@ -112,7 +112,7 @@ export function Footer() {
 
         <FooterCol
           title="Shop"
-          links={DEVICE_CATEGORIES.slice(0, 6).map((c) => ({
+          links={NAV_CATEGORIES.slice(0, 6).map((c) => ({
             label: c.name,
             href: `/collections/${c.slug}`,
           }))}
