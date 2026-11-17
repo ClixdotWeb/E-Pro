@@ -3,7 +3,6 @@ import { VideoHero } from "@/components/home/VideoHero";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { RealCustomers } from "@/components/home/RealCustomers";
 import { BeforeAfter } from "@/components/home/BeforeAfter";
-import { SkinFinder } from "@/components/SkinFinder";
 
 /**
  * Homepage.
@@ -18,41 +17,21 @@ import { SkinFinder } from "@/components/SkinFinder";
  *   collapsible_content     -> Faq
  *   newsletter + icon_with_text -> in <Footer>
  *
- * The one addition is the finder. It used to sit inside the hero, which
- * is a big part of why this page stopped resembling the real one — the
- * live hero holds nothing at all. It now has its own band between the
- * video and the categories, so the hero is faithful and the shortcut to
- * a buyable item still arrives before any browsing.
+ * Nothing is added. The finder band that used to sit between the video
+ * and the categories is gone: the live page goes straight from one to
+ * the other, and a section that is not there is a difference you can
+ * see at a glance. The finder itself still lives at /find, linked from
+ * the footer, so the shortcut survives without changing this page.
  */
 export default function HomePage() {
   return (
     <>
       <VideoHero />
-      <FinderBand />
       <CategoryGrid />
       <RealCustomers />
       <BeforeAfter />
       <Faq />
     </>
-  );
-}
-
-function FinderBand() {
-  return (
-    <section className="page py-8 md:py-10">
-      <div className="mx-auto max-w-2xl">
-        <h2 className="text-center text-lg font-semibold tracking-tight text-text-hi">
-          Find your skin in one step
-        </h2>
-        <p className="mx-auto mt-1.5 max-w-md text-center text-[13px] leading-relaxed text-text-mid">
-          Type your device — a model, a brand, a focal length — and add it
-          straight to the cart.
-        </p>
-        <div className="mt-5">
-          <SkinFinder compact />
-        </div>
-      </div>
-    </section>
   );
 }
 

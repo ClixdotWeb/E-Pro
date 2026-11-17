@@ -11,6 +11,7 @@ const HELP = [
 ];
 
 const COMPANY = [
+  { label: "Find my device", href: "/find" },
   { label: "About us", href: "/about" },
   { label: "Material", href: "/material" },
   { label: "How to apply", href: "/how-to-apply" },
