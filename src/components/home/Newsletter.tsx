@@ -20,7 +20,7 @@
  */
 export function Newsletter() {
   return (
-    <section className="page py-6 md:py-10">
+    <section className="page py-10 md:py-20">
       <div
         className="relative overflow-hidden rounded-[24px] bg-surface-1 px-6 py-16 text-center md:py-24"
         style={{

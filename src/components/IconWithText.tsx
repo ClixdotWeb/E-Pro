@@ -55,7 +55,7 @@ const ITEMS: Item[] = [
 
 export function IconWithText() {
   return (
-    <section className="page py-10 md:py-14">
+    <section className="page py-10 md:py-20">
       <ul role="list" className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {ITEMS.map((item) => (
           <li

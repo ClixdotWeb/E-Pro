@@ -56,7 +56,7 @@ function Track({ hidden }: { hidden?: boolean }) {
 
 export function RealCustomers() {
   return (
-    <section className="page py-6 md:py-10">
+    <section className="page py-10 md:py-20">
       <div
         className="relative isolate h-[50vh] overflow-hidden rounded-[24px] bg-black md:h-[70vh]"
         style={

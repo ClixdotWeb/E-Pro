@@ -54,7 +54,7 @@ const FAQS = [
 
 export function Faq() {
   return (
-    <section className="page py-12 md:py-16">
+    <section className="page py-10 md:py-20">
       <div className="flex flex-col gap-10 md:flex-row md:items-start md:gap-20">
         {/* ---- left column ---- */}
         <div className="md:w-1/2">

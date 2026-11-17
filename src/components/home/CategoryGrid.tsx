@@ -50,7 +50,7 @@ export function CategoryGrid() {
   const counts = new Map(NAV_CATEGORIES.map((c) => [c.slug, c.count]));
 
   return (
-    <section className="bg-surface-0 px-5 pb-6 pt-3 md:px-8">
+    <section className="bg-surface-0 px-5 py-10 md:px-8 md:py-20">
       <h2 className="mb-5 text-center text-2xl font-bold tracking-tight text-text-hi md:text-[28px]">
         Categories
       </h2>

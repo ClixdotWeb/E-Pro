@@ -44,8 +44,11 @@ export function BeforeAfter() {
   const [pos, setPos] = useState(50);
 
   return (
-    <section className="page py-6 md:py-10">
-      <div className="relative isolate aspect-[16/9] w-full overflow-hidden rounded-[24px]">
+    /* The live comparison is NOT full container width - it is roughly
+       960px, centred, which at 16/9 makes it about 540px tall. Running
+       it across the full 1600px made it tower over everything else. */
+    <section className="page py-10 md:py-20">
+      <div className="relative isolate mx-auto aspect-[16/9] w-full max-w-[960px] overflow-hidden rounded-[24px]">
         {/* after layer - full width, underneath */}
         <Image
           src={AFTER_IMAGE}

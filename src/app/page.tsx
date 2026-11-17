@@ -23,6 +23,13 @@ import { Newsletter } from "@/components/home/Newsletter";
  * the other, and a section that is not there is a difference you can
  * see at a glance. The finder itself still lives at /find, linked from
  * the footer, so the shortcut survives without changing this page.
+ *
+ * Every section carries the theme's own `.section` spacing -
+ * padding-block: --s-outer-p-y, which is 4 * --gutter-base, so 40px on
+ * mobile and 80px from 769px up - written as `py-10 md:py-20`. They had
+ * drifted to six different values, which is why the page ran together.
+ * The hero is the exception: as the first section it gets half the top
+ * padding, exactly as `.s--banner-spacing` does.
  */
 export default function HomePage() {
   return (
