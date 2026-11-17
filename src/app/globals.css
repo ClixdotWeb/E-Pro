@@ -232,21 +232,28 @@ body {
   animation: epro-shimmer 1.4s infinite;
 }
 
-/* Continuous marquee for the "Real Customers - Real Skins" rail,
-   mirroring the theme's moving image banner. */
-@keyframes epro-marquee {
-  from {
-    transform: translateX(0);
+/* Moving image banner, exactly as the live theme runs it:
+     .moving-image-inner { animation: moving-image-banner var(--time-run) linear infinite }
+     @keyframes moving-image-banner { 0% { translateZ(0) } to { translate3d(-100%,0,0) } }
+   Two identical groups sit side by side and each slides a full 100%
+   of its own width, so the seam never shows. --time-run is 28s. */
+@keyframes moving-image-banner {
+  0% {
+    transform: translateZ(0);
   }
   to {
-    transform: translateX(-50%);
+    transform: translate3d(-100%, 0, 0);
   }
 }
-.marquee-track {
+.moving-image-inner {
   display: flex;
-  width: max-content;
-  animation: epro-marquee 40s linear infinite;
+  flex-wrap: nowrap;
+  height: 100%;
+  animation: moving-image-banner var(--time-run, 28s) linear infinite;
 }
-.marquee:hover .marquee-track {
-  animation-play-state: paused;
+/* .moving-image { width: calc(var(--container-height) * var(--ratio)) } */
+.moving-image {
+  height: 100%;
+  flex: none;
+  width: calc(var(--container-height) * var(--ratio, 2));
 }
