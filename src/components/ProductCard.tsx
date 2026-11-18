@@ -1,19 +1,27 @@
 import Link from "next/link";
 import { formatPaise } from "@/lib/money";
 import { CatalogMedia } from "./CatalogMedia";
-import {
-  CATEGORY_LABEL,
-  FINISH_LABEL,
-  type ImportedProduct,
-} from "@/lib/realCatalog";
+import type { ImportedProduct } from "@/lib/realCatalog";
 
 /**
- * Grid card for a real imported product.
+ * Product card, rebuilt from the live grid's own markup.
  *
- * Shows a price RANGE rather than a single price, because a product's
- * variants genuinely differ in price in this catalog (a camera skin is
- * ₹849-₹1299 depending on brand). Collapsing that to "from ₹849" hid
- * the spread badly enough that a customer could feel misled at checkout.
+ *   .product-card__wrapper.d-grid.gap-16
+ *     .card__media.corner-radius-s      square, 12px radius
+ *       a (covers the media)
+ *       .product__buttons -> "Quick Shop" btn-secondary btn-icon
+ *     .card__content > .card__info
+ *       h3.card__heading.fw-700.mb-4  -> a  (title)
+ *       .card__price-wrapper          -> "Rs. 949.00 INR"
+ *
+ * --font-card-heading-size is --font-body-size, so the title is 16px
+ * in the heading family at weight 700.
+ *
+ * Two things I had added are gone: the price RANGE ("Rs. 849 – Rs.
+ * 1,299") and the "N options" line underneath. The live card shows one
+ * plain price and nothing else. The badge slot above the media exists
+ * in the markup but renders empty on this store, so there is no
+ * bestseller/new flag to show.
  */
 
 type Props = {
@@ -22,53 +30,49 @@ type Props = {
 };
 
 export function ProductCard({ product, priority = false }: Props) {
-  const { minPriceInPaise: min, maxPriceInPaise: max } = product;
-  const buyable = product.variants.filter((v) => v.available).length;
-
   return (
-    <Link
-      href={`/products/${product.slug}`}
-      className="group block overflow-hidden rounded-[var(--r-lg)] border border-hairline bg-surface-1 transition-colors hover:border-hairline-strong focus-visible:border-accent"
-    >
-      <CatalogMedia
-        src={product.images[0] ?? null}
-        seed={product.slug}
-        alt={product.title}
-        priority={priority}
-        className="aspect-square"
-      />
+    <div className="grid gap-4">
+      {/* media */}
+      <div className="relative">
+        <Link
+          href={`/products/${product.slug}`}
+          aria-label={product.title}
+          className="block"
+        >
+          <CatalogMedia
+            src={product.images[0] ?? null}
+            seed={product.slug}
+            alt={product.title}
+            priority={priority}
+            className="aspect-square rounded-[12px]"
+          />
+        </Link>
 
-      <div className="p-3.5">
-        <p className="kicker truncate">
-          {product.finish
-            ? (FINISH_LABEL[product.finish] ?? product.finish)
-            : product.category
-              ? (CATEGORY_LABEL[product.category] ?? product.category)
-              : "Skin"}
-        </p>
+        {/* Quick Shop, as the live card carries it */}
+        <Link
+          href={`/products/${product.slug}`}
+          aria-label={`Quick Shop ${product.title}`}
+          className="absolute bottom-3 right-3 grid h-10 w-10 place-items-center rounded-[6px] border border-hairline bg-surface-0/80 text-text-hi backdrop-blur transition-colors hover:border-accent hover:text-accent"
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-4.3-4.3M11 8v6M8 11h6" />
+          </svg>
+        </Link>
+      </div>
 
-        <h3 className="mt-1 truncate text-sm font-medium text-text-hi">
-          {product.title}
+      {/* content */}
+      <div>
+        <h3 className="mb-1 text-[16px] font-bold leading-[1.25] text-text-hi">
+          <Link href={`/products/${product.slug}`} className="hover:text-accent">
+            {product.title}
+          </Link>
         </h3>
 
-        <p className="mt-2 text-sm text-text-hi">
-          <span className="font-semibold tabular-nums">
-            {formatPaise(min)}
-          </span>
-          {max > min && (
-            <span className="text-text-low tabular-nums">
-              {" – "}
-              {formatPaise(max)}
-            </span>
-          )}
-        </p>
-
-        <p className="mt-1 text-[11px] text-text-low tabular-nums">
-          {buyable > 0
-            ? `${buyable} option${buyable === 1 ? "" : "s"}`
-            : "Currently unavailable"}
+        <p className="text-[14px] text-text-mid">
+          {formatPaise(product.minPriceInPaise)}
         </p>
       </div>
-    </Link>
+    </div>
   );
 }
