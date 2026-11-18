@@ -18,7 +18,12 @@
  * marked up so that pointing `action` at a Server Action is the only
  * change needed.
  */
-export function Newsletter() {
+export function Newsletter({
+  /** The About page runs the same block under "Join us now". */
+  heading = "Newsletter",
+}: {
+  heading?: string;
+} = {}) {
   return (
     <section className="page py-10 md:py-20">
       <div
@@ -35,7 +40,7 @@ export function Newsletter() {
         </span>
 
         <h2 className="mt-5 text-4xl font-bold tracking-tight text-text-hi md:text-5xl">
-          Newsletter
+          {heading}
         </h2>
 
         <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-text-mid">

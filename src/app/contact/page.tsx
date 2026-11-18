@@ -1,209 +1,274 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Contact us",
   description:
-    "WhatsApp, email or the form below. We answer between 10am and 7pm IST, within one business day.",
+    "Have questions about our skins, custom orders, or need support? Reach out and our team will be glad to assist you.",
 };
 
-const CHANNELS = [
+/**
+ * Contact, from the live /policies/contact-information.
+ *
+ * Two columns: copy and a "Need Quick Assistance?" WhatsApp card on the
+ * left, the form card on the right, then a three-up strip with the
+ * studio address, working hours and direct email.
+ *
+ * The heading is two lines with the second in accent green, the Inquiry
+ * Topic options are the store's own six, and only Email address and
+ * Message are required - Name and Phone Number are not, same as there.
+ *
+ * The form posts nowhere yet; pointing `action` at a Server Action is
+ * the only change needed.
+ */
+
+const WHATSAPP =
+  "https://wa.me/918891202497?text=Hello%20Epro!%20I%20have%20a%20question.";
+
+const TOPICS = [
+  "Custom Skin Request",
+  "Order Status & Tracking",
+  "Product & Material Question",
+  "Bulk / Corporate Orders",
+  "Feedback / Suggestions",
+  "Other Inquiries",
+];
+
+const DETAILS: { title: string; body: string; href?: string; icon: React.ReactNode }[] = [
   {
-    name: "WhatsApp",
-    detail: "Fastest — usually within the hour",
-    value: "+91 00000 00000",
-    href: "https://wa.me/910000000000",
-    icon: "chat",
+    title: "Studio Address",
+    body: "IMG Junction, Infopark Road, Kakkanad, Kochi, Kerala",
+    icon: (
+      <>
+        <path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z" />
+        <circle cx="12" cy="10" r="2.6" />
+      </>
+    ),
   },
   {
-    name: "Email",
-    detail: "For order issues with photos attached",
-    value: "support@eprogadgets.com",
-    href: "mailto:support@eprogadgets.com",
-    icon: "mail",
+    title: "Working Hours",
+    body: "Mon – Fri | 10:00 AM – 6:00 PM (IST)",
+    icon: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5.2l3.3 2" />
+      </>
+    ),
   },
   {
-    name: "Instagram",
-    detail: "Real customer photos and new drops",
-    value: "@eprogadgets",
-    href: "https://instagram.com",
-    icon: "camera",
+    title: "Direct Email",
+    body: "eprogadgetsofficial@gmail.com",
+    href: "mailto:eprogadgetsofficial@gmail.com",
+    icon: (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="2.5" />
+        <path d="M3.6 6.6L12 12.8l8.4-6.2" />
+      </>
+    ),
   },
-] as const;
+];
 
 export default function ContactPage() {
   return (
-    <div className="page grid gap-12 py-12 lg:grid-cols-[1fr_minmax(0,440px)]">
-      <div>
-        <p className="kicker">10am – 7pm IST, Mon–Sat</p>
-        <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight text-text-hi">
-          Talk to a human.
-        </h1>
-        <p className="mt-4 max-w-md text-[15px] leading-relaxed text-text-mid">
-          The person answering is usually the person who cut your skin. Have
-          your order number ready and a photo if something is wrong — that
-          resolves most cases in one message.
-        </p>
+    <>
+      <section className="page py-10 md:py-20">
+        <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+          {/* ---- left ---- */}
+          <div className="flex flex-col">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-accent/45 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-accent">
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
+              We&apos;re Here For You
+            </span>
 
-        <ul className="mt-10 space-y-3">
-          {CHANNELS.map((c) => (
-            <li key={c.name}>
+            <h1 className="mt-7 text-[32px] font-bold leading-[1.15] tracking-tight text-text-hi md:text-[42px]">
+              We&apos;re here for you
+              <br />
+              <span className="text-accent">Contact Us</span>
+            </h1>
+
+            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-text-mid">
+              Have questions about our skins, custom orders, or need support?
+              Reach out to us and our team will be glad to assist you.
+            </p>
+
+            {/* quick assistance */}
+            <div
+              className="mt-auto rounded-2xl border border-hairline bg-surface-1 p-7"
+              style={{
+                backgroundImage:
+                  "radial-gradient(120% 120% at 0% 0%, rgba(0,164,79,0.12) 0%, transparent 60%)",
+              }}
+            >
+              <h2 className="text-[16px] font-bold text-text-hi">
+                Need Quick Assistance?
+              </h2>
+              <p className="mt-2.5 max-w-sm text-[13px] leading-relaxed text-text-mid">
+                Direct 1-on-1 support for custom device skins, order tracking,
+                and instant inquiries.
+              </p>
+
               <a
-                href={c.href}
-                target={c.href.startsWith("http") ? "_blank" : undefined}
+                href={WHATSAPP}
+                target="_blank"
                 rel="noreferrer noopener"
-                className="group flex items-center gap-4 rounded-[var(--r-lg)] border border-hairline bg-surface-1 p-4 transition-colors hover:border-accent"
+                className="mt-6 inline-flex h-12 items-center gap-2.5 rounded-full bg-accent px-7 text-sm font-bold text-black transition-colors hover:bg-accent-hover"
+                style={{ boxShadow: "0 0 26px rgba(0,164,79,0.35)" }}
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--r-md)] bg-accent-soft text-accent">
-                  <ChannelIcon name={c.icon} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-text-hi">
-                    {c.name}
-                  </span>
-                  <span className="block text-[12px] text-text-low">
-                    {c.detail}
-                  </span>
-                </span>
-                <span className="shrink-0 text-[13px] text-text-mid transition-colors group-hover:text-accent">
-                  {c.value}
-                </span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.87 9.87 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm5.8 14.17c-.25.69-1.44 1.32-1.99 1.37-.53.05-.53.43-3.34-.86-2.81-1.29-4.52-4.3-4.65-4.5-.14-.2-1.11-1.53-1.11-2.92s.72-2.07.98-2.35c.25-.28.55-.35.73-.35h.53c.17 0 .4-.06.63.48.23.55.79 1.9.86 2.04.07.14.11.3.02.49-.09.19-.14.3-.27.46-.14.16-.29.36-.41.48-.14.14-.28.29-.12.57.16.28.71 1.17 1.52 1.89 1.04.93 1.92 1.21 2.2 1.35.28.14.44.12.6-.07.17-.19.69-.8.88-1.08.19-.28.37-.23.63-.14.25.09 1.6.76 1.88.9.27.14.45.21.52.32.07.12.07.67-.19 1.37z" />
+                </svg>
+                Chat on WhatsApp
               </a>
+            </div>
+          </div>
+
+          {/* ---- form ---- */}
+          <div className="rounded-2xl border border-hairline bg-surface-1 p-7 md:p-9">
+            <form className="space-y-5">
+              <Field id="name" label="Your name" placeholder="Your name" autoComplete="name" />
+              <Field
+                id="phone"
+                label="Phone Number"
+                type="tel"
+                placeholder="Your phone number"
+                autoComplete="tel"
+                inputMode="numeric"
+              />
+              <Field
+                id="email"
+                label="Email address"
+                type="email"
+                placeholder="Your email address"
+                autoComplete="email"
+                required
+              />
+
+              <div>
+                <Label htmlFor="topic">Inquiry Topic</Label>
+                <select
+                  id="topic"
+                  name="topic"
+                  defaultValue=""
+                  className="h-12 w-full rounded-full border border-hairline bg-surface-2 px-5 text-[14px] text-text-hi focus:border-accent focus:outline-none"
+                >
+                  <option value="" disabled>
+                    Select a topic...
+                  </option>
+                  {TOPICS.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="message" required>
+                  Message
+                </Label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows={5}
+                  required
+                  placeholder="Type something here..."
+                  className="min-h-[130px] w-full resize-y rounded-2xl border border-hairline bg-surface-2 px-5 py-4 text-[14px] leading-relaxed text-text-hi placeholder:text-text-low focus:border-accent focus:outline-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-accent text-sm font-bold text-black transition-colors hover:bg-accent-hover"
+              >
+                Send a message
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                </svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- details ---- */}
+      <section className="page pb-10 md:pb-20">
+        <ul className="grid gap-5 md:grid-cols-3">
+          {DETAILS.map((d) => (
+            <li
+              key={d.title}
+              className="flex items-start gap-4 rounded-2xl border border-hairline bg-surface-1 p-6"
+            >
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-accent/35 text-accent">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  {d.icon}
+                </svg>
+              </span>
+              <div className="min-w-0">
+                <p className="text-[14px] font-bold text-text-hi">{d.title}</p>
+                {d.href ? (
+                  <a
+                    href={d.href}
+                    className="mt-1 block break-words text-[13px] leading-relaxed text-text-mid hover:text-accent"
+                  >
+                    {d.body}
+                  </a>
+                ) : (
+                  <p className="mt-1 text-[13px] leading-relaxed text-text-mid">
+                    {d.body}
+                  </p>
+                )}
+              </div>
             </li>
           ))}
         </ul>
-
-        <div className="mt-10 border-t border-hairline pt-6">
-          <p className="kicker">Before you write</p>
-          <ul className="mt-3 space-y-2">
-            {[
-              ["Where is my order?", "/track"],
-              ["How do I apply a skin?", "/how-to-apply"],
-              ["Can I return it?", "/policies/returns"],
-              ["My device isn't listed", "/request-model"],
-            ].map(([label, href]) => (
-              <li key={href}>
-                <Link
-                  href={href}
-                  className="text-[13px] text-accent hover:underline"
-                >
-                  {label} →
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <div className="card h-fit p-6 lg:sticky lg:top-[calc(var(--header-h)+24px)]">
-        <h2 className="text-base font-semibold text-text-hi">Send a message</h2>
-
-        <form className="mt-5 space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1.5 block text-[12px] font-medium text-text-mid">
-                Name <span className="text-danger">*</span>
-              </span>
-              <input
-                name="name"
-                required
-                className="w-full rounded-[var(--r-md)] border border-hairline bg-surface-0 px-3.5 py-2.5 text-sm text-text-hi"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-[12px] font-medium text-text-mid">
-                Email <span className="text-danger">*</span>
-              </span>
-              <input
-                name="email"
-                type="email"
-                required
-                className="w-full rounded-[var(--r-md)] border border-hairline bg-surface-0 px-3.5 py-2.5 text-sm text-text-hi"
-              />
-            </label>
-          </div>
-
-          <label className="block">
-            <span className="mb-1.5 block text-[12px] font-medium text-text-mid">
-              Order number
-            </span>
-            <input
-              name="orderNumber"
-              placeholder="EPRO-1234"
-              className="w-full rounded-[var(--r-md)] border border-hairline bg-surface-0 px-3.5 py-2.5 text-sm text-text-hi placeholder:text-text-low"
-            />
-            <span className="mt-1 block text-[11px] text-text-low">
-              Optional, but it speeds things up
-            </span>
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block text-[12px] font-medium text-text-mid">
-              Subject <span className="text-danger">*</span>
-            </span>
-            <select
-              name="subject"
-              required
-              className="w-full rounded-[var(--r-md)] border border-hairline bg-surface-0 px-3.5 py-2.5 text-sm text-text-hi"
-            >
-              <option value="">Select…</option>
-              <option>Order status / tracking</option>
-              <option>Damaged or miscut skin</option>
-              <option>Return or exchange</option>
-              <option>Application help</option>
-              <option>Request a device model</option>
-              <option>Wholesale / bulk</option>
-              <option>Something else</option>
-            </select>
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block text-[12px] font-medium text-text-mid">
-              Message <span className="text-danger">*</span>
-            </span>
-            <textarea
-              name="message"
-              rows={5}
-              required
-              className="w-full resize-y rounded-[var(--r-md)] border border-hairline bg-surface-0 px-3.5 py-2.5 text-sm text-text-hi"
-            />
-          </label>
-
-          <button
-            type="button"
-            className="w-full rounded-[var(--r-md)] bg-accent px-5 py-3 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
-          >
-            Send message
-          </button>
-
-          <p className="text-center text-[11px] text-text-low">
-            We reply within one business day.
-          </p>
-        </form>
-      </div>
-    </div>
+      </section>
+    </>
   );
 }
 
-function ChannelIcon({ name }: { name: "chat" | "mail" | "camera" }) {
-  const d = {
-    chat: "M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-2.8-.4L4 21l1.5-4.2A8.2 8.2 0 0 1 3.6 11.5 8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z",
-    mail: "M3 6h18v12H3zM3 7l9 6 9-6",
-    camera: "M4 7h3l1.5-2.5h7L17 7h3v13H4zM12 17a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z",
-  }[name];
+function Label({
+  htmlFor,
+  required = false,
+  children,
+}: {
+  htmlFor: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <svg
-      width="19"
-      height="19"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
+    <label
+      htmlFor={htmlFor}
+      className="mb-2 block text-[13px] font-bold text-text-hi"
     >
-      <path d={d} />
-    </svg>
+      {children}
+      {required && <sup className="ml-1 text-accent">*</sup>}
+    </label>
+  );
+}
+
+function Field({
+  id,
+  label,
+  required = false,
+  type = "text",
+  ...rest
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+} & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div>
+      <Label htmlFor={id} required={required}>
+        {label}
+      </Label>
+      <input
+        id={id}
+        name={id}
+        type={type}
+        required={required}
+        className="h-12 w-full rounded-full border border-hairline bg-surface-2 px-5 text-[14px] text-text-hi placeholder:text-text-low focus:border-accent focus:outline-none"
+        {...rest}
+      />
+    </div>
   );
 }
