@@ -86,7 +86,7 @@ function SkinDropdown({ open }: { open: boolean }) {
   if (!open) return null;
 
   return (
-    <div className="absolute left-0 top-full z-50 hidden w-[360px] pt-2 md:block">
+    <div className="absolute left-0 top-full z-50 hidden w-[400px] pt-2 md:block">
       <div className="overflow-hidden rounded-lg bg-[#4a4a4a] py-2 shadow-pop">
         {SKIN_MENU.map((item) => {
           const href =
@@ -96,13 +96,13 @@ function SkinDropdown({ open }: { open: boolean }) {
             <Link
               key={item.slug}
               href={href}
-              className="block px-6 py-2.5 text-[17px] font-bold text-white transition-colors hover:text-accent"
+              className="block px-6 py-3 text-[19px] font-bold text-white transition-colors hover:text-accent"
             >
               {item.label}
             </Link>
           ) : (
             <details key={item.slug} className="group">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-2.5 text-[17px] font-bold text-white marker:content-none hover:text-accent">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-3 text-[19px] font-bold text-white marker:content-none hover:text-accent">
                 {item.label}
                 <svg
                   width="20"
@@ -125,7 +125,7 @@ function SkinDropdown({ open }: { open: boolean }) {
                   <li key={f.label}>
                     <Link
                       href={f.href}
-                      className="block py-1.5 text-[14px] text-white/75 transition-colors hover:text-white"
+                      className="block py-1.5 text-[15px] text-white/75 transition-colors hover:text-white"
                     >
                       {f.label}
                     </Link>
@@ -221,7 +221,7 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
                 onMouseEnter={() => setSkinOpen(true)}
                 /* "Skin" is the one top-level item the live header
                    keeps bold; the rest are weight 400. */
-                className={`nav-link flex items-center gap-1 px-4 py-2 text-sm font-bold transition-colors ${
+                className={`nav-link flex items-center gap-1 px-4 py-2 text-base font-bold transition-colors ${
                   skinOpen ? "text-accent" : "text-text-hi"
                 }`}
                 aria-expanded={skinOpen}
@@ -242,7 +242,7 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
                 key={item.href}
                 href={item.href}
                 aria-current={pathname === item.href ? "page" : undefined}
-                className="nav-link whitespace-nowrap px-4 py-2 text-sm text-text-hi"
+                className="nav-link whitespace-nowrap px-4 py-2 text-base text-text-hi"
               >
                 {item.label}
               </Link>

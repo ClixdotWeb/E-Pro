@@ -290,9 +290,17 @@ body {
     pointer-events: none;
   }
 
+  /* The theme's own hover underline is white. Green was asked for
+     instead - the animation is unchanged, only the colour. */
+  .nav-link:hover,
+  .nav-link[aria-expanded="true"] {
+    color: #00a44f;
+  }
+
   .nav-link:hover::after,
   .nav-link[aria-expanded="true"]::after {
     transform: translateX(-50%) scaleX(1);
+    background: linear-gradient(90deg, transparent, #00a44f, transparent);
   }
 
   .nav-link[aria-current="page"] {
