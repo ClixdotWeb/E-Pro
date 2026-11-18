@@ -1,189 +1,177 @@
 import type { Metadata } from "next";
-import { ALL_PRODUCTS, FINISH_LABEL, NAV_CATEGORIES } from "@/lib/realCatalog";
 
 export const metadata: Metadata = {
-  title: "Request a model",
+  title: "Request a Device Model",
   description:
-    "Tell us the device you want skinned and we'll template and cut it, usually within a week.",
+    "Unable to find your device model? Send us a request and we'll work on adding it to our list.",
 };
+
+/**
+ * Request a Device Model, rebuilt from the live page
+ * (/pages/request-a-skin-1) rather than designed here.
+ *
+ * Structure, from its markup:
+ *
+ *   section 1  .ctnr.corner-radius-m > [--w-md: 10] > h1.h2.tt-cap
+ *              "Request a Device Model", centred
+ *   section 2  .ctnr grid of 12 > content at --gc-md: 3 / 11
+ *              h2.h3  "Unable to find your device model? ..."
+ *              form .rw.r-gap-24
+ *                Your name    --w-md 6   (not required)
+ *                Your email   --w-md 6   required *
+ *                Product Type --w-md 12  (not required, its * is d-none)
+ *                Brand        --w-md 6   required *
+ *                Model        --w-md 6   required *
+ *                Your message 12, textarea rows=5, required *
+ *                button .btn-primary.btn-large  "Send message"
+ *
+ * Resolved sizes (html font-size: 62.5%, so 1rem = 10px):
+ *   --h2 36px (the page title), --h3 28px (the card heading)
+ *   .field__text  height --form-field-lg 44px, padding 0 1.6rem,
+ *                 border 1px, radius --corner-radius-xs 6px
+ *   textarea      min-height 10rem, padding-top 10px
+ *   .r-gap-24     row-gap 24px
+ *   .color-error  #eb544a  (the asterisks)
+ *
+ * Every placeholder and label is the store's own text.
+ *
+ * The form posts nowhere yet. It is marked up so that pointing
+ * `action` at a Server Action is the only change needed.
+ */
 
 export default function RequestModelPage() {
   return (
-    <div className="page grid gap-12 py-12 lg:grid-cols-[1fr_minmax(0,440px)]">
-      <div>
-        <p className="kicker">Not in the catalogue yet?</p>
-        <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight text-text-hi">
-          Request a cut for
-          <br />
-          <span className="text-accent">your device.</span>
+    <>
+      {/* page title */}
+      <section className="page pt-10 md:pt-16">
+        <h1 className="text-center text-[28px] font-bold capitalize tracking-tight text-text-hi md:text-[36px]">
+          Request a Device Model
         </h1>
+      </section>
 
-        <p className="mt-5 max-w-md text-[15px] leading-relaxed text-text-mid">
-          We template new models every week. Send us the exact model and the
-          design you want, and we&apos;ll come back with a price and a date.
-          First cuts carry no extra charge.
-        </p>
+      {/* form card */}
+      <section className="page py-10 md:py-20">
+        <div className="mx-auto w-full max-w-[680px] rounded-[24px] bg-surface-1 px-6 py-10 md:px-12 md:py-14">
+          <h2 className="text-center text-[20px] font-bold leading-snug text-text-hi md:text-[28px]">
+            Unable to find your device model? Send us a request and we&rsquo;ll
+            work on adding it to our list.
+          </h2>
 
-        <ol className="mt-10 space-y-6 border-l border-hairline pl-6">
-          {[
-            {
-              title: "You send the model",
-              body: "Exact name and variant — storage size rarely matters, but camera layout does.",
-            },
-            {
-              title: "We template it",
-              body: "Either from our die library or a fresh measurement off the real device.",
-            },
-            {
-              title: "We quote and cut",
-              body: "Usually within a week. Once cut, the model joins the catalogue for everyone.",
-            },
-          ].map((s, i) => (
-            <li key={s.title} className="relative">
-              <span className="absolute -left-[31px] grid h-[22px] w-[22px] place-items-center rounded-full border border-hairline bg-surface-0 font-mono text-[10px] text-accent">
-                {i + 1}
-              </span>
-              <p className="text-sm font-semibold text-text-hi">{s.title}</p>
-              <p className="mt-1 text-[13px] leading-relaxed text-text-mid">
-                {s.body}
-              </p>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      {/* form */}
-      <div className="card h-fit p-6 lg:sticky lg:top-[calc(var(--header-h)+24px)]">
-        <h2 className="text-base font-semibold text-text-hi">
-          Tell us what you need
-        </h2>
-
-        <form className="mt-5 space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="Your name" name="name" required />
-            <Input label="Phone / WhatsApp" name="phone" type="tel" required />
-          </div>
-
-          <Input label="Email" name="email" type="email" required />
-
-          <Select
-            label="Device type"
-            name="deviceType"
-            required
-            options={NAV_CATEGORIES.map((c) => c.name)}
-          />
-
-          <Input
-            label="Exact model"
-            name="model"
-            required
-            placeholder="e.g. Sony ZV-E1, Insta360 X4"
-            hint="Brand and full model name"
-          />
-
-          <Select
-            label="Design you want"
-            name="design"
-            options={[
-              ...ALL_PRODUCTS.map((p) =>
-                p.finish
-                  ? `${p.title} (${FINISH_LABEL[p.finish] ?? p.finish})`
-                  : p.title,
-              ),
-              "Not sure yet — suggest something",
-            ]}
-          />
-
-          <label className="block">
-            <span className="mb-1.5 block text-[12px] font-medium text-text-mid">
-              Anything else?
-            </span>
-            <textarea
-              name="notes"
-              rows={3}
-              placeholder="Links to photos of the device, areas to leave uncovered, deadline..."
-              className="w-full resize-y rounded-[var(--r-md)] border border-hairline bg-surface-0 px-3.5 py-2.5 text-sm text-text-hi placeholder:text-text-low"
+          <form className="mt-10 grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2">
+            <Field
+              id="name"
+              label="Your name"
+              autoComplete="name"
+              placeholder="Enter your name"
             />
-          </label>
+            <Field
+              id="email"
+              label="Your email"
+              type="email"
+              autoComplete="email"
+              placeholder="Enter your email"
+              required
+            />
 
-          <button
-            type="button"
-            className="w-full rounded-[var(--r-md)] bg-accent px-5 py-3 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
-          >
-            Send request
-          </button>
+            <Field
+              id="productType"
+              label="Product Type"
+              placeholder="e.g. Camera, Lens, Smartphone, Drone..."
+              className="md:col-span-2"
+            />
 
-          <p className="text-center text-[11px] leading-relaxed text-text-low">
-            We reply within one business day. No payment is taken at this step.
-          </p>
-        </form>
-      </div>
-    </div>
+            <Field
+              id="brand"
+              label="Brand"
+              placeholder="e.g. Sony, Canon, Apple, DJI..."
+              required
+            />
+            <Field
+              id="model"
+              label="Model"
+              placeholder="e.g. A7 IV, 24-70mm GM II, iPhone 16 Pro..."
+              required
+            />
+
+            <div className="md:col-span-2">
+              <Label htmlFor="message" required>
+                Your message
+              </Label>
+              <textarea
+                id="message"
+                name="message"
+                rows={5}
+                required
+                placeholder="Enter your message"
+                className="min-h-[100px] w-full resize-y rounded-[6px] border border-hairline bg-surface-2 px-4 pt-2.5 text-[14px] leading-relaxed text-text-hi placeholder:text-text-low focus:border-accent focus:outline-none"
+              />
+            </div>
+
+            <div className="mt-2 flex justify-center md:col-span-2 md:mt-6">
+              <button
+                type="submit"
+                className="inline-flex h-11 items-center gap-2.5 rounded-full bg-accent px-7 text-sm font-bold text-black transition-colors hover:bg-accent-hover"
+              >
+                Send message
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                </svg>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </>
   );
 }
 
-function Input({
-  label,
-  name,
-  type = "text",
-  required,
-  placeholder,
-  hint,
+function Label({
+  htmlFor,
+  required = false,
+  children,
 }: {
-  label: string;
-  name: string;
-  type?: string;
+  htmlFor: string;
   required?: boolean;
-  placeholder?: string;
-  hint?: string;
+  children: React.ReactNode;
 }) {
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-[12px] font-medium text-text-mid">
-        {label} {required && <span className="text-danger">*</span>}
-      </span>
+    <label
+      htmlFor={htmlFor}
+      className="mb-2 block text-[11px] font-bold uppercase tracking-[0.08em] text-text-mid"
+    >
+      {children}
+      {/* .color-error is #eb544a in the theme */}
+      {required && <sup className="ml-1 text-danger">*</sup>}
+    </label>
+  );
+}
+
+function Field({
+  id,
+  label,
+  required = false,
+  className = "",
+  type = "text",
+  ...rest
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+  className?: string;
+} & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div className={className}>
+      <Label htmlFor={id} required={required}>
+        {label}
+      </Label>
       <input
-        name={name}
+        id={id}
+        name={id}
         type={type}
         required={required}
-        placeholder={placeholder}
-        className="w-full rounded-[var(--r-md)] border border-hairline bg-surface-0 px-3.5 py-2.5 text-sm text-text-hi placeholder:text-text-low"
+        className="h-11 w-full rounded-[6px] border border-hairline bg-surface-2 px-4 text-[14px] text-text-hi placeholder:text-text-low focus:border-accent focus:outline-none"
+        {...rest}
       />
-      {hint && (
-        <span className="mt-1 block text-[11px] text-text-low">{hint}</span>
-      )}
-    </label>
-  );
-}
-
-function Select({
-  label,
-  name,
-  required,
-  options,
-}: {
-  label: string;
-  name: string;
-  required?: boolean;
-  options: string[];
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-[12px] font-medium text-text-mid">
-        {label} {required && <span className="text-danger">*</span>}
-      </span>
-      <select
-        name={name}
-        required={required}
-        className="w-full rounded-[var(--r-md)] border border-hairline bg-surface-0 px-3.5 py-2.5 text-sm text-text-hi"
-      >
-        <option value="">Select…</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-    </label>
+    </div>
   );
 }
