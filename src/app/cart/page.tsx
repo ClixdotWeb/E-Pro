@@ -43,18 +43,11 @@ function demoLines(): CartLine[] {
 export default function CartPage() {
   const lines = demoLines();
 
+  // The live cart page has no kicker and no rule under the title - the
+  // heading is centred and the content starts straight after it.
   return (
-    <div className="page py-8 md:py-10">
-      <header className="border-b border-hairline pb-6">
-        <p className="kicker">Step 1 of 2</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-text-hi md:text-4xl">
-          Your cart
-        </h1>
-      </header>
-
-      <div className="mt-8">
-        <CartView initialLines={lines} />
-      </div>
+    <div className="page py-10 md:py-20">
+      <CartView initialLines={lines} />
     </div>
   );
 }

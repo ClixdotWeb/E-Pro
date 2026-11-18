@@ -17,16 +17,22 @@ export function paiseToRupees(paise: Paise): number {
   return paise / 100;
 }
 
-const inrFormatter = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  minimumFractionDigits: 0,
+/**
+ * The live store renders prices as "Rs. 949.00 INR" - its Shopify
+ * money_format is "Rs. {{amount}}" with the currency code shown, and
+ * {{amount}} is the Indian-grouped figure with two decimals always.
+ *
+ * This was "₹949" here, which is shorter and arguably reads better,
+ * but it is not what the store shows, so it is matched exactly.
+ */
+const amountFormatter = new Intl.NumberFormat("en-IN", {
+  minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
 
-/** 129900 -> "₹1,299" */
+/** 94900 -> "Rs. 949.00 INR" */
 export function formatPaise(paise: Paise): string {
-  return inrFormatter.format(paise / 100);
+  return `Rs. ${amountFormatter.format(paise / 100)} INR`;
 }
 
 /** Percentage off, rounded down so we never over-discount. */
