@@ -219,7 +219,9 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
                 type="button"
                 onClick={() => setSkinOpen((v) => !v)}
                 onMouseEnter={() => setSkinOpen(true)}
-                className={`flex items-center gap-1 rounded-[var(--r-sm)] px-3 py-2 text-sm font-semibold transition-colors hover:text-accent ${
+                /* "Skin" is the one top-level item the live header
+                   keeps bold; the rest are weight 400. */
+                className={`nav-link flex items-center gap-1 px-4 py-2 text-sm font-bold transition-colors ${
                   skinOpen ? "text-accent" : "text-text-hi"
                 }`}
                 aria-expanded={skinOpen}
@@ -239,9 +241,8 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`whitespace-nowrap rounded-[var(--r-sm)] px-3 py-2 text-sm font-semibold transition-colors hover:text-accent ${
-                  pathname === item.href ? "text-accent" : "text-text-hi"
-                }`}
+                aria-current={pathname === item.href ? "page" : undefined}
+                className="nav-link whitespace-nowrap px-4 py-2 text-sm text-text-hi"
               >
                 {item.label}
               </Link>

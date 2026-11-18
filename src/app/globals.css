@@ -257,3 +257,53 @@ body {
   flex: none;
   width: calc(var(--container-height) * var(--ratio, 2));
 }
+
+/* Nav link underline, lifted from the store's own custom CSS block
+   ("NAV LINK UNDERLINE ANIMATION - hover + active indicator").
+   Desktop only, exactly as they gate it at 1025px.
+
+   Hover slides in a WHITE bar; the current page keeps a GREEN one and
+   turns the label green with a glow. Top-level links are weight 400
+   there, not semibold. */
+@media (min-width: 1025px) {
+  .nav-link {
+    position: relative;
+    overflow: visible;
+    font-weight: 400;
+    transition: color 0.3s ease;
+  }
+
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    transform-origin: center;
+    width: 80%;
+    height: 1.5px;
+    background: linear-gradient(90deg, transparent, #ffffff, transparent);
+    border-radius: 2px;
+    transition:
+      transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      background 0.3s ease;
+    pointer-events: none;
+  }
+
+  .nav-link:hover::after,
+  .nav-link[aria-expanded="true"]::after {
+    transform: translateX(-50%) scaleX(1);
+  }
+
+  .nav-link[aria-current="page"] {
+    color: #00a44f;
+    text-shadow:
+      0 0 14px rgba(0, 164, 79, 0.85),
+      0 1px 3px rgba(0, 0, 0, 0.9);
+  }
+
+  .nav-link[aria-current="page"]::after {
+    transform: translateX(-50%) scaleX(1);
+    background: linear-gradient(90deg, transparent, #00a44f, transparent);
+  }
+}
