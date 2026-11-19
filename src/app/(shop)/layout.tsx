@@ -11,6 +11,13 @@ import { getNavCategories } from "@/lib/catalog";
  * handed down. That keeps Prisma out of the browser bundle while the
  * menu still reflects what is actually in the database.
  */
+/**
+ * Rendered per request. The header shows live category counts, so a
+ * shell baked at build time would go stale the moment a product
+ * changed - and the Docker build has no database to bake it from.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function ShopLayout({
   children,
 }: {

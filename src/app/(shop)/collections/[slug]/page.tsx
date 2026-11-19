@@ -63,9 +63,16 @@ async function resolve(slug: string): Promise<Resolved | null> {
   return null;
 }
 
-export function generateStaticParams() {
-  return [...ALL_CATEGORY_SLUGS, ...ALL_FINISH_SLUGS].map((slug) => ({ slug }));
-}
+/**
+ * Rendered per request, not prerendered at build.
+ *
+ * Two reasons. The build runs in Docker with no database reachable,
+ * so prerendering could not read the catalogue anyway. And once the
+ * dashboard can edit a product, a page baked at build time would keep
+ * showing the old one until the next deploy - which defeats the point
+ * of putting the catalogue in a database.
+ */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

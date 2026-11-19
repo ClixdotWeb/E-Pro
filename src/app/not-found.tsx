@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getNavCategories } from "@/lib/catalog";
+import { CATEGORY_LABEL } from "@/lib/catalog-shared";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
@@ -7,8 +7,17 @@ import { Footer } from "@/components/Footer";
  * Root 404. It sits above the (shop) route group, so it renders in
  * the bare root layout and has to bring the storefront chrome itself.
  */
-export default async function NotFound() {
-  const navCategories = await getNavCategories();
+/**
+ * The 404 lists the devices from the static label map rather than the
+ * database. It only needs names and links, and keeping it off the
+ * database means the build can collect this page without one - the
+ * Docker build has no database reachable.
+ */
+export default function NotFound() {
+  const navCategories = Object.entries(CATEGORY_LABEL).map(([slug, name]) => ({
+    slug,
+    name,
+  }));
 
   return (
     <>

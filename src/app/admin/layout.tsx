@@ -42,6 +42,13 @@ const LOCKED_IN_PRODUCTION =
   process.env.NODE_ENV === "production" &&
   process.env.ALLOW_INSECURE_ADMIN !== "1";
 
+/**
+ * Nothing in the dashboard is prerendered. It reads live data on
+ * every screen, a baked copy would be wrong the moment anything
+ * changed, and the Docker build has no database to bake one from.
+ */
+export const dynamic = "force-dynamic";
+
 export default function AdminLayout({
   children,
 }: {

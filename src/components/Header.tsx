@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import type { NavCategory } from "@/lib/catalog-shared";
+/**
+ * The header only needs a slug and, where it is known, how many
+ * options are in that category. The 404 renders above the shop layout
+ * and has no database, so it passes names without counts - an
+ * undefined count means "unknown", and the menu links to the
+ * collection rather than claiming nothing is cut yet.
+ */
+type HeaderCategory = { slug: string; count?: number };
 
 /**
  * The live store's desktop nav, in its order: a "Skin" dropdown then
@@ -64,11 +71,11 @@ const SKIN_ORDER: { slug: string; label: string }[] = [
   { slug: "charger", label: "Charger" },
 ];
 
-function buildSkinMenu(navCategories: NavCategory[]) {
+function buildSkinMenu(navCategories: HeaderCategory[]) {
   return SKIN_ORDER.map(({ slug, label }) => ({
     slug,
     label,
-    count: navCategories.find((c) => c.slug === slug)?.count ?? 0,
+    count: navCategories.find((c) => c.slug === slug)?.count,
     finishes: (SKIN_SUBMENUS[slug] ?? []).map((f) => ({
       label: f,
       href: `/collections/${FINISH_SLUG[f]}`,
@@ -94,7 +101,7 @@ function SkinDropdown({ open, menu }: { open: boolean; menu: SkinMenu }) {
       <div className="overflow-hidden rounded-lg bg-[#4a4a4a] py-2 shadow-pop">
         {menu.map((item) => {
           const href =
-            item.count > 0 ? `/collections/${item.slug}` : "/request-model";
+            item.count === 0 ? "/request-model" : `/collections/${item.slug}`;
 
           return item.finishes.length === 0 ? (
             <Link
@@ -156,7 +163,7 @@ export function Header({
   navCategories,
   cartCount = 0,
 }: {
-  navCategories: NavCategory[];
+  navCategories: HeaderCategory[];
   cartCount?: number;
 }) {
   const skinMenu = buildSkinMenu(navCategories);
@@ -320,9 +327,9 @@ export function Header({
               <p className="kicker px-3 pb-2">Skin</p>
               {skinMenu.map((item) => {
                 const href =
-                  item.count > 0
-                    ? `/collections/${item.slug}`
-                    : "/request-model";
+                  item.count === 0
+                    ? "/request-model"
+                    : `/collections/${item.slug}`;
 
                 return item.finishes.length === 0 ? (
                   <Link

@@ -6,12 +6,9 @@ import {
   type ProductDraft,
 } from "@/components/admin/ProductForm";
 import { optionLabelFor, type CatalogProduct } from "@/lib/catalog-shared";
-import { getAllProducts, getProductBySlug } from "@/lib/catalog";
+import { getProductBySlug } from "@/lib/catalog";
 
-export async function generateStaticParams() {
-  const products = await getAllProducts();
-  return products.map((p) => ({ slug: p.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

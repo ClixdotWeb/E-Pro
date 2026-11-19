@@ -11,7 +11,6 @@ import {
   optionLabelFor,
 } from "@/lib/catalog-shared";
 import {
-  getAllProducts,
   getProductBySlug,
   getRelatedProducts,
 } from "@/lib/catalog";
@@ -22,10 +21,16 @@ import {
  * rail underneath.
  */
 
-export async function generateStaticParams() {
-  const products = await getAllProducts();
-  return products.map((p) => ({ slug: p.slug }));
-}
+/**
+ * Rendered per request, not prerendered at build.
+ *
+ * Two reasons. The build runs in Docker with no database reachable,
+ * so prerendering could not read the catalogue anyway. And once the
+ * dashboard can edit a product, a page baked at build time would keep
+ * showing the old one until the next deploy - which defeats the point
+ * of putting the catalogue in a database.
+ */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
