@@ -1,23 +1,27 @@
 # Epro Gadgets storefront - production image for Coolify.
 #
-# The target server is aarch64 (ARM64), which is fine: this project has
-# no native binaries to worry about. Prisma 7 runs through the `pg`
-# driver adapter, so no Rust query engine is downloaded, and `pg`,
-# `bcryptjs` and `zod` are all pure JavaScript. The same Dockerfile
-# therefore builds unchanged on arm64 and amd64.
+# The target server is aarch64 (ARM64), and the base is Debian slim
+# rather than Alpine on purpose.
 #
-# Alpine is safe for the same reason - there is no glibc-linked binary
-# that would need the Debian image.
+# Prisma 7 needs no Rust query engine here - it goes through the pg
+# driver adapter - but Next.js and Tailwind both ship NATIVE binaries:
+# @next/swc for the compiler and lightningcss for the CSS pipeline.
+# Those are built against glibc. On Alpine they need the musl variants
+# plus libc6-compat, which is exactly the kind of thing that fails on
+# arm64 and produces an unhelpful build error.
+#
+# Debian slim is ~40 MB larger and removes that entire class of
+# problem. The same Dockerfile builds on arm64 and amd64.
 
 # ---------- deps ----------
-FROM node:22-alpine AS deps
+FROM node:22-slim AS deps
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
 RUN npm ci
 
 # ---------- build ----------
-FROM node:22-alpine AS builder
+FROM node:22-slim AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -38,7 +42,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # ---------- runtime ----------
-FROM node:22-alpine AS runner
+FROM node:22-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -47,8 +51,9 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 # Never run the server as root.
-RUN addgroup --system --gid 1001 nodejs \
- && adduser --system --uid 1001 --ingroup nodejs nextjs
+# groupadd/useradd rather than Alpine's BusyBox addgroup/adduser.
+RUN groupadd --system --gid 1001 nodejs \
+ && useradd --system --uid 1001 --gid nodejs nextjs
 
 # The standalone server does not bundle these two directories.
 COPY --from=builder /app/public ./public
