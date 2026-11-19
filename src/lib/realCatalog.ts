@@ -321,3 +321,17 @@ export const NAV_FINISHES: { slug: string; name: string; count: number }[] =
       count: IMPORTED_PRODUCTS.filter((p) => p.finish === slug).length,
     }))
     .filter((f) => f.count > 0);
+
+/**
+ * Offers a customer can actually add to the cart right now: a real
+ * option name AND in stock.
+ *
+ * BUYABLE_OFFERS only strips placeholder names ("Default Title",
+ * "test", bare numbers) - it says nothing about stock. The dashboard
+ * was labelling that count "in stock and priced", which was wrong by
+ * 14 options, so the two are kept separate and named for what they
+ * are.
+ */
+export const IN_STOCK_OFFERS: Offer[] = BUYABLE_OFFERS.filter(
+  (o) => o.available,
+);

@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { Avatar, Card, PageHeader, Pill, Stat } from "@/components/admin/ui";
 import { formatPaise } from "@/lib/money";
-import { ALL_PRODUCTS, BUYABLE_OFFERS, IMPORT_STATS } from "@/lib/realCatalog";
+import {
+  ALL_PRODUCTS,
+  BUYABLE_OFFERS,
+  IMPORT_STATS,
+  IN_STOCK_OFFERS,
+} from "@/lib/realCatalog";
 
 export const metadata = { title: "Overview" };
 
@@ -66,6 +71,7 @@ export default function AdminOverviewPage() {
   const noPhoto = ALL_PRODUCTS.filter((p) => p.missingImages);
   const noCategory = ALL_PRODUCTS.filter((p) => !p.category);
   const oddPrices = ALL_PRODUCTS.filter((p) => p.suspiciousPrices.length > 0);
+  const soldOut = BUYABLE_OFFERS.length - IN_STOCK_OFFERS.length;
 
   const jobs = [
     {
@@ -108,10 +114,19 @@ export default function AdminOverviewPage() {
           sub={`${IMPORT_STATS.totalVariants} options in total`}
           icon={ICON.box}
         />
+        {/* "Buyable options / in stock and priced" was wrong twice over:
+            the number only excluded placeholder NAMES, and said nothing
+            about stock. This is the count someone can actually add to a
+            cart. The denominator is the real options, not the raw 205 -
+            four of those are placeholders nobody is ever offered. */}
         <Stat
-          label="Buyable options"
-          value={String(BUYABLE_OFFERS.length)}
-          sub="In stock and priced"
+          label="Options for sale"
+          value={String(IN_STOCK_OFFERS.length)}
+          sub={
+            soldOut > 0
+              ? `Of ${BUYABLE_OFFERS.length} real options — ${soldOut} sold out`
+              : `All ${BUYABLE_OFFERS.length} available`
+          }
           icon={ICON.tag}
           tone="accent"
         />
