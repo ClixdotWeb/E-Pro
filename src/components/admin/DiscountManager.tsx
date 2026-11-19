@@ -331,7 +331,7 @@ export function DiscountManager({ initial }: { initial: DiscountRow[] }) {
             <span className="w-[130px]">Code</span>
             <span className="flex-1">What it does</span>
             <span className="w-[100px] text-right">Used</span>
-            <span className="w-[110px] text-right">On / off</span>
+            <span className="w-[150px] text-right">On / off</span>
           </div>
 
           <ul>
@@ -365,7 +365,7 @@ export function DiscountManager({ initial }: { initial: DiscountRow[] }) {
                     opposite of the pill. One control shows the state
                     and changes it, and it cannot wrap onto two lines
                     the way "Turn off" did. */}
-                <div className="flex w-[110px] items-center justify-end gap-3">
+                <div className="flex w-[150px] items-center justify-end gap-2">
                   <Switch
                     on={r.active}
                     onChange={() => toggle(r.id)}

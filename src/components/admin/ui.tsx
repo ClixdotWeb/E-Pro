@@ -272,6 +272,14 @@ export function Switch({
   onChange: () => void;
   label: string;
 }) {
+  // Track 44, knob 18, 3px of breathing room each side. The knob is
+  // positioned with an explicit `left`, not a utility translate - an
+  // absolutely positioned child with no left/right falls back to its
+  // static position, which is what put the knob outside the track.
+  const KNOB = 18;
+  const TRACK = 44;
+  const PAD = 3;
+
   return (
     <button
       type="button"
@@ -279,16 +287,35 @@ export function Switch({
       aria-checked={on}
       aria-label={label}
       onClick={onChange}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-        on ? "bg-accent" : "bg-surface-3"
-      }`}
+      className="group inline-flex shrink-0 items-center gap-2.5"
     >
       <span
         aria-hidden
-        className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${
-          on ? "translate-x-6" : "translate-x-1"
+        className={`relative block rounded-full transition-colors ${
+          on ? "bg-accent" : "bg-surface-3"
         }`}
-      />
+        style={{ width: TRACK, height: KNOB + PAD * 2 }}
+      >
+        <span
+          className="absolute rounded-full bg-white shadow transition-[left] duration-200"
+          style={{
+            width: KNOB,
+            height: KNOB,
+            top: PAD,
+            left: on ? TRACK - KNOB - PAD : PAD,
+          }}
+        />
+      </span>
+
+      {/* The word, because a switch alone is a guess. */}
+      <span
+        aria-hidden
+        className={`w-7 text-left text-[12px] font-bold ${
+          on ? "text-accent" : "text-text-low"
+        }`}
+      >
+        {on ? "On" : "Off"}
+      </span>
     </button>
   );
 }
