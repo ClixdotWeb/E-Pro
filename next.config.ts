@@ -4,7 +4,10 @@ const nextConfig: NextConfig = {
   // Emits .next/standalone - a self-contained server with only the
   // node_modules it actually traced. Coolify builds this in Docker, and
   // it takes the image from ~1.2 GB to ~200 MB.
-  output: "standalone",
+  //
+  // Vercel builds its own output format and does not want a standalone
+  // server, so it is skipped there. VERCEL is set by their build.
+  ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
 
   // Evaluated once when the build starts, so the footer can print a
   // copyright year without calling new Date() during prerender.

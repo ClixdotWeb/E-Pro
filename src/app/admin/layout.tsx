@@ -25,7 +25,22 @@ export const metadata: Metadata = {
  * at the top of this layout, and then delete the guard.
  */
 
-const LOCKED_IN_PRODUCTION = process.env.NODE_ENV === "production";
+/**
+ * The lock, and the one way around it.
+ *
+ * ALLOW_INSECURE_ADMIN=1 opens the dashboard in production. It exists
+ * so the work can be shown on a deployed preview before auth is
+ * written, and it is defensible only while the dashboard holds nothing
+ * private: there is no database, so it saves nothing and reads nothing
+ * but the catalogue, which is already public on the shop.
+ *
+ * The moment real orders or customers exist, that stops being true.
+ * Delete this flag along with the guard when the session check goes
+ * in - do not leave it switched on alongside real data.
+ */
+const LOCKED_IN_PRODUCTION =
+  process.env.NODE_ENV === "production" &&
+  process.env.ALLOW_INSECURE_ADMIN !== "1";
 
 export default function AdminLayout({
   children,
