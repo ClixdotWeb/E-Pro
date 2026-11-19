@@ -37,7 +37,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # Generate the Prisma client from the schema. This needs no database
 # connection - only `prisma migrate` does, and that runs at deploy time.
-RUN npx prisma generate
+#
+# It does need the config file to LOAD, though, and prisma.config.ts
+# resolves DATABASE_URL through Prisma's env() helper, which throws
+# when the variable is unset. .env is deliberately not in the image,
+# so a placeholder is passed for this one command. Nothing reads it:
+# `generate` only writes the client from the schema.
+RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" \
+    npx prisma generate
 
 RUN npm run build
 
