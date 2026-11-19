@@ -15,10 +15,13 @@ import { CATEGORY_LABEL, type ImportedProduct } from "@/lib/realCatalog";
  * than a generic status dropdown, so a click goes straight from
  * "13 products have no photo" on the Overview to exactly those rows.
  *
- * Each row shows the things you need to decide whether to open it:
- * photo, name, category, how many options, price, and a flag when
- * something is wrong. Clicking anywhere on the row opens it - there is
- * no separate "edit" button to hunt for.
+ * Each row carries Edit and Delete on the right. The row itself is
+ * still clickable - a stretched link behind the content - so there are
+ * two ways to open a product and neither is hidden in a menu. The
+ * buttons sit above that link so they do not trigger it.
+ *
+ * Delete asks first, naming the product, and says what else goes with
+ * it. It is the one irreversible thing on this screen.
  */
 
 type Filter = "all" | "no-photo" | "odd-price" | "no-category";
@@ -39,21 +42,28 @@ export function ProductTable({
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>(initialFilter);
+  /** slugs removed in this session; real deletion needs the database */
+  const [removed, setRemoved] = useState<string[]>([]);
+
+  const live = useMemo(
+    () => products.filter((p) => !removed.includes(p.slug)),
+    [products, removed],
+  );
 
   const counts = useMemo(
     () => ({
-      all: products.length,
-      "no-photo": products.filter((p) => p.missingImages).length,
-      "odd-price": products.filter((p) => p.suspiciousPrices.length > 0).length,
-      "no-category": products.filter((p) => !p.category).length,
+      all: live.length,
+      "no-photo": live.filter((p) => p.missingImages).length,
+      "odd-price": live.filter((p) => p.suspiciousPrices.length > 0).length,
+      "no-category": live.filter((p) => !p.category).length,
     }),
-    [products],
+    [live],
   );
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    return products.filter((p) => {
+    return live.filter((p) => {
       if (filter === "no-photo" && !p.missingImages) return false;
       if (filter === "odd-price" && p.suspiciousPrices.length === 0) return false;
       if (filter === "no-category" && p.category) return false;
@@ -64,7 +74,17 @@ export function ProductTable({
         p.variants.some((v) => v.title.toLowerCase().includes(q))
       );
     });
-  }, [products, query, filter]);
+  }, [live, query, filter]);
+
+  function remove(p: ImportedProduct) {
+    const ok = confirm(
+      `Delete “${p.title}”?\n\n` +
+        `Its ${p.variants.length} option${p.variants.length === 1 ? "" : "s"} go with it, and the product page stops working for anyone who has the link.\n\n` +
+        `This cannot be undone.`,
+    );
+    if (!ok) return;
+    setRemoved((r) => [...r, p.slug]);
+  }
 
   return (
     <>
@@ -103,7 +123,7 @@ export function ProductTable({
               disabled={n === 0 && f.id !== "all"}
               className={`rounded-full border px-4 py-2 text-[13px] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                 active
-                  ? "border-accent bg-accent text-black font-bold"
+                  ? "border-accent bg-accent font-bold text-black"
                   : "border-hairline text-text-mid hover:border-hairline-strong hover:text-text-hi"
               }`}
             >
@@ -115,7 +135,12 @@ export function ProductTable({
       </div>
 
       <p className="mt-5 text-[13px] text-text-mid" aria-live="polite">
-        Showing {rows.length} of {products.length}
+        Showing {rows.length} of {live.length}
+        {removed.length > 0 && (
+          <span className="ml-2 text-text-low">
+            · {removed.length} deleted this session
+          </span>
+        )}
       </p>
 
       {/* rows */}
@@ -137,16 +162,22 @@ export function ProductTable({
             <span className="flex-1">Product</span>
             <span className="w-[180px]">Flags</span>
             <span className="w-[130px] text-right">From</span>
-            <span className="w-[18px]" />
+            <span className="w-[92px] text-right">Actions</span>
           </div>
 
           <ul>
-          {rows.map((p) => (
-            <li key={p.slug} className="border-b border-hairline last:border-0">
-              <Link
-                href={`/admin/products/${p.slug}`}
-                className="flex items-center gap-4 p-4 transition-colors hover:bg-surface-2"
+            {rows.map((p) => (
+              <li
+                key={p.slug}
+                className="relative flex items-center gap-4 border-b border-hairline p-4 transition-colors last:border-0 hover:bg-surface-2"
               >
+                {/* stretched link - the whole row opens the product */}
+                <Link
+                  href={`/admin/products/${p.slug}`}
+                  className="absolute inset-0 z-0"
+                  aria-label={`Edit ${p.title}`}
+                />
+
                 <CatalogMedia
                   src={p.images[0] ?? null}
                   seed={p.slug}
@@ -180,12 +211,33 @@ export function ProductTable({
                   {formatPaise(p.minPriceInPaise)}
                 </p>
 
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-text-low">
-                  <path d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </li>
-          ))}
+                {/* actions sit above the stretched link */}
+                <div className="relative z-10 flex w-[92px] shrink-0 justify-end gap-1">
+                  <Link
+                    href={`/admin/products/${p.slug}`}
+                    aria-label={`Edit ${p.title}`}
+                    title="Edit"
+                    className="grid h-9 w-9 place-items-center rounded-[8px] text-text-mid transition-colors hover:bg-surface-3 hover:text-text-hi"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3z" />
+                    </svg>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => remove(p)}
+                    aria-label={`Delete ${p.title}`}
+                    title="Delete"
+                    className="grid h-9 w-9 place-items-center rounded-[8px] text-text-low transition-colors hover:bg-danger/15 hover:text-danger"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M5 7h14M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M7 7l.8 12.1A1.5 1.5 0 0 0 9.3 20.5h5.4a1.5 1.5 0 0 0 1.5-1.4L17 7" />
+                    </svg>
+                  </button>
+                </div>
+              </li>
+            ))}
           </ul>
         </div>
       )}

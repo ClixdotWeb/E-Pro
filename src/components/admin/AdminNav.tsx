@@ -43,6 +43,35 @@ const NAV: { href: string; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
+    href: "/admin/stock",
+    label: "Stock",
+    icon: (
+      <>
+        <path d="M3 9h18M3 15h18" />
+        <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
+      </>
+    ),
+  },
+  {
+    href: "/admin/categories",
+    label: "Categories",
+    icon: (
+      <>
+        <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
+        <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
+        <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
+        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" />
+      </>
+    ),
+  },
+  {
+    href: "/admin/reviews",
+    label: "Reviews",
+    icon: (
+      <path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.4 6.7 19.2l1.1-5.9L3.5 9.2l5.9-.8z" />
+    ),
+  },
+  {
     href: "/admin/customers",
     label: "Customers",
     icon: (
