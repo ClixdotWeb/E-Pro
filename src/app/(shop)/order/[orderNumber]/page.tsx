@@ -3,11 +3,8 @@ import type { Metadata } from "next";
 import { CatalogMedia } from "@/components/CatalogMedia";
 import { formatPaise } from "@/lib/money";
 import { calculateTotals } from "@/lib/pricing";
-import {
-  BUYABLE_OFFERS,
-  getProductBySlug,
-  optionLabelFor,
-} from "@/lib/realCatalog";
+import { optionLabelFor } from "@/lib/catalog-shared";
+import { getOffers, getProductBySlug } from "@/lib/catalog";
 
 /**
  * Order confirmation — where checkout lands after a successful payment.
@@ -32,29 +29,34 @@ export async function generateMetadata({
   };
 }
 
-function stubLines() {
-  return BUYABLE_OFFERS.filter((o) => o.available && o.imageUrl)
-    .slice(0, 2)
-    .map((o, i) => {
-      const product = getProductBySlug(o.productSlug);
-      return {
-        id: o.id,
-        productSlug: o.productSlug,
-        productTitle: o.productTitle,
-        variantTitle: o.variantTitle,
-        optionLabel: product ? optionLabelFor(product) : "Option",
-        unitInPaise: o.priceInPaise,
-        imageUrl: o.imageUrl,
-        quantity: i === 0 ? 1 : 2,
-      };
-    });
+async function stubLines() {
+  const offers = await getOffers();
+
+  return Promise.all(
+    offers
+      .filter((o) => o.available && o.imageUrl)
+      .slice(0, 2)
+      .map(async (o, i) => {
+        const product = await getProductBySlug(o.productSlug);
+        return {
+          id: o.id,
+          productSlug: o.productSlug,
+          productTitle: o.productTitle,
+          variantTitle: o.variantTitle,
+          optionLabel: product ? optionLabelFor(product) : "Option",
+          unitInPaise: o.priceInPaise,
+          imageUrl: o.imageUrl,
+          quantity: i === 0 ? 1 : 2,
+        };
+      }),
+  );
 }
 
 export default async function OrderConfirmationPage({
   params,
 }: PageProps<"/order/[orderNumber]">) {
   const { orderNumber } = await params;
-  const lines = stubLines();
+  const lines = await stubLines();
 
   const totals = calculateTotals(
     lines.map((l) => ({

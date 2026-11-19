@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Card } from "./ui";
 import { CatalogMedia } from "@/components/CatalogMedia";
 import { formatPaise } from "@/lib/money";
-import { CATEGORY_LABEL, FINISH_LABEL } from "@/lib/realCatalog";
+import { CATEGORY_LABEL, FINISH_LABEL } from "@/lib/catalog-shared";
 
 /**
  * Add / edit a product.

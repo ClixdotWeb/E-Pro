@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { formatPaise } from "@/lib/money";
-import type { ImportedVariant } from "@/lib/realCatalog";
+import type { CatalogVariant } from "@/lib/catalog-shared";
 
 /**
  * Variant picker for a real imported product.
@@ -26,7 +26,7 @@ const GRID_THRESHOLD = 12;
 type Props = {
   productSlug: string;
   productTitle: string;
-  variants: ImportedVariant[];
+  variants: CatalogVariant[];
   /** what the variants actually name, e.g. "Model" or "Brand" */
   optionLabel: string;
 };
@@ -37,7 +37,7 @@ export function VariantPicker({
   variants,
   optionLabel,
 }: Props) {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   const [added, setAdded] = useState(0);
 
@@ -49,7 +49,7 @@ export function VariantPicker({
     return variants.filter((v) => v.title.toLowerCase().includes(q));
   }, [variants, filter]);
 
-  const selected = variants.find((v) => v.shopifyId === selectedId) ?? null;
+  const selected = variants.find((v) => v.id === selectedId) ?? null;
 
   function addToCart() {
     if (!selected?.available) return;
@@ -97,15 +97,15 @@ export function VariantPicker({
           className="mt-3 max-h-[320px] divide-y divide-hairline overflow-y-auto rounded-[var(--r-md)] border border-hairline"
         >
           {shown.map((v) => {
-            const active = v.shopifyId === selectedId;
+            const active = v.id === selectedId;
             return (
-              <li key={v.shopifyId}>
+              <li key={v.id}>
                 <button
                   type="button"
                   role="radio"
                   aria-checked={active}
                   disabled={!v.available}
-                  onClick={() => setSelectedId(v.shopifyId)}
+                  onClick={() => setSelectedId(v.id)}
                   className={`flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors ${
                     active
                       ? "bg-accent-soft"
@@ -140,15 +140,15 @@ export function VariantPicker({
       ) : (
         <ul role="radiogroup" aria-label={optionLabel} className="mt-3 grid grid-cols-2 gap-2">
           {shown.map((v) => {
-            const active = v.shopifyId === selectedId;
+            const active = v.id === selectedId;
             return (
-              <li key={v.shopifyId}>
+              <li key={v.id}>
                 <button
                   type="button"
                   role="radio"
                   aria-checked={active}
                   disabled={!v.available}
-                  onClick={() => setSelectedId(v.shopifyId)}
+                  onClick={() => setSelectedId(v.id)}
                   className={`w-full rounded-[var(--r-md)] border px-3 py-2.5 text-left transition-colors ${
                     active
                       ? "border-accent bg-accent-soft"

@@ -2,11 +2,8 @@ import type { Metadata } from "next";
 import { CheckoutView } from "@/components/CheckoutView";
 import type { CartLine } from "@/components/CartView";
 import { paymentStatus } from "@/lib/payments";
-import {
-  BUYABLE_OFFERS,
-  getProductBySlug,
-  optionLabelFor,
-} from "@/lib/realCatalog";
+import { optionLabelFor } from "@/lib/catalog-shared";
+import { getOffers, getProductBySlug } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -23,28 +20,29 @@ export const metadata: Metadata = {
  * page works the same whether the answer turns out to be Razorpay,
  * Cashfree, PhonePe or something else.
  */
-function demoLines(): CartLine[] {
-  const picks = BUYABLE_OFFERS.filter((o) => o.available && o.imageUrl).slice(
-    0,
-    2,
-  );
+async function demoLines(): Promise<CartLine[]> {
+  const offers = await getOffers();
+  const picks = offers.filter((o) => o.available && o.imageUrl).slice(0, 2);
 
-  return picks.map((o, i) => {
-    const product = getProductBySlug(o.productSlug);
-    return {
-      id: o.id,
-      productSlug: o.productSlug,
-      productTitle: o.productTitle,
-      variantTitle: o.variantTitle,
-      optionLabel: product ? optionLabelFor(product) : "Option",
-      unitInPaise: o.priceInPaise,
-      imageUrl: o.imageUrl,
-      quantity: i === 0 ? 1 : 2,
-    };
-  });
+  return Promise.all(
+    picks.map(async (o, i) => {
+      const product = await getProductBySlug(o.productSlug);
+
+      return {
+        id: o.id,
+        productSlug: o.productSlug,
+        productTitle: o.productTitle,
+        variantTitle: o.variantTitle,
+        optionLabel: product ? optionLabelFor(product) : "Option",
+        unitInPaise: o.priceInPaise,
+        imageUrl: o.imageUrl,
+        quantity: i === 0 ? 1 : 2,
+      };
+    }),
+  );
 }
 
-export default function CheckoutPage() {
+export default async function CheckoutPage() {
   const status = paymentStatus();
 
   return (
@@ -58,7 +56,7 @@ export default function CheckoutPage() {
 
       <div className="mt-8">
         <CheckoutView
-          lines={demoLines()}
+          lines={await demoLines()}
           payment={{ displayName: status.displayName, live: status.live }}
         />
       </div>

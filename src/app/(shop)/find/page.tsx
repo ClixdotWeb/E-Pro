@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { SkinFinder } from "@/components/SkinFinder";
-import { BUYABLE_OFFERS, CATEGORIES } from "@/lib/realCatalog";
+import { getOffers, getNavCategories } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Find your skin",
@@ -13,6 +13,11 @@ export default async function FindPage({
   searchParams,
 }: PageProps<"/find">) {
   const sp = await searchParams;
+  const [offers, navCategories] = await Promise.all([
+    getOffers(),
+    getNavCategories(),
+  ]);
+  const categories = navCategories.filter((c) => c.count > 0);
   const device = typeof sp.device === "string" ? sp.device : undefined;
 
   return (
@@ -27,8 +32,8 @@ export default async function FindPage({
 
         <p className="mt-5 max-w-md text-[15px] leading-relaxed text-text-mid">
           Type any part of your device — a focal length, a brand, a model
-          number — and add it straight to the cart. {BUYABLE_OFFERS.length}{" "}
-          options across {CATEGORIES.length} device types.
+          number — and add it straight to the cart. {offers.length}{" "}
+          options across {categories.length} device types.
         </p>
 
         <div className="mt-8">
@@ -59,7 +64,11 @@ export default async function FindPage({
       </div>
 
       <div>
-        <SkinFinder initialCategory={device} />
+        <SkinFinder
+          offers={offers}
+          categories={categories}
+          initialCategory={device}
+        />
       </div>
     </div>
   );

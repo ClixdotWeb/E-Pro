@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { NAV_CATEGORIES, NAV_FINISHES } from "@/lib/realCatalog";
+import { getNavCategories, getNavFinishes } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "All collections",
@@ -20,9 +20,14 @@ export const metadata: Metadata = {
  * nobody ever finds that out. They route to /request-model instead of
  * an empty grid.
  */
-export default function CollectionsIndexPage() {
-  const stocked = NAV_CATEGORIES.filter((c) => c.count > 0);
-  const onRequest = NAV_CATEGORIES.filter((c) => c.count === 0);
+export default async function CollectionsIndexPage() {
+  const [navCategories, navFinishes] = await Promise.all([
+    getNavCategories(),
+    getNavFinishes(),
+  ]);
+
+  const stocked = navCategories.filter((c) => c.count > 0);
+  const onRequest = navCategories.filter((c) => c.count === 0);
 
   return (
     <div className="page py-8 md:py-10">
@@ -91,11 +96,11 @@ export default function CollectionsIndexPage() {
       )}
 
       {/* finishes */}
-      {NAV_FINISHES.length > 0 && (
+      {navFinishes.length > 0 && (
         <section className="mt-12 border-t border-hairline pt-10">
           <h2 className="text-sm font-semibold text-text-hi">By finish</h2>
           <ul className="mt-4 flex flex-wrap gap-2">
-            {NAV_FINISHES.map((f) => (
+            {navFinishes.map((f) => (
               <li key={f.slug}>
                 <Link
                   href={`/collections/${f.slug}`}

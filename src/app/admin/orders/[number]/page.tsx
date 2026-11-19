@@ -1,6 +1,6 @@
 import { Card, PageHeader, Pill } from "@/components/admin/ui";
 import { formatPaise } from "@/lib/money";
-import { BUYABLE_OFFERS } from "@/lib/realCatalog";
+import { getOffers } from "@/lib/catalog";
 
 export async function generateMetadata({
   params,
@@ -24,7 +24,8 @@ export default async function AdminOrderPage({
 }: PageProps<"/admin/orders/[number]">) {
   const { number } = await params;
 
-  const lines = BUYABLE_OFFERS.filter((o) => o.available).slice(0, 2);
+  const offers = await getOffers();
+  const lines = offers.filter((o) => o.available).slice(0, 2);
   const total = lines.reduce((n, l) => n + l.priceInPaise, 0);
 
   return (

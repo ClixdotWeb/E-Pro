@@ -6,7 +6,7 @@ import {
   GST_RATE_BPS,
 } from "@/lib/pricing";
 import { formatPaise } from "@/lib/money";
-import { IMPORT_STATS } from "@/lib/realCatalog";
+import { getCatalogStats } from "@/lib/catalog";
 
 export const metadata = { title: "Settings" };
 
@@ -23,7 +23,8 @@ export const metadata = { title: "Settings" };
  * are changed where they live, not in a form that pretends to own
  * them.
  */
-export default function AdminSettingsPage() {
+export default async function AdminSettingsPage() {
+  const stats = await getCatalogStats();
   const payment = paymentStatus();
   const hasDatabase = Boolean(process.env.DATABASE_URL);
 
@@ -90,16 +91,16 @@ export default function AdminSettingsPage() {
           hint="Imported from the Shopify storefront. Re-run the importer to refresh it."
         >
           <dl className="grid gap-3 text-[14px] sm:grid-cols-2">
-            <Row label="Products imported" value={String(IMPORT_STATS.imported)} />
-            <Row label="Options" value={String(IMPORT_STATS.totalVariants)} />
+            <Row label="Products imported" value={String(stats.products)} />
+            <Row label="Options" value={String(stats.totalVariants)} />
             <Row
               label="Skipped"
-              value={String(IMPORT_STATS.skipped)}
+              value={String(stats.noCategory)}
               note="Placeholder titles like “werdx”"
             />
             <Row
               label="Missing photos"
-              value={String(IMPORT_STATS.missingImages)}
+              value={String(stats.missingImages)}
             />
           </dl>
 

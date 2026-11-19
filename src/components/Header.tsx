@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { NAV_CATEGORIES } from "@/lib/realCatalog";
+import type { NavCategory } from "@/lib/catalog-shared";
 
 /**
  * The live store's desktop nav, in its order: a "Skin" dropdown then
@@ -64,15 +64,19 @@ const SKIN_ORDER: { slug: string; label: string }[] = [
   { slug: "charger", label: "Charger" },
 ];
 
-const SKIN_MENU = SKIN_ORDER.map(({ slug, label }) => ({
-  slug,
-  label,
-  count: NAV_CATEGORIES.find((c) => c.slug === slug)?.count ?? 0,
-  finishes: (SKIN_SUBMENUS[slug] ?? []).map((f) => ({
-    label: f,
-    href: `/collections/${FINISH_SLUG[f]}`,
-  })),
-}));
+function buildSkinMenu(navCategories: NavCategory[]) {
+  return SKIN_ORDER.map(({ slug, label }) => ({
+    slug,
+    label,
+    count: navCategories.find((c) => c.slug === slug)?.count ?? 0,
+    finishes: (SKIN_SUBMENUS[slug] ?? []).map((f) => ({
+      label: f,
+      href: `/collections/${FINISH_SLUG[f]}`,
+    })),
+  }));
+}
+
+type SkinMenu = ReturnType<typeof buildSkinMenu>;
 
 /**
  * The dropdown panel itself.
@@ -82,13 +86,13 @@ const SKIN_MENU = SKIN_ORDER.map(({ slug, label }) => ({
  * around that button, so it tracks the word rather than sitting in the
  * middle of the header.
  */
-function SkinDropdown({ open }: { open: boolean }) {
+function SkinDropdown({ open, menu }: { open: boolean; menu: SkinMenu }) {
   if (!open) return null;
 
   return (
     <div className="absolute left-0 top-full z-50 hidden w-[400px] pt-2 md:block">
       <div className="overflow-hidden rounded-lg bg-[#4a4a4a] py-2 shadow-pop">
-        {SKIN_MENU.map((item) => {
+        {menu.map((item) => {
           const href =
             item.count > 0 ? `/collections/${item.slug}` : "/request-model";
 
@@ -148,7 +152,14 @@ const NAV = [
   { label: "About us", href: "/about" },
 ];
 
-export function Header({ cartCount = 0 }: { cartCount?: number }) {
+export function Header({
+  navCategories,
+  cartCount = 0,
+}: {
+  navCategories: NavCategory[];
+  cartCount?: number;
+}) {
+  const skinMenu = buildSkinMenu(navCategories);
   const [skinOpen, setSkinOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
@@ -234,7 +245,7 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
                 />
               </button>
 
-              <SkinDropdown open={skinOpen} />
+              <SkinDropdown open={skinOpen} menu={skinMenu} />
             </div>
 
             {NAV.map((item) => (
@@ -307,7 +318,7 @@ export function Header({ cartCount = 0 }: { cartCount?: number }) {
               {/* Same menu as the desktop dropdown, so the two cannot
                   drift apart the way they did before. */}
               <p className="kicker px-3 pb-2">Skin</p>
-              {SKIN_MENU.map((item) => {
+              {skinMenu.map((item) => {
                 const href =
                   item.count > 0
                     ? `/collections/${item.slug}`

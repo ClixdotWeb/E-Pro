@@ -1,10 +1,12 @@
 import { NotSavingYet, PageHeader } from "@/components/admin/ui";
 import { StockTable } from "@/components/admin/StockTable";
-import { ALL_PRODUCTS } from "@/lib/realCatalog";
+import { getAllProducts } from "@/lib/catalog";
 
 export const metadata = { title: "Stock" };
 
-export default function AdminStockPage() {
+export default async function AdminStockPage() {
+  const products = await getAllProducts();
+
   return (
     <>
       <PageHeader
@@ -14,7 +16,7 @@ export default function AdminStockPage() {
 
       <NotSavingYet what="Stock" />
 
-      <StockTable products={ALL_PRODUCTS} />
+      <StockTable products={products} />
     </>
   );
 }

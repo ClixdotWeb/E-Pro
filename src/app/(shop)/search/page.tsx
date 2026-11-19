@@ -5,11 +5,10 @@ import { formatPaise } from "@/lib/money";
 import {
   CATEGORY_LABEL,
   FINISH_LABEL,
-  NAV_CATEGORIES,
-  getProductBySlug,
   optionLabelFor,
-  searchOffers,
-} from "@/lib/realCatalog";
+  rankOffers,
+} from "@/lib/catalog-shared";
+import { getAllProducts, getNavCategories, getOffers } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Search",
@@ -30,7 +29,17 @@ export default async function SearchPage({
 }: PageProps<"/search">) {
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q : "";
-  const results = q ? searchOffers(q, { limit: 60 }) : [];
+  const [offers, navCategories, products] = await Promise.all([
+    getOffers(),
+    getNavCategories(),
+    getAllProducts(),
+  ]);
+
+  // One lookup instead of a query per row.
+  const optionLabels = new Map(
+    products.map((p) => [p.slug, optionLabelFor(p)]),
+  );
+  const results = q ? rankOffers(offers, q, { limit: 60 }) : [];
 
   return (
     <div className="page py-8 md:py-10">
@@ -73,7 +82,7 @@ export default async function SearchPage({
         <div className="mt-12">
           <p className="kicker">Browse by device instead</p>
           <ul className="mt-4 flex flex-wrap gap-2">
-            {NAV_CATEGORIES.map((c) => (
+            {navCategories.map((c) => (
               <li key={c.slug}>
                 <Link
                   href={`/collections/${c.slug}`}
@@ -112,8 +121,8 @@ export default async function SearchPage({
 
           <ul className="mt-4 divide-y divide-hairline border-y border-hairline">
             {results.map((offer) => {
-              const product = getProductBySlug(offer.productSlug);
-              const optionLabel = product ? optionLabelFor(product) : "Option";
+              const optionLabel =
+                optionLabels.get(offer.productSlug) ?? "Option";
 
               return (
                 <li key={offer.id}>

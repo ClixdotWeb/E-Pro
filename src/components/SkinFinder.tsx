@@ -2,12 +2,11 @@
 
 import { useMemo, useRef, useState } from "react";
 import {
-  CATEGORIES,
   FINISH_LABEL,
-  searchOffers,
+  rankOffers,
   swatchFor,
   type Offer,
-} from "@/lib/realCatalog";
+} from "@/lib/catalog-shared";
 import { formatPaise } from "@/lib/money";
 
 /**
@@ -21,12 +20,21 @@ import { formatPaise } from "@/lib/money";
  */
 
 type Props = {
+  /** every buyable option, passed in from a server component */
+  offers: Offer[];
+  /** device chips, already filtered to the ones with stock */
+  categories: { slug: string; name: string; count: number }[];
   /** compact variant for the home hero */
   compact?: boolean;
   initialCategory?: string;
 };
 
-export function SkinFinder({ compact = false, initialCategory }: Props) {
+export function SkinFinder({
+  offers,
+  categories,
+  compact = false,
+  initialCategory,
+}: Props) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>(initialCategory ?? "all");
   const [added, setAdded] = useState<Record<string, number>>({});
@@ -36,8 +44,8 @@ export function SkinFinder({ compact = false, initialCategory }: Props) {
   const limit = compact ? 6 : 50;
 
   const results = useMemo(
-    () => searchOffers(query, { category, limit }),
-    [query, category, limit],
+    () => rankOffers(offers, query, { category, limit }),
+    [offers, query, category, limit],
   );
 
   // Reset the keyboard cursor whenever the result set changes, adjusted
@@ -122,10 +130,10 @@ export function SkinFinder({ compact = false, initialCategory }: Props) {
           active={category === "all"}
           onClick={() => setCategory("all")}
         />
-        {CATEGORIES.map((c) => (
+        {categories.map((c) => (
           <Chip
             key={c.slug}
-            label={c.label}
+            label={c.name}
             count={c.count}
             active={category === c.slug}
             onClick={() => setCategory(c.slug)}

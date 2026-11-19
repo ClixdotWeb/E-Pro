@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Empty, Pill } from "./ui";
 import { formatPaise } from "@/lib/money";
-import { CATEGORY_LABEL, type ImportedProduct } from "@/lib/realCatalog";
+import { CATEGORY_LABEL, type CatalogProduct } from "@/lib/catalog-shared";
 
 /**
  * Stock control.
@@ -33,12 +33,12 @@ type Row = {
   stock: number;
 };
 
-export function StockTable({ products }: { products: ImportedProduct[] }) {
+export function StockTable({ products }: { products: CatalogProduct[] }) {
   const initial = useMemo<Row[]>(
     () =>
       products.flatMap((p) =>
         p.variants.map((v) => ({
-          key: `${p.slug}:${v.shopifyId}`,
+          key: `${p.slug}:${v.id}`,
           productSlug: p.slug,
           productTitle: p.title,
           category: p.category,

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { NAV_CATEGORIES } from "@/lib/realCatalog";
+import { getNavCategories } from "@/lib/catalog";
 
 /**
  * Categories — rebuilt from the live site's own custom-liquid section
@@ -46,8 +46,9 @@ const TILES = [
   { slug: "wireless-earbuds", label: "Wireless Earbuds" },
 ];
 
-export function CategoryGrid() {
-  const counts = new Map(NAV_CATEGORIES.map((c) => [c.slug, c.count]));
+export async function CategoryGrid() {
+  const navCategories = await getNavCategories();
+  const counts = new Map(navCategories.map((c) => [c.slug, c.count]));
 
   return (
     <section className="bg-surface-0 px-5 py-10 md:px-8 md:py-20">

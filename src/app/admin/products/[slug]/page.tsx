@@ -5,27 +5,24 @@ import {
   ProductForm,
   type ProductDraft,
 } from "@/components/admin/ProductForm";
-import {
-  ALL_PRODUCTS,
-  getProductBySlug,
-  optionLabelFor,
-  type ImportedProduct,
-} from "@/lib/realCatalog";
+import { optionLabelFor, type CatalogProduct } from "@/lib/catalog-shared";
+import { getAllProducts, getProductBySlug } from "@/lib/catalog";
 
-export function generateStaticParams() {
-  return ALL_PRODUCTS.map((p) => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  const products = await getAllProducts();
+  return products.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({
   params,
 }: PageProps<"/admin/products/[slug]">) {
   const { slug } = await params;
-  const p = getProductBySlug(slug);
+  const p = await getProductBySlug(slug);
   return { title: p ? p.title : "Product not found" };
 }
 
 /** Catalogue row -> what the form edits. Prices come back to rupees. */
-function toDraft(p: ImportedProduct): ProductDraft {
+function toDraft(p: CatalogProduct): ProductDraft {
   return {
     title: p.title,
     slug: p.slug,
@@ -36,11 +33,11 @@ function toDraft(p: ImportedProduct): ProductDraft {
     optionLabel: optionLabelFor(p),
     images: p.images,
     variants: p.variants.map((v) => ({
-      key: String(v.shopifyId),
+      key: v.id,
       title: v.title,
       price: String(v.priceInPaise / 100),
-      stock: v.available ? "1" : "0",
-      sku: v.sku ?? "",
+      stock: String(v.stock),
+      sku: v.sku,
     })),
   };
 }
@@ -49,7 +46,7 @@ export default async function EditProductPage({
   params,
 }: PageProps<"/admin/products/[slug]">) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
   return (

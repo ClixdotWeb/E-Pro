@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { CatalogMedia } from "@/components/CatalogMedia";
 import { Empty, Pill } from "./ui";
 import { formatPaise } from "@/lib/money";
-import { CATEGORY_LABEL, type ImportedProduct } from "@/lib/realCatalog";
+import { CATEGORY_LABEL, type CatalogProduct } from "@/lib/catalog-shared";
 
 /**
  * Product list.
@@ -37,7 +37,7 @@ export function ProductTable({
   products,
   initialFilter = "all",
 }: {
-  products: ImportedProduct[];
+  products: CatalogProduct[];
   initialFilter?: Filter;
 }) {
   const [query, setQuery] = useState("");
@@ -76,7 +76,7 @@ export function ProductTable({
     });
   }, [live, query, filter]);
 
-  function remove(p: ImportedProduct) {
+  function remove(p: CatalogProduct) {
     const ok = confirm(
       `Delete “${p.title}”?\n\n` +
         `Its ${p.variants.length} option${p.variants.length === 1 ? "" : "s"} go with it, and the product page stops working for anyone who has the link.\n\n` +

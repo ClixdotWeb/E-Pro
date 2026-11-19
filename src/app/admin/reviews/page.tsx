@@ -1,6 +1,6 @@
 import { NotSavingYet, PageHeader } from "@/components/admin/ui";
 import { ReviewList, type ReviewRow } from "@/components/admin/ReviewList";
-import { ALL_PRODUCTS } from "@/lib/realCatalog";
+import { getAllProducts } from "@/lib/catalog";
 
 export const metadata = { title: "Reviews" };
 
@@ -13,8 +13,9 @@ export const metadata = { title: "Reviews" };
  * rows are examples showing the two states; real ones arrive when the
  * form and the database do.
  */
-const EXAMPLES: ReviewRow[] = (() => {
-  const [a, b, c] = ALL_PRODUCTS.filter((p) => p.images.length > 0).slice(0, 3);
+async function examples(): Promise<ReviewRow[]> {
+  const all = await getAllProducts();
+  const [a, b, c] = all.filter((p) => p.images.length > 0).slice(0, 3);
 
   return [
     {
@@ -51,9 +52,10 @@ const EXAMPLES: ReviewRow[] = (() => {
       approved: true,
     },
   ];
-})();
+}
 
-export default function AdminReviewsPage() {
+export default async function AdminReviewsPage() {
+  const rows = await examples();
   return (
     <>
       <PageHeader
@@ -63,7 +65,7 @@ export default function AdminReviewsPage() {
 
       <NotSavingYet what="Publishing and deleting" />
 
-      <ReviewList initial={EXAMPLES} />
+      <ReviewList initial={rows} />
     </>
   );
 }

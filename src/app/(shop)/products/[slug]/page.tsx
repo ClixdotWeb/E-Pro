@@ -6,13 +6,15 @@ import { ProductCard } from "@/components/ProductCard";
 import { VariantPicker } from "@/components/VariantPicker";
 import { formatPaise } from "@/lib/money";
 import {
-  ALL_PRODUCTS,
   CATEGORY_LABEL,
   FINISH_LABEL,
-  getProductBySlug,
   optionLabelFor,
-  relatedProducts,
-} from "@/lib/realCatalog";
+} from "@/lib/catalog-shared";
+import {
+  getAllProducts,
+  getProductBySlug,
+  getRelatedProducts,
+} from "@/lib/catalog";
 
 /**
  * Product page in the live theme's layout: media column on the left,
@@ -20,15 +22,16 @@ import {
  * rail underneath.
  */
 
-export function generateStaticParams() {
-  return ALL_PRODUCTS.map((p) => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  const products = await getAllProducts();
+  return products.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({
   params,
 }: PageProps<"/products/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product) return { title: "Product not found" };
 
   const plain = product.description.replace(/\s+/g, " ").trim();
@@ -48,11 +51,11 @@ export default async function ProductPage({
   params,
 }: PageProps<"/products/[slug]">) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
   const optionLabel = optionLabelFor(product);
-  const related = relatedProducts(product);
+  const related = await getRelatedProducts(product);
   const categoryLabel = product.category
     ? (CATEGORY_LABEL[product.category] ?? product.category)
     : null;

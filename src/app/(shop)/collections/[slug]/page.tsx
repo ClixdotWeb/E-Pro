@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/ProductCard";
 import {
-  ALL_PRODUCTS,
   CATEGORY_LABEL,
   FINISH_LABEL,
-  type ImportedProduct,
-} from "@/lib/realCatalog";
+  type CatalogProduct,
+} from "@/lib/catalog-shared";
+import { getProductsForCategory, getProductsForFinish } from "@/lib/catalog";
 
 /**
  * Collection page, laid out like the live product grid.
@@ -38,16 +38,16 @@ type Resolved = {
   kind: "category" | "finish";
   slug: string;
   label: string;
-  products: ImportedProduct[];
+  products: CatalogProduct[];
 };
 
-function resolve(slug: string): Resolved | null {
+async function resolve(slug: string): Promise<Resolved | null> {
   if (ALL_CATEGORY_SLUGS.includes(slug)) {
     return {
       kind: "category",
       slug,
       label: CATEGORY_LABEL[slug],
-      products: ALL_PRODUCTS.filter((p) => p.category === slug),
+      products: await getProductsForCategory(slug),
     };
   }
 
@@ -56,7 +56,7 @@ function resolve(slug: string): Resolved | null {
       kind: "finish",
       slug,
       label: FINISH_LABEL[slug],
-      products: ALL_PRODUCTS.filter((p) => p.finish === slug),
+      products: await getProductsForFinish(slug),
     };
   }
 
@@ -71,7 +71,7 @@ export async function generateMetadata({
   params,
 }: PageProps<"/collections/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const found = resolve(slug);
+  const found = await resolve(slug);
   if (!found) return { title: "Collection not found" };
   return { title: found.label };
 }
@@ -80,7 +80,7 @@ export default async function CollectionPage({
   params,
 }: PageProps<"/collections/[slug]">) {
   const { slug } = await params;
-  const found = resolve(slug);
+  const found = await resolve(slug);
   if (!found) notFound();
 
   const { label, products } = found;

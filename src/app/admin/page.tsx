@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { Avatar, Card, PageHeader, Pill, Stat } from "@/components/admin/ui";
 import { formatPaise } from "@/lib/money";
-import {
-  ALL_PRODUCTS,
-  BUYABLE_OFFERS,
-  IMPORT_STATS,
-  IN_STOCK_OFFERS,
-} from "@/lib/realCatalog";
+import { getAllProducts, getCatalogStats } from "@/lib/catalog";
 
 export const metadata = { title: "Overview" };
 
@@ -67,11 +62,16 @@ const ICON = {
   ),
 };
 
-export default function AdminOverviewPage() {
-  const noPhoto = ALL_PRODUCTS.filter((p) => p.missingImages);
-  const noCategory = ALL_PRODUCTS.filter((p) => !p.category);
-  const oddPrices = ALL_PRODUCTS.filter((p) => p.suspiciousPrices.length > 0);
-  const soldOut = BUYABLE_OFFERS.length - IN_STOCK_OFFERS.length;
+export default async function AdminOverviewPage() {
+  const [products, stats] = await Promise.all([
+    getAllProducts(),
+    getCatalogStats(),
+  ]);
+
+  const noPhoto = products.filter((p) => p.missingImages);
+  const noCategory = products.filter((p) => !p.category);
+  const oddPrices = products.filter((p) => p.suspiciousPrices.length > 0);
+  const soldOut = stats.realOptions - stats.inStock;
 
   const jobs = [
     {
@@ -110,8 +110,8 @@ export default function AdminOverviewPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat
           label="Products"
-          value={String(ALL_PRODUCTS.length)}
-          sub={`${IMPORT_STATS.totalVariants} options in total`}
+          value={String(stats.products)}
+          sub={`${stats.totalVariants} options in total`}
           icon={ICON.box}
         />
         {/* "Buyable options / in stock and priced" was wrong twice over:
@@ -121,11 +121,11 @@ export default function AdminOverviewPage() {
             four of those are placeholders nobody is ever offered. */}
         <Stat
           label="Options for sale"
-          value={String(IN_STOCK_OFFERS.length)}
+          value={String(stats.inStock)}
           sub={
             soldOut > 0
-              ? `Of ${BUYABLE_OFFERS.length} real options — ${soldOut} sold out`
-              : `All ${BUYABLE_OFFERS.length} available`
+              ? `Of ${stats.realOptions} real options — ${soldOut} sold out`
+              : `All ${stats.realOptions} available`
           }
           icon={ICON.tag}
           tone="accent"

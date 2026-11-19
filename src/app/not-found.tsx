@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { NAV_CATEGORIES } from "@/lib/realCatalog";
+import { getNavCategories } from "@/lib/catalog";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
@@ -7,10 +7,12 @@ import { Footer } from "@/components/Footer";
  * Root 404. It sits above the (shop) route group, so it renders in
  * the bare root layout and has to bring the storefront chrome itself.
  */
-export default function NotFound() {
+export default async function NotFound() {
+  const navCategories = await getNavCategories();
+
   return (
     <>
-      <Header />
+      <Header navCategories={navCategories} />
       <main id="main" className="flex-1">
     <div className="page grid place-items-center py-28 text-center">
       <p className="font-mono text-xs font-semibold tracking-widest text-accent">
@@ -25,7 +27,7 @@ export default function NotFound() {
       </p>
 
       <ul className="mt-8 flex max-w-lg flex-wrap justify-center gap-2">
-        {NAV_CATEGORIES.map((c) => (
+        {navCategories.map((c) => (
           <li key={c.slug}>
             <Link
               href={`/collections/${c.slug}`}

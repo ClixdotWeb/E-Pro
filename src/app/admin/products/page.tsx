@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/admin/ui";
 import { ProductTable } from "@/components/admin/ProductTable";
-import { ALL_PRODUCTS } from "@/lib/realCatalog";
+import { getAllProducts } from "@/lib/catalog";
 
 export const metadata = { title: "Products" };
 
@@ -14,6 +14,7 @@ export default async function AdminProductsPage({
   const sp = await searchParams;
   const raw = typeof sp.filter === "string" ? sp.filter : "all";
   const filter = (VALID as string[]).includes(raw) ? (raw as Filter) : "all";
+  const products = await getAllProducts();
 
   return (
     <>
@@ -23,7 +24,7 @@ export default async function AdminProductsPage({
         action={{ label: "Add product", href: "/admin/products/new" }}
       />
 
-      <ProductTable products={ALL_PRODUCTS} initialFilter={filter} />
+      <ProductTable products={products} initialFilter={filter} />
     </>
   );
 }

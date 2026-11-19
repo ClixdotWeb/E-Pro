@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CartView, type CartLine } from "@/components/CartView";
-import { BUYABLE_OFFERS, getProductBySlug, optionLabelFor } from "@/lib/realCatalog";
+import { optionLabelFor } from "@/lib/catalog-shared";
+import { getOffers, getProductBySlug } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Cart",
@@ -18,30 +19,30 @@ export const metadata: Metadata = {
  * When the cart table lands, this function reads the session's cart
  * instead and nothing in CartView changes.
  */
-function demoLines(): CartLine[] {
-  const picks = BUYABLE_OFFERS.filter((o) => o.available && o.imageUrl).slice(
-    0,
-    2,
+async function demoLines(): Promise<CartLine[]> {
+  const offers = await getOffers();
+  const picks = offers.filter((o) => o.available && o.imageUrl).slice(0, 2);
+
+  return Promise.all(
+    picks.map(async (o, i) => {
+      const product = await getProductBySlug(o.productSlug);
+
+      return {
+        id: o.id,
+        productSlug: o.productSlug,
+        productTitle: o.productTitle,
+        variantTitle: o.variantTitle,
+        optionLabel: product ? optionLabelFor(product) : "Option",
+        unitInPaise: o.priceInPaise,
+        imageUrl: o.imageUrl,
+        quantity: i === 0 ? 1 : 2,
+      };
+    }),
   );
-
-  return picks.map((o, i) => {
-    const product = getProductBySlug(o.productSlug);
-
-    return {
-      id: o.id,
-      productSlug: o.productSlug,
-      productTitle: o.productTitle,
-      variantTitle: o.variantTitle,
-      optionLabel: product ? optionLabelFor(product) : "Option",
-      unitInPaise: o.priceInPaise,
-      imageUrl: o.imageUrl,
-      quantity: i === 0 ? 1 : 2,
-    };
-  });
 }
 
-export default function CartPage() {
-  const lines = demoLines();
+export default async function CartPage() {
+  const lines = await demoLines();
 
   // The live cart page has no kicker and no rule under the title - the
   // heading is centred and the content starts straight after it.

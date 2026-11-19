@@ -1,14 +1,16 @@
 import { NotSavingYet, PageHeader } from "@/components/admin/ui";
 import { CategoryManager } from "@/components/admin/CategoryManager";
-import { ALL_PRODUCTS, CATEGORY_LABEL } from "@/lib/realCatalog";
+import { CATEGORY_LABEL } from "@/lib/catalog-shared";
+import { getAllProducts } from "@/lib/catalog";
 
 export const metadata = { title: "Categories" };
 
-export default function AdminCategoriesPage() {
+export default async function AdminCategoriesPage() {
+  const products = await getAllProducts();
   const rows = Object.entries(CATEGORY_LABEL).map(([slug, name]) => ({
     slug,
     name,
-    count: ALL_PRODUCTS.filter((p) => p.category === slug).length,
+    count: products.filter((p) => p.category === slug).length,
   }));
 
   return (

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { swatchFor } from "@/lib/realCatalog";
+import { swatchFor } from "@/lib/catalog-shared";
 
 /**
  * Product imagery for the real catalog.

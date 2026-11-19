@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { formatPaise } from "@/lib/money";
 import { CatalogMedia } from "./CatalogMedia";
-import type { ImportedProduct } from "@/lib/realCatalog";
+import type { CatalogProduct } from "@/lib/catalog-shared";
 
 /**
  * Product card, rebuilt from the live grid's own markup.
@@ -25,7 +25,7 @@ import type { ImportedProduct } from "@/lib/realCatalog";
  */
 
 type Props = {
-  product: ImportedProduct;
+  product: CatalogProduct;
   priority?: boolean;
 };
 
