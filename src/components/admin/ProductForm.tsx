@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { saveProduct } from "@/app/admin/actions";
 import { Card } from "./ui";
 import { CatalogMedia } from "@/components/CatalogMedia";
 import { formatPaise } from "@/lib/money";
@@ -81,12 +83,16 @@ export function ProductForm({
 }) {
   const [draft, setDraft] = useState<ProductDraft>(initial);
   const [touched, setTouched] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [result, setResult] = useState<
+    { ok: boolean; message: string } | null
+  >(null);
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   function set<K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) {
     setDraft((d) => ({ ...d, [key]: value }));
     setTouched(true);
-    setSaved(false);
+    setResult(null);
   }
 
   function setVariant(key: string, patch: Partial<VariantDraft>) {
@@ -95,7 +101,7 @@ export function ProductForm({
       variants: d.variants.map((v) => (v.key === key ? { ...v, ...patch } : v)),
     }));
     setTouched(true);
-    setSaved(false);
+    setResult(null);
   }
 
   function addVariant() {
@@ -113,7 +119,7 @@ export function ProductForm({
       ],
     }));
     setTouched(true);
-    setSaved(false);
+    setResult(null);
   }
 
   function removeVariant(key: string) {
@@ -123,7 +129,7 @@ export function ProductForm({
 
     setDraft((d) => ({ ...d, variants: d.variants.filter((x) => x.key !== key) }));
     setTouched(true);
-    setSaved(false);
+    setResult(null);
   }
 
   // What is still missing before this can be saved, in plain words.
@@ -137,10 +143,45 @@ export function ProductForm({
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSave) return;
-    // Replaced by a Server Action once the database is connected.
-    setSaved(true);
-    setTouched(false);
+    if (!canSave || pending) return;
+
+    startTransition(async () => {
+      const res = await saveProduct(
+        {
+          slug: draft.slug,
+          title: draft.title,
+          description: draft.description,
+          category: draft.category,
+          finish: draft.finish,
+          status: draft.status,
+          optionLabel: draft.optionLabel,
+          variants: draft.variants.map((v) => ({
+            // The key is the Variant id on an existing row, and a
+            // throwaway on a new one. The server matches on the option
+            // name, so either is fine to send.
+            id: v.key,
+            title: v.title,
+            price: v.price,
+            stock: v.stock,
+            sku: v.sku,
+          })),
+        },
+        mode,
+      );
+
+      setResult(res);
+
+      if (res.ok) {
+        setTouched(false);
+        // A new product lives at its own URL now; an edit stays put
+        // but needs the server data re-read.
+        if (mode === "new" && res.slug) {
+          router.push(`/admin/products/${res.slug}`);
+        } else {
+          router.refresh();
+        }
+      }
+    });
   }
 
   const autoSlug = draft.slug || slugify(draft.title);
@@ -471,14 +512,18 @@ export function ProductForm({
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-surface-1/95 px-5 py-3.5 backdrop-blur md:left-[240px] md:px-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-[13px] text-text-mid" aria-live="polite">
-            {saved ? (
-              <span className="font-bold text-accent">
-                Saved — except it is not, see below
+            {result ? (
+              <span
+                className={
+                  result.ok ? "font-bold text-accent" : "font-bold text-danger"
+                }
+              >
+                {result.message}
               </span>
+            ) : pending ? (
+              "Saving…"
             ) : !canSave ? (
-              <>
-                Still needs {problems.join(", ")}.
-              </>
+              <>Still needs {problems.join(", ")}.</>
             ) : touched ? (
               "Ready to save."
             ) : (
@@ -495,10 +540,14 @@ export function ProductForm({
             </Link>
             <button
               type="submit"
-              disabled={!canSave || !touched}
+              disabled={!canSave || !touched || pending}
               className="inline-flex h-11 items-center rounded-full bg-accent px-7 text-[14px] font-bold text-black transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {mode === "new" ? "Add product" : "Save changes"}
+              {pending
+                ? "Saving…"
+                : mode === "new"
+                  ? "Add product"
+                  : "Save changes"}
             </button>
           </div>
         </div>

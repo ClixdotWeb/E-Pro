@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { NotSavingYet, PageHeader, Pill } from "@/components/admin/ui";
+import { PageHeader, Pill } from "@/components/admin/ui";
 import {
   ProductForm,
   type ProductDraft,
@@ -91,8 +91,6 @@ export default async function EditProductPage({
           </svg>
         </Link>
       </div>
-
-      <NotSavingYet what="Your changes" />
 
       <ProductForm initial={toDraft(product)} mode="edit" />
     </>

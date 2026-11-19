@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { deleteProduct } from "@/app/admin/actions";
 import { CatalogMedia } from "@/components/CatalogMedia";
 import { Empty, Pill } from "./ui";
 import { formatPaise } from "@/lib/money";
@@ -42,8 +44,10 @@ export function ProductTable({
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>(initialFilter);
-  /** slugs removed in this session; real deletion needs the database */
   const [removed, setRemoved] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   const live = useMemo(
     () => products.filter((p) => !removed.includes(p.slug)),
@@ -77,13 +81,24 @@ export function ProductTable({
   }, [live, query, filter]);
 
   function remove(p: CatalogProduct) {
+    const n = p.variants.length;
     const ok = confirm(
       `Delete “${p.title}”?\n\n` +
-        `Its ${p.variants.length} option${p.variants.length === 1 ? "" : "s"} go with it, and the product page stops working for anyone who has the link.\n\n` +
+        `Its ${n} option${n === 1 ? "" : "s"} go with it, and the product page stops working for anyone who has the link.\n\n` +
         `This cannot be undone.`,
     );
     if (!ok) return;
-    setRemoved((r) => [...r, p.slug]);
+
+    setError(null);
+    startTransition(async () => {
+      const res = await deleteProduct(p.slug);
+      if (res.ok) {
+        setRemoved((r) => [...r, p.slug]);
+        router.refresh();
+      } else {
+        setError(res.message);
+      }
+    });
   }
 
   return (
@@ -136,12 +151,14 @@ export function ProductTable({
 
       <p className="mt-5 text-[13px] text-text-mid" aria-live="polite">
         Showing {rows.length} of {live.length}
-        {removed.length > 0 && (
-          <span className="ml-2 text-text-low">
-            · {removed.length} deleted this session
-          </span>
-        )}
+        {pending && <span className="ml-2 text-text-low">· working…</span>}
       </p>
+
+      {error && (
+        <p className="mt-3 rounded-[8px] border border-danger/30 bg-danger/10 px-4 py-3 text-[13px] leading-relaxed text-danger">
+          {error}
+        </p>
+      )}
 
       {/* rows */}
       {rows.length === 0 ? (
