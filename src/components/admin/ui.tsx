@@ -249,6 +249,50 @@ export function Pill({
   );
 }
 
+/* ---------------- switch ---------------- */
+
+/**
+ * On/off in one control.
+ *
+ * A pill saying "On" beside a button saying "Turn off" is two things
+ * that contradict each other at a glance, and the button's label had
+ * to change length every time it was pressed - which is what made it
+ * wrap onto two lines. A switch states the condition and changes it,
+ * at a fixed size.
+ *
+ * It is a real <button role="switch"> so the keyboard and screen
+ * readers get it for free.
+ */
+export function Switch({
+  on,
+  onChange,
+  label,
+}: {
+  on: boolean;
+  onChange: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      onClick={onChange}
+      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+        on ? "bg-accent" : "bg-surface-3"
+      }`}
+    >
+      <span
+        aria-hidden
+        className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${
+          on ? "translate-x-6" : "translate-x-1"
+        }`}
+      />
+    </button>
+  );
+}
+
 /* ---------------- empty state ---------------- */
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Empty, Pill } from "./ui";
+import { Card, Empty, Switch } from "./ui";
 import { formatPaise } from "@/lib/money";
 import type { DiscountType } from "@/lib/pricing";
 
@@ -331,7 +331,7 @@ export function DiscountManager({ initial }: { initial: DiscountRow[] }) {
             <span className="w-[130px]">Code</span>
             <span className="flex-1">What it does</span>
             <span className="w-[100px] text-right">Used</span>
-            <span className="w-[150px] text-right">Actions</span>
+            <span className="w-[110px] text-right">On / off</span>
           </div>
 
           <ul>
@@ -361,27 +361,23 @@ export function DiscountManager({ initial }: { initial: DiscountRow[] }) {
                   )}
                 </span>
 
-                <div className="flex w-[150px] items-center justify-end gap-2">
-                  {r.active ? (
-                    <Pill tone="success">On</Pill>
-                  ) : (
-                    <Pill tone="neutral">Off</Pill>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => toggle(r.id)}
-                    className="h-9 rounded-[8px] border border-hairline px-3 text-[12px] font-bold text-text-mid transition-colors hover:border-hairline-strong hover:text-text-hi"
-                  >
-                    {r.active ? "Turn off" : "Turn on"}
-                  </button>
+                {/* A switch, not a pill next to a button that says the
+                    opposite of the pill. One control shows the state
+                    and changes it, and it cannot wrap onto two lines
+                    the way "Turn off" did. */}
+                <div className="flex w-[110px] items-center justify-end gap-3">
+                  <Switch
+                    on={r.active}
+                    onChange={() => toggle(r.id)}
+                    label={`${r.code} is ${r.active ? "on" : "off"}`}
+                  />
 
                   <button
                     type="button"
                     onClick={() => remove(r)}
                     aria-label={`Delete ${r.code}`}
                     title="Delete"
-                    className="grid h-9 w-9 place-items-center rounded-[8px] text-text-low transition-colors hover:bg-danger/15 hover:text-danger"
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-[8px] text-text-low transition-colors hover:bg-danger/15 hover:text-danger"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                       <path d="M5 7h14M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M7 7l.8 12.1A1.5 1.5 0 0 0 9.3 20.5h5.4a1.5 1.5 0 0 0 1.5-1.4L17 7" />
