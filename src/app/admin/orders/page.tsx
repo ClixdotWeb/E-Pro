@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PageHeader, Pill, type Tone } from "@/components/admin/ui";
+import { Avatar, PageHeader, Pill, type Tone } from "@/components/admin/ui";
 import { formatPaise } from "@/lib/money";
 
 export const metadata = { title: "Orders" };
@@ -43,35 +43,49 @@ export default function AdminOrdersPage() {
         }
       />
 
-      <ul className="overflow-hidden rounded-[12px] border border-hairline">
-        {ORDERS.map((o) => (
-          <li key={o.number} className="border-b border-hairline last:border-0">
-            <Link
-              href={`/admin/orders/${o.number}`}
-              className="flex flex-wrap items-center gap-x-4 gap-y-2 bg-surface-1 p-4 transition-colors hover:bg-surface-2"
-            >
-              <span className="font-mono text-[13px] font-bold text-text-hi">
-                {o.number}
-              </span>
+      <div className="overflow-hidden rounded-[14px] border border-hairline bg-surface-1">
+        <div className="hidden items-center gap-4 border-b border-hairline px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-text-low md:flex">
+          <span className="w-[108px]">Order</span>
+          <span className="flex-1">Customer</span>
+          <span className="w-[110px]">Status</span>
+          <span className="w-[130px] text-right">Total</span>
+        </div>
 
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14px] text-text-hi">
-                  {o.customer}
+        <ul>
+          {ORDERS.map((o) => (
+            <li key={o.number} className="border-b border-hairline last:border-0">
+              <Link
+                href={`/admin/orders/${o.number}`}
+                className="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-4 transition-colors hover:bg-surface-2"
+              >
+                <span className="w-[108px] font-mono text-[13px] font-bold text-text-hi">
+                  {o.number}
                 </span>
-                <span className="mt-0.5 block text-[12px] text-text-low">
-                  {o.at} · {o.items} item{o.items === 1 ? "" : "s"}
+
+                <span className="flex min-w-0 flex-1 items-center gap-3">
+                  <Avatar name={o.customer} />
+                  <span className="min-w-0">
+                    <span className="block truncate text-[14px] text-text-hi">
+                      {o.customer}
+                    </span>
+                    <span className="mt-0.5 block text-[12px] text-text-low">
+                      {o.at} · {o.items} item{o.items === 1 ? "" : "s"}
+                    </span>
+                  </span>
                 </span>
-              </span>
 
-              <Pill tone={TONE[o.status]}>{o.status}</Pill>
+                <span className="w-[110px]">
+                  <Pill tone={TONE[o.status]}>{o.status}</Pill>
+                </span>
 
-              <span className="w-[120px] text-right text-[13px] font-bold text-text-hi">
-                {formatPaise(o.totalInPaise)}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+                <span className="w-[130px] text-right text-[13px] font-bold tabular-nums text-text-hi">
+                  {formatPaise(o.totalInPaise)}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
     </>
   );
 }

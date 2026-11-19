@@ -74,58 +74,150 @@ export function PageHeader({
 export function Card({
   title,
   hint,
+  action,
   children,
   className = "",
+  flush = false,
 }: {
   title?: string;
   hint?: string;
+  action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  /** drop the body padding, for tables that run edge to edge */
+  flush?: boolean;
 }) {
   return (
     <section
-      className={`rounded-[12px] border border-hairline bg-surface-1 ${className}`}
+      className={`overflow-hidden rounded-[14px] border border-hairline bg-surface-1 ${className}`}
+      style={{
+        backgroundImage:
+          "linear-gradient(180deg, rgba(255,255,255,0.025) 0%, transparent 120px)",
+      }}
     >
       {title && (
-        <header className="border-b border-hairline px-5 py-4">
-          <h2 className="text-[15px] font-bold text-text-hi">{title}</h2>
-          {hint && (
-            <p className="mt-1 text-[12px] leading-relaxed text-text-mid">
-              {hint}
-            </p>
-          )}
+        <header className="flex flex-wrap items-start justify-between gap-3 border-b border-hairline px-6 py-5">
+          <div>
+            <h2 className="text-[15px] font-bold tracking-tight text-text-hi">
+              {title}
+            </h2>
+            {hint && (
+              <p className="mt-1 text-[12px] leading-relaxed text-text-mid">
+                {hint}
+              </p>
+            )}
+          </div>
+          {action}
         </header>
       )}
-      <div className="p-5">{children}</div>
+      <div className={flush ? "" : "p-6"}>{children}</div>
     </section>
   );
 }
 
 /* ---------------- stat ---------------- */
 
+/**
+ * A single number, with the icon kept quiet in the corner so the
+ * figure is the first thing read. The accent tint on a warning tile
+ * is what makes "needs attention" findable at a glance without a
+ * colour-coded legend to learn.
+ */
 export function Stat({
   label,
   value,
   sub,
+  icon,
   tone = "default",
 }: {
   label: string;
   value: string;
   sub?: string;
-  tone?: "default" | "warning";
+  icon?: React.ReactNode;
+  tone?: "default" | "warning" | "accent";
 }) {
+  const ring =
+    tone === "warning"
+      ? "border-warning/30"
+      : tone === "accent"
+        ? "border-accent/30"
+        : "border-hairline";
+
+  const wash =
+    tone === "warning"
+      ? "radial-gradient(120% 130% at 100% 0%, rgba(227,140,9,0.12) 0%, transparent 60%)"
+      : tone === "accent"
+        ? "radial-gradient(120% 130% at 100% 0%, rgba(0,164,79,0.12) 0%, transparent 60%)"
+        : "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 90px)";
+
+  const figure =
+    tone === "warning"
+      ? "text-warning"
+      : tone === "accent"
+        ? "text-accent"
+        : "text-text-hi";
+
   return (
-    <div className="rounded-[12px] border border-hairline bg-surface-1 p-5">
-      <p className="text-[12px] text-text-mid">{label}</p>
+    <div
+      className={`relative overflow-hidden rounded-[14px] border bg-surface-1 p-5 ${ring}`}
+      style={{ backgroundImage: wash }}
+    >
+      {icon && (
+        <span
+          aria-hidden
+          className={`absolute right-4 top-4 ${
+            tone === "default" ? "text-text-low" : figure
+          } opacity-50`}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            {icon}
+          </svg>
+        </span>
+      )}
+
+      <p className="text-[12px] font-medium text-text-mid">{label}</p>
       <p
-        className={`mt-2 text-[26px] font-bold leading-none ${
-          tone === "warning" ? "text-warning" : "text-text-hi"
-        }`}
+        className={`mt-2.5 text-[30px] font-bold leading-none tracking-tight tabular-nums ${figure}`}
       >
         {value}
       </p>
-      {sub && <p className="mt-2 text-[12px] text-text-low">{sub}</p>}
+      {sub && (
+        <p className="mt-2.5 text-[12px] leading-relaxed text-text-low">
+          {sub}
+        </p>
+      )}
     </div>
+  );
+}
+
+/**
+ * Initials in a circle. Cheap, consistent, and it gives a row of names
+ * something to anchor on when scanning. The hue is derived from the
+ * name so the same person is always the same colour.
+ */
+export function Avatar({ name }: { name: string }) {
+  const initials = name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+
+  return (
+    <span
+      aria-hidden
+      className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[12px] font-bold"
+      style={{
+        background: `hsl(${hue} 42% 22%)`,
+        color: `hsl(${hue} 70% 72%)`,
+      }}
+    >
+      {initials}
+    </span>
   );
 }
 

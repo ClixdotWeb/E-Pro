@@ -131,12 +131,21 @@ export function ProductTable({
           />
         </div>
       ) : (
-        <ul className="mt-4 overflow-hidden rounded-[12px] border border-hairline">
+        <div className="mt-4 overflow-hidden rounded-[14px] border border-hairline bg-surface-1">
+          <div className="hidden items-center gap-4 border-b border-hairline px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-text-low sm:flex">
+            <span className="w-14" />
+            <span className="flex-1">Product</span>
+            <span className="w-[180px]">Flags</span>
+            <span className="w-[130px] text-right">From</span>
+            <span className="w-[18px]" />
+          </div>
+
+          <ul>
           {rows.map((p) => (
             <li key={p.slug} className="border-b border-hairline last:border-0">
               <Link
                 href={`/admin/products/${p.slug}`}
-                className="flex items-center gap-4 bg-surface-1 p-4 transition-colors hover:bg-surface-2"
+                className="flex items-center gap-4 p-4 transition-colors hover:bg-surface-2"
               >
                 <CatalogMedia
                   src={p.images[0] ?? null}
@@ -160,14 +169,14 @@ export function ProductTable({
                   </p>
                 </div>
 
-                <div className="hidden shrink-0 gap-2 sm:flex">
+                <div className="hidden w-[180px] shrink-0 flex-wrap gap-2 sm:flex">
                   {p.missingImages && <Pill tone="warning">No photo</Pill>}
                   {p.suspiciousPrices.length > 0 && (
                     <Pill tone="danger">Odd price</Pill>
                   )}
                 </div>
 
-                <p className="shrink-0 text-right text-[13px] text-text-hi">
+                <p className="w-[130px] shrink-0 text-right text-[13px] font-bold tabular-nums text-text-hi">
                   {formatPaise(p.minPriceInPaise)}
                 </p>
 
@@ -177,7 +186,8 @@ export function ProductTable({
               </Link>
             </li>
           ))}
-        </ul>
+          </ul>
+        </div>
       )}
     </>
   );
