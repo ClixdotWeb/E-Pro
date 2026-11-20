@@ -36,6 +36,7 @@ type Row = {
   title: string;
   description: string | null;
   finish: string | null;
+  status: string;
   images: { url: string; position: number }[];
   variants: {
     id: string;
@@ -70,6 +71,7 @@ function toProduct(p: Row): CatalogProduct {
     category:
       categorySlug && categorySlug !== UNCATEGORISED ? categorySlug : null,
     finish: p.finish,
+    status: p.status,
     images: [...p.images]
       .sort((a, b) => a.position - b.position)
       .map((i) => i.url),
@@ -112,6 +114,22 @@ export async function getAllProducts(): Promise<CatalogProduct[]> {
   return rows.map(toProduct);
 }
 
+/**
+ * What a customer is allowed to see.
+ *
+ * Draft and archived products exist in the database and must stay
+ * visible in the dashboard - that is the whole point of a draft - but
+ * they are not for sale. The phone catalogue arrives from the price
+ * lists as drafts with no price on them, so without this filter the
+ * shop would list a thousand skins at Rs. 0.00 and sell them.
+ *
+ * `getAllProducts` is the unfiltered one; only the dashboard uses it.
+ */
+export async function getLiveProducts(): Promise<CatalogProduct[]> {
+  const all = await getAllProducts();
+  return all.filter((p) => p.status === "ACTIVE");
+}
+
 export async function getProductBySlug(
   slug: string,
 ): Promise<CatalogProduct | null> {
@@ -125,14 +143,14 @@ export async function getProductBySlug(
 export async function getProductsForCategory(
   category: string,
 ): Promise<CatalogProduct[]> {
-  const all = await getAllProducts();
+  const all = await getLiveProducts();
   return all.filter((p) => (p.category ?? UNCATEGORISED) === category);
 }
 
 export async function getProductsForFinish(
   finish: string,
 ): Promise<CatalogProduct[]> {
-  const all = await getAllProducts();
+  const all = await getLiveProducts();
   return all.filter((p) => p.finish === finish);
 }
 
@@ -141,7 +159,7 @@ export async function getRelatedProducts(
   p: CatalogProduct,
   limit = 4,
 ): Promise<CatalogProduct[]> {
-  const all = await getAllProducts();
+  const all = await getLiveProducts();
 
   const same = all.filter((o) => o.slug !== p.slug && o.category === p.category);
   const rest = all.filter((o) => o.slug !== p.slug && o.category !== p.category);
@@ -161,7 +179,7 @@ export async function getRelatedProducts(
  * the finder and search work off this instead.
  */
 export async function getOffers(): Promise<Offer[]> {
-  const products = await getAllProducts();
+  const products = await getLiveProducts();
 
   return products.flatMap((p) =>
     p.variants
@@ -199,7 +217,7 @@ export async function getOffers(): Promise<Offer[]> {
  * /request-model rather than an empty grid.
  */
 export async function getNavCategories(): Promise<NavCategory[]> {
-  const products = await getAllProducts();
+  const products = await getLiveProducts();
   const offers = await getOffers();
 
   return Object.keys(CATEGORY_LABEL).map((slug) => {
@@ -224,7 +242,7 @@ export async function getNavCategories(): Promise<NavCategory[]> {
 export async function getNavFinishes(): Promise<
   { slug: string; name: string; count: number }[]
 > {
-  const products = await getAllProducts();
+  const products = await getLiveProducts();
 
   return Object.keys(FINISH_LABEL)
     .map((slug) => ({

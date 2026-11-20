@@ -8,6 +8,20 @@ import {
 } from "../src/lib/realCatalog";
 
 /**
+ * SUPERSEDED. Do not run this against a live catalogue.
+ *
+ * The shop is loaded from the price lists in prisma/data by
+ * import-xlsx.ts, which is what `prisma db seed` now runs. This script
+ * loads the old Shopify export, whose products use finish names the
+ * site no longer knows ("Design Patterns", "Embossed") - running it
+ * would add 21 superseded products beside the real ones.
+ *
+ * It is kept because src/lib/catalog.generated.ts is still the only
+ * record of the 13 product photo URLs on cdn.shopify.com that have
+ * not been downloaded yet. Delete both once they have.
+ *
+ * ---
+ *
  * Loads the imported Shopify catalogue into the database.
  *
  * Idempotent: every write is an upsert keyed on a stable slug or SKU,

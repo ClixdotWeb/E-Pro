@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { FINISH_LABEL } from "@/lib/catalog-shared";
 /**
  * The header only needs a slug and, where it is known, how many
  * options are in that category. The 404 renders above the shop layout
@@ -11,7 +12,12 @@ import { usePathname } from "next/navigation";
  * undefined count means "unknown", and the menu links to the
  * collection rather than claiming nothing is cut yet.
  */
-type HeaderCategory = { slug: string; count?: number };
+type HeaderCategory = {
+  slug: string;
+  count?: number;
+  /** finish slugs the catalogue offers for this device */
+  finishes?: string[];
+};
 
 /**
  * The live store's desktop nav, in its order: a "Skin" dropdown then
@@ -24,38 +30,20 @@ type HeaderCategory = { slug: string; count?: number };
  * page, not packed against the logo.
  */
 /**
- * The Skin dropdown, read off the live header's own markup: the ten
- * devices in the store's order, and the finish list under each.
+ * The Skin dropdown: the ten devices in the store's order, each with
+ * the finishes offered for it.
  *
- * Six expand; Gaming consoles, Drone and Charger have no children and
- * so get no chevron.
+ * The device list is the live header's, kept verbatim. The finishes
+ * under each are not - they used to be a hand-copied list, and that
+ * went stale the moment the real price lists came in. They are now
+ * whatever the catalogue actually sells for that device, read on the
+ * server and passed down. A device with nothing priced for it gets no
+ * chevron, and a finish added to the price list appears here without
+ * anyone editing this file.
  *
- * Two deliberate differences. The store's finish labels contain typos
- * ("Solid  Pattern" with two spaces, "Solid pattern" lower-cased on
- * Gimbal) which are normalised here. And every finish link on the live
- * site is href="#" - a dead placeholder - so these point at the finish
- * collection instead.
+ * Every finish link on the live site is href="#" - a dead placeholder
+ * - so these point at the finish collection instead.
  */
-const SKIN_SUBMENUS: Record<string, string[]> = {
-  phone: ["Design Patterns", "Printed Designs", "Solid Pattern", "Texture"],
-  camera: ["Design Patterns", "Solid Pattern", "Texture"],
-  lens: ["Design Patterns", "Solid Pattern", "Texture"],
-  laptop: ["Embossed", "Printed Designs", "Design Patterns", "Solid Pattern"],
-  gimbal: ["Design Patterns", "Solid Pattern", "Texture"],
-  tablet: ["Printed Designs", "Design Patterns", "Solid Pattern"],
-  "gaming-consoles": [],
-  drone: [],
-  "wireless-earbuds": ["Printed Designs", "Design Patterns", "Solid Pattern"],
-  charger: [],
-};
-
-const FINISH_SLUG: Record<string, string> = {
-  "Design Patterns": "design-patterns",
-  "Printed Designs": "printed-designs",
-  "Solid Pattern": "solid-pattern",
-  Texture: "texture",
-  Embossed: "embossed",
-};
 
 /** Device order and labels exactly as the live menu prints them. */
 const SKIN_ORDER: { slug: string; label: string }[] = [
@@ -76,9 +64,11 @@ function buildSkinMenu(navCategories: HeaderCategory[]) {
     slug,
     label,
     count: navCategories.find((c) => c.slug === slug)?.count,
-    finishes: (SKIN_SUBMENUS[slug] ?? []).map((f) => ({
-      label: f,
-      href: `/collections/${FINISH_SLUG[f]}`,
+    finishes: (
+      navCategories.find((c) => c.slug === slug)?.finishes ?? []
+    ).map((f) => ({
+      label: FINISH_LABEL[f] ?? f,
+      href: `/collections/${f}`,
     })),
   }));
 }

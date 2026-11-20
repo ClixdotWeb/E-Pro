@@ -23,12 +23,27 @@ export const CATEGORY_LABEL: Record<string, string> = {
   charger: "Charger",
 };
 
+/**
+ * The finishes actually sold, taken from the price lists in
+ * prisma/data - not from the old Shopify theme, whose names
+ * ("Design Patterns", "Embossed") never matched what the sheets
+ * quote a price for.
+ *
+ * The last three are phone-only. A phone skin is priced by how much
+ * of the body it covers rather than by material, so the sheets list
+ * coverage where the camera and lens sheets list a finish. They sit
+ * in the same map because they do the same job: they are the thing a
+ * customer picks before a model.
+ */
 export const FINISH_LABEL: Record<string, string> = {
-  "printed-designs": "Printed Designs",
-  "design-patterns": "Design Patterns",
-  "solid-pattern": "Solid Pattern",
-  texture: "Texture",
-  embossed: "Embossed",
+  "printed-skin": "Printed Skin",
+  "variable-lamination": "Variable Lamination",
+  "korean-skin": "Korean Skin",
+  "imported-skin": "Imported Skin",
+  "3m-skin": "3M Skin",
+  "full-wrap": "Full Wrap",
+  "back-with-sides": "Back With Sides",
+  "back-only": "Back Only",
 };
 
 export const UNCATEGORISED = "uncategorised";
@@ -52,6 +67,8 @@ export type CatalogProduct = {
   description: string;
   category: string | null;
   finish: string | null;
+  /** DRAFT | ACTIVE | ARCHIVED. Only ACTIVE is shown to customers. */
+  status: string;
   images: string[];
   variants: CatalogVariant[];
   minPriceInPaise: number;

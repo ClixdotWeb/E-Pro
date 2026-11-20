@@ -57,7 +57,9 @@ export default async function ProductPage({
 }: PageProps<"/products/[slug]">) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  if (!product) notFound();
+  // A draft or archived product still has a row and a URL, but it is
+  // not on sale - so to a customer it does not exist.
+  if (!product || product.status !== "ACTIVE") notFound();
 
   const optionLabel = optionLabelFor(product);
   const related = await getRelatedProducts(product);

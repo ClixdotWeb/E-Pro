@@ -8,7 +8,7 @@ import {
   optionLabelFor,
   rankOffers,
 } from "@/lib/catalog-shared";
-import { getAllProducts, getNavCategories, getOffers } from "@/lib/catalog";
+import { getLiveProducts, getNavCategories, getOffers } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Search",
@@ -32,7 +32,7 @@ export default async function SearchPage({
   const [offers, navCategories, products] = await Promise.all([
     getOffers(),
     getNavCategories(),
-    getAllProducts(),
+    getLiveProducts(),
   ]);
 
   // One lookup instead of a query per row.

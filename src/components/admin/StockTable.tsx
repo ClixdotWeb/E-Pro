@@ -1,78 +1,79 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
 import { Empty, Pill } from "./ui";
 import { formatPaise } from "@/lib/money";
-import { CATEGORY_LABEL, type CatalogProduct } from "@/lib/catalog-shared";
+import { saveStock } from "@/app/admin/actions";
 
 /**
  * Stock control.
  *
  * One row per buyable option, not per product, because stock is held
- * per option - "Sony Lens Skin" is not in or out of stock, "24-70mm GM
- * II" is.
+ * per option - "Camera Skins - Korean Skin" is not in or out of
+ * stock, "Sony Alpha 7 IV" in that finish is.
  *
  * The number is editable right here. Typing in a list is the whole
  * point of this screen: counting shelves and typing numbers is one
- * task, and making someone open 205 product pages to do it would be
- * absurd. Changes are held until Save, so a mistyped digit can be
- * abandoned.
+ * task, and making someone open a thousand product pages to do it
+ * would be absurd. Changes are held until Save, so a mistyped digit
+ * can be abandoned.
  *
- * Out-of-stock rows sort to the top by default, since those are the
- * ones costing money.
+ * One product at a time, chosen in the dropdown, which navigates - the
+ * server then sends only that product's rows. Picking a different
+ * product discards nothing silently: the save bar warns first. The
+ * page keys this component on the product, so arriving at a new one
+ * remounts it and no typed number can survive onto the wrong rows.
+ *
+ * Out-of-stock rows sort to the top, since those are the ones costing
+ * money.
  */
 
 type Row = {
-  key: string;
-  productSlug: string;
-  productTitle: string;
-  category: string | null;
+  /** the variant id - what the server updates */
+  id: string;
   variantTitle: string;
   priceInPaise: number;
   stock: number;
 };
 
-export function StockTable({ products }: { products: CatalogProduct[] }) {
-  const initial = useMemo<Row[]>(
-    () =>
-      products.flatMap((p) =>
-        p.variants.map((v) => ({
-          key: `${p.slug}:${v.id}`,
-          productSlug: p.slug,
-          productTitle: p.title,
-          category: p.category,
-          variantTitle: v.title,
-          priceInPaise: v.priceInPaise,
-          // The import only knows available/not, so this is a stand-in
-          // until real counts are entered.
-          stock: v.available ? 10 : 0,
-        })),
-      ),
-    [products],
-  );
+type Choice = { slug: string; title: string; count: number };
 
-  const [rows, setRows] = useState<Row[]>(initial);
+export function StockTable({
+  choices,
+  selected,
+  productTitle,
+  rows: incoming,
+}: {
+  choices: Choice[];
+  selected: string;
+  productTitle: string;
+  rows: Row[];
+}) {
+  const router = useRouter();
+  const [rows, setRows] = useState<Row[]>(incoming);
   const [query, setQuery] = useState("");
   const [onlyProblems, setOnlyProblems] = useState(false);
   const [dirty, setDirty] = useState<Record<string, number>>({});
+  const [pending, startTransition] = useTransition();
+  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(
+    null,
+  );
 
-  const stockOf = (r: Row) => dirty[r.key] ?? r.stock;
+  const stockOf = (r: Row) => dirty[r.id] ?? r.stock;
+  const changed = Object.keys(dirty).length;
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     // Inlined rather than calling stockOf, so the dependency list is
-    // honestly just rows/query/onlyProblems/dirty.
-    const current = (r: Row) => dirty[r.key] ?? r.stock;
+    // honestly just these values.
+    const current = (r: Row) => dirty[r.id] ?? r.stock;
 
     return rows
       .filter((r) => {
         if (onlyProblems && current(r) > 3) return false;
         if (!q) return true;
-        return (
-          r.productTitle.toLowerCase().includes(q) ||
-          r.variantTitle.toLowerCase().includes(q)
-        );
+        return r.variantTitle.toLowerCase().includes(q);
       })
       .sort((a, b) => current(a) - current(b));
   }, [rows, query, onlyProblems, dirty]);
@@ -82,17 +83,41 @@ export function StockTable({ products }: { products: CatalogProduct[] }) {
     const n = stockOf(r);
     return n > 0 && n <= 3;
   }).length;
-  const changed = Object.keys(dirty).length;
 
-  function setStock(key: string, value: string) {
+  function setStock(id: string, value: string) {
     const n = Math.max(0, Number(value.replace(/[^0-9]/g, "")) || 0);
-    setDirty((d) => ({ ...d, [key]: n }));
+    setDirty((d) => ({ ...d, [id]: n }));
+  }
+
+  function switchProduct(slug: string) {
+    if (
+      changed > 0 &&
+      !window.confirm(
+        `${changed} change${changed === 1 ? "" : "s"} here have not been saved. Leave them?`,
+      )
+    ) {
+      return;
+    }
+    setDirty({});
+    router.push(`/admin/stock?product=${encodeURIComponent(slug)}`);
   }
 
   function save() {
-    // Replaced by a Server Action once the database is connected.
-    setRows((rs) => rs.map((r) => ({ ...r, stock: dirty[r.key] ?? r.stock })));
-    setDirty({});
+    const changes = Object.entries(dirty).map(([id, stock]) => ({ id, stock }));
+    setResult(null);
+
+    startTransition(async () => {
+      const res = await saveStock(changes);
+      setResult(res);
+
+      if (res.ok) {
+        // Only now is the typed number the real one.
+        setRows((rs) =>
+          rs.map((r) => (r.id in dirty ? { ...r, stock: dirty[r.id] } : r)),
+        );
+        setDirty({});
+      }
+    });
   }
 
   return (
@@ -101,17 +126,46 @@ export function StockTable({ products }: { products: CatalogProduct[] }) {
       <div className="mb-6 flex flex-wrap gap-3">
         <Tally label="Out of stock" value={out} tone="danger" />
         <Tally label="Running low" value={low} tone="warning" />
-        <Tally label="Options in total" value={rows.length} />
+        <Tally label={`options in ${productTitle}`} value={rows.length} />
       </div>
 
       {/* controls */}
       <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-[260px]">
+          <label htmlFor="stock-product" className="sr-only">
+            Product
+          </label>
+          <select
+            id="stock-product"
+            value={selected}
+            onChange={(e) => switchProduct(e.target.value)}
+            className="h-12 w-full rounded-[8px] border border-hairline bg-surface-1 px-4 text-[14px] text-text-hi focus:border-accent focus:outline-none"
+          >
+            {choices.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.title} ({c.count})
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="relative min-w-[240px] flex-1">
           <label htmlFor="stock-search" className="sr-only">
             Search options
           </label>
-          <span aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-low">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-low"
+          >
+            <svg
+              width="17"
+              height="17"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            >
               <path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" />
             </svg>
           </span>
@@ -119,7 +173,7 @@ export function StockTable({ products }: { products: CatalogProduct[] }) {
             id="stock-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by product or option"
+            placeholder="Search by model"
             autoComplete="off"
             className="h-12 w-full rounded-[8px] border border-hairline bg-surface-1 pl-11 pr-4 text-[14px] text-text-hi placeholder:text-text-low focus:border-accent focus:outline-none"
           />
@@ -146,15 +200,15 @@ export function StockTable({ products }: { products: CatalogProduct[] }) {
             title="Nothing to show"
             body={
               onlyProblems
-                ? "Everything has stock. Turn the filter off to see all options."
-                : `No option matches “${query}”.`
+                ? "Everything here has stock. Turn the filter off to see all options."
+                : `No model matches “${query}”.`
             }
           />
         </div>
       ) : (
         <div className="mt-5 overflow-hidden rounded-[14px] border border-hairline bg-surface-1">
           <div className="hidden items-center gap-4 border-b border-hairline px-5 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-text-low md:flex">
-            <span className="flex-1">Option</span>
+            <span className="flex-1">Model</span>
             <span className="w-[130px] text-right">Price</span>
             <span className="w-[110px] text-right">In stock</span>
           </div>
@@ -162,34 +216,18 @@ export function StockTable({ products }: { products: CatalogProduct[] }) {
           <ul className="max-h-[62vh] overflow-y-auto">
             {shown.map((r) => {
               const n = stockOf(r);
-              const edited = r.key in dirty && dirty[r.key] !== r.stock;
+              const edited = r.id in dirty && dirty[r.id] !== r.stock;
 
               return (
                 <li
-                  key={r.key}
+                  key={r.id}
                   className={`flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-hairline px-5 py-3 last:border-0 ${
                     edited ? "bg-accent-soft/40" : ""
                   }`}
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] text-text-hi">
-                      {r.variantTitle || "Default"}
-                    </p>
-                    <p className="mt-0.5 truncate text-[12px] text-text-low">
-                      <Link
-                        href={`/admin/products/${r.productSlug}`}
-                        className="hover:text-accent hover:underline"
-                      >
-                        {r.productTitle}
-                      </Link>
-                      {r.category && (
-                        <>
-                          <span className="px-1.5">·</span>
-                          {CATEGORY_LABEL[r.category] ?? r.category}
-                        </>
-                      )}
-                    </p>
-                  </div>
+                  <p className="min-w-0 flex-1 truncate text-[14px] text-text-hi">
+                    {r.variantTitle || "Default"}
+                  </p>
 
                   <p className="w-[130px] text-right text-[13px] tabular-nums text-text-mid">
                     {formatPaise(r.priceInPaise)}
@@ -199,13 +237,13 @@ export function StockTable({ products }: { products: CatalogProduct[] }) {
                     {n === 0 && <Pill tone="danger">Out</Pill>}
                     {n > 0 && n <= 3 && <Pill tone="warning">Low</Pill>}
 
-                    <label className="sr-only" htmlFor={`stock-${r.key}`}>
-                      Stock for {r.productTitle} {r.variantTitle}
+                    <label className="sr-only" htmlFor={`stock-${r.id}`}>
+                      Stock for {r.variantTitle}
                     </label>
                     <input
-                      id={`stock-${r.key}`}
+                      id={`stock-${r.id}`}
                       value={String(n)}
-                      onChange={(e) => setStock(r.key, e.target.value)}
+                      onChange={(e) => setStock(r.id, e.target.value)}
                       inputMode="numeric"
                       className={`h-10 w-16 rounded-[6px] border bg-surface-2 px-2 text-center text-[14px] font-bold tabular-nums text-text-hi focus:outline-none ${
                         n === 0
@@ -222,28 +260,42 @@ export function StockTable({ products }: { products: CatalogProduct[] }) {
       )}
 
       {/* save bar */}
-      {changed > 0 && (
+      {(changed > 0 || result) && (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-surface-1/95 px-5 py-3.5 backdrop-blur md:left-[240px] md:px-10">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[13px] text-text-mid">
-              {changed} option{changed === 1 ? "" : "s"} changed.
+            <p
+              className={`text-[13px] ${
+                result && !result.ok ? "text-danger" : "text-text-mid"
+              }`}
+            >
+              {changed > 0
+                ? `${changed} option${changed === 1 ? "" : "s"} changed — not saved yet.`
+                : result?.message}
             </p>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setDirty({})}
-                className="text-[13px] text-text-mid hover:text-text-hi"
-              >
-                Discard
-              </button>
-              <button
-                type="button"
-                onClick={save}
-                className="inline-flex h-11 items-center rounded-full bg-accent px-7 text-[14px] font-bold text-black transition-colors hover:bg-accent-hover"
-              >
-                Save stock
-              </button>
-            </div>
+
+            {changed > 0 && (
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDirty({});
+                    setResult(null);
+                  }}
+                  disabled={pending}
+                  className="text-[13px] text-text-mid hover:text-text-hi disabled:opacity-50"
+                >
+                  Discard
+                </button>
+                <button
+                  type="button"
+                  onClick={save}
+                  disabled={pending}
+                  className="inline-flex h-11 items-center rounded-full bg-accent px-7 text-[14px] font-bold text-black transition-colors hover:bg-accent-hover disabled:opacity-60"
+                >
+                  {pending ? "Saving…" : "Save stock"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
