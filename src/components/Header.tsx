@@ -90,8 +90,7 @@ function SkinDropdown({ open, menu }: { open: boolean; menu: SkinMenu }) {
     <div className="absolute left-0 top-full z-50 hidden w-[400px] pt-2 md:block">
       <div className="overflow-hidden rounded-lg bg-[#4a4a4a] py-2 shadow-pop">
         {menu.map((item) => {
-          const href =
-            item.count === 0 ? "/request-model" : `/collections/${item.slug}`;
+          const href = `/skins/${item.slug}`;
 
           return item.finishes.length === 0 ? (
             <Link
@@ -316,10 +315,7 @@ export function Header({
                   drift apart the way they did before. */}
               <p className="kicker px-3 pb-2">Skin</p>
               {skinMenu.map((item) => {
-                const href =
-                  item.count === 0
-                    ? "/request-model"
-                    : `/collections/${item.slug}`;
+                const href = `/skins/${item.slug}`;
 
                 return item.finishes.length === 0 ? (
                   <Link

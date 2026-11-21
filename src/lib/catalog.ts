@@ -5,7 +5,10 @@ import {
   FINISH_LABEL,
   NOISE_VARIANT,
   UNCATEGORISED,
+  brandLabel,
   categoryLabel,
+  offersLogoCutout,
+  urlSlug,
   type CatalogProduct,
   type NavCategory,
   type Offer,
@@ -23,10 +26,11 @@ import {
  * need as props; see `catalog-shared.ts` for the labels and helpers
  * they can import directly.
  *
- * The queries are deliberately unglamorous: there are 21 products and
- * 205 variants, so one query that fetches the lot and shapes it in
- * memory beats a careful set of narrow ones. Revisit if the catalogue
- * grows an order of magnitude.
+ * `getAllProducts` fetches the whole catalogue and shapes it in
+ * memory. That was obviously right at 21 products and 205 variants;
+ * at 1302 models and 3374 variants it is no longer free, so the
+ * device-browsing queries further down are narrow on purpose - a
+ * brand page reads that brand, not the shop.
  */
 
 /** Shapes a Prisma row into the shape the UI has always used. */
@@ -217,25 +221,40 @@ export async function getOffers(): Promise<Offer[]> {
  * /request-model rather than an empty grid.
  */
 export async function getNavCategories(): Promise<NavCategory[]> {
-  const products = await getLiveProducts();
-  const offers = await getOffers();
+  // The header runs this on every page in the shop, so it is a single
+  // grouped count rather than the whole catalogue shaped in memory.
+  // The in-memory version was fine at 205 variants; at 3374 it was
+  // reading the entire shop to decide what to put in a menu.
+  const rows = await db.$queryRaw<
+    { category: string; finish: string | null; n: bigint }[]
+  >`
+    SELECT c.slug AS category, p.finish AS finish, COUNT(*) AS n
+    FROM "Variant" v
+    JOIN "Product" p ON p.id = v."productId"
+    JOIN "DeviceModel" m ON m.id = v."deviceModelId"
+    JOIN "DeviceCategory" c ON c.id = m."categoryId"
+    WHERE v.active AND v.stock > 0 AND p.status = 'ACTIVE'
+    GROUP BY c.slug, p.finish
+  `;
 
-  return Object.keys(CATEGORY_LABEL).map((slug) => {
-    const inCategory = products.filter((p) => p.category === slug);
+  const counts = new Map<string, number>();
+  const finishes = new Map<string, Set<string>>();
 
-    return {
-      slug,
-      name: CATEGORY_LABEL[slug],
-      count: offers.filter((o) => o.category === slug).length,
-      finishes: [
-        ...new Set(
-          inCategory
-            .map((p) => p.finish)
-            .filter((f): f is string => Boolean(f && FINISH_LABEL[f])),
-        ),
-      ],
-    };
-  });
+  for (const r of rows) {
+    counts.set(r.category, (counts.get(r.category) ?? 0) + Number(r.n));
+    if (r.finish && FINISH_LABEL[r.finish]) {
+      (finishes.get(r.category) ?? finishes.set(r.category, new Set()).get(r.category)!).add(
+        r.finish,
+      );
+    }
+  }
+
+  return Object.keys(CATEGORY_LABEL).map((slug) => ({
+    slug,
+    name: CATEGORY_LABEL[slug],
+    count: counts.get(slug) ?? 0,
+    finishes: [...(finishes.get(slug) ?? [])],
+  }));
 }
 
 /** Finish collections that have at least one product behind them. */
@@ -271,5 +290,196 @@ export async function getCatalogStats() {
     missingImages: products.filter((p) => p.missingImages).length,
     noCategory: products.filter((p) => !p.category).length,
     oddPrices: products.filter((p) => p.suspiciousPrices.length > 0).length,
+  };
+}
+
+/* ================= browsing by device ================= */
+
+/**
+ * These four are what the shop is actually navigated with, and they
+ * are narrow on purpose: a brand page must not read 3374 variants to
+ * show 236 names.
+ *
+ * Brand and model slugs are derived from the stored names rather than
+ * stored themselves, so each lookup fetches the candidates for that
+ * category and matches on the derived slug. That is one indexed read
+ * of a few hundred rows, and it keeps the URL free of the internal
+ * slug ("phone-samsung-samsung-galaxy-s24-ultra") that nobody should
+ * ever see.
+ */
+
+export type BrandSummary = {
+  slug: string;
+  name: string;
+  models: number;
+  /** false when nothing in this brand is on sale yet */
+  onSale: boolean;
+};
+
+export async function getBrandsForCategory(
+  category: string,
+): Promise<BrandSummary[]> {
+  const models = await db.deviceModel.findMany({
+    where: { category: { slug: category }, active: true },
+    select: {
+      brand: true,
+      variants: {
+        where: { active: true, product: { status: "ACTIVE" } },
+        select: { id: true },
+        take: 1,
+      },
+    },
+  });
+
+  const byBrand = new Map<string, BrandSummary>();
+  for (const m of models) {
+    const slug = urlSlug(m.brand);
+    const row = byBrand.get(slug) ?? {
+      slug,
+      name: brandLabel(m.brand),
+      models: 0,
+      onSale: false,
+    };
+    row.models++;
+    if (m.variants.length > 0) row.onSale = true;
+    byBrand.set(slug, row);
+  }
+
+  return [...byBrand.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export type ModelSummary = {
+  slug: string;
+  name: string;
+  /** cheapest option on sale, or null when none is */
+  fromPaise: number | null;
+};
+
+export async function getModelsForBrand(
+  category: string,
+  brandSlug: string,
+): Promise<{ brand: string; models: ModelSummary[] } | null> {
+  const models = await db.deviceModel.findMany({
+    where: { category: { slug: category }, active: true },
+    select: {
+      brand: true,
+      name: true,
+      variants: {
+        where: { active: true, product: { status: "ACTIVE" } },
+        select: { priceInPaise: true },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  const mine = models.filter((m) => urlSlug(m.brand) === brandSlug);
+  if (mine.length === 0) return null;
+
+  return {
+    brand: brandLabel(mine[0].brand),
+    models: mine.map((m) => ({
+      slug: urlSlug(m.name),
+      name: m.name,
+      fromPaise: m.variants.length
+        ? Math.min(...m.variants.map((v) => v.priceInPaise))
+        : null,
+    })),
+  };
+}
+
+/** One buyable way to have this model's skin made. */
+export type SkinOption = {
+  variantId: string;
+  /** the finish or coverage slug, e.g. "korean-skin" or "full-wrap" */
+  finish: string | null;
+  label: string;
+  priceInPaise: number;
+  stock: number;
+  available: boolean;
+  /** true when the product is still a draft - priced later */
+  pending: boolean;
+};
+
+export type ModelPage = {
+  category: string;
+  categoryLabel: string;
+  brand: string;
+  brandSlug: string;
+  name: string;
+  slug: string;
+  options: SkinOption[];
+  /** what the options are called here: "Material" or "Coverage" */
+  optionLabel: string;
+  logoCutout: boolean;
+};
+
+export async function getModelPage(
+  category: string,
+  brandSlug: string,
+  modelSlug: string,
+): Promise<ModelPage | null> {
+  // Two queries on purpose. The slugs are derived, so finding the row
+  // means reading the category's names - 1045 of them for phones - but
+  // that is two short columns. Pulling their variants in the same
+  // query would have meant 2400 rows to show one model's four.
+  const names = await db.deviceModel.findMany({
+    where: { category: { slug: category }, active: true },
+    select: { id: true, brand: true, name: true },
+  });
+
+  const match = names.find(
+    (m) => urlSlug(m.brand) === brandSlug && urlSlug(m.name) === modelSlug,
+  );
+  if (!match) return null;
+
+  const model = await db.deviceModel.findUniqueOrThrow({
+    where: { id: match.id },
+    select: {
+      brand: true,
+      name: true,
+      variants: {
+        select: {
+          id: true,
+          priceInPaise: true,
+          stock: true,
+          active: true,
+          product: { select: { finish: true, title: true, status: true } },
+        },
+      },
+    },
+  });
+
+  const options: SkinOption[] = model.variants
+    .map((v) => {
+      const finish = v.product.finish;
+      const pending = v.product.status !== "ACTIVE";
+      return {
+        variantId: v.id,
+        finish,
+        label: (finish && FINISH_LABEL[finish]) || v.product.title,
+        priceInPaise: v.priceInPaise,
+        stock: v.stock,
+        available: v.active && v.stock > 0 && !pending,
+        pending,
+      };
+    })
+    // Cheapest first; a pending option has no price to sort on, so it
+    // goes last whatever its zero says.
+    .sort(
+      (a, b) =>
+        Number(a.pending) - Number(b.pending) ||
+        a.priceInPaise - b.priceInPaise,
+    );
+
+  return {
+    category,
+    categoryLabel: CATEGORY_LABEL[category] ?? category,
+    brand: brandLabel(model.brand),
+    brandSlug,
+    name: model.name,
+    slug: modelSlug,
+    options,
+    optionLabel: category === "phone" ? "Coverage" : "Material",
+    logoCutout: offersLogoCutout(category, model.brand),
   };
 }

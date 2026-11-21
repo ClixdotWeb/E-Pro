@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getNavCategories } from "@/lib/catalog";
 
 /**
  * Categories — rebuilt from the live site's own custom-liquid section
@@ -27,10 +26,13 @@ import { getNavCategories } from "@/lib/catalog";
  * Liquid: Phone, Camera, Lens, Laptop, Gimbal, Tablet, Gaming Console,
  * Drone, Charger, Wireless Earbuds.
  *
- * One deliberate difference: the live tiles link to /pages/<name>,
- * which on the real store are mostly empty stub pages. These link to
- * the category collection where we have stock, and to /request-model
- * where we do not, so no tile is a dead end.
+ * The live tiles link to /pages/<name>, which on the real store open
+ * with the design families and leave the model to a dropdown at the
+ * end. These link to /skins/<name>, which asks for the brand and then
+ * the model first - a skin cut for the wrong device is scrap, so that
+ * is the question worth asking first. A category with nothing in it
+ * still has a page, and that page offers to cut the model on request,
+ * so no tile is a dead end.
  */
 
 const TILES = [
@@ -46,10 +48,7 @@ const TILES = [
   { slug: "wireless-earbuds", label: "Wireless Earbuds" },
 ];
 
-export async function CategoryGrid() {
-  const navCategories = await getNavCategories();
-  const counts = new Map(navCategories.map((c) => [c.slug, c.count]));
-
+export function CategoryGrid() {
   return (
     <section className="bg-surface-0 px-5 py-10 md:px-8 md:py-20">
       <h2 className="mb-5 text-center text-2xl font-bold tracking-tight text-text-hi md:text-[28px]">
@@ -58,12 +57,10 @@ export async function CategoryGrid() {
 
       <ul className="mx-auto grid max-w-[1580px] grid-cols-2 gap-x-[11px] gap-y-[14px] sm:grid-cols-3 sm:gap-x-[13px] sm:gap-y-[18px] lg:grid-cols-4 lg:gap-x-4 lg:gap-y-5 xl:grid-cols-5 xl:gap-5">
         {TILES.map(({ slug, label }) => {
-          const count = counts.get(slug) ?? 0;
-
           return (
             <li key={slug}>
               <Link
-                href={count > 0 ? `/collections/${slug}` : "/request-model"}
+                href={`/skins/${slug}`}
                 aria-label={label}
                 className="group relative isolate block aspect-square w-full overflow-hidden rounded-[9px] bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-white md:rounded-xl"
               >
