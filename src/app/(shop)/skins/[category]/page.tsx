@@ -1,12 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  CATEGORY_INTRO,
-  CATEGORY_LABEL,
-  STYLE_TILES,
-} from "@/lib/catalog-shared";
+import { CATEGORY_INTRO, CATEGORY_LABEL } from "@/lib/catalog-shared";
 import { getBrandsForCategory } from "@/lib/catalog";
 
 /**
@@ -15,9 +10,15 @@ import { getBrandsForCategory } from "@/lib/catalog";
  * This is the live store's /pages/camera rebuilt around the thing a
  * customer actually has to answer first. Its version opened with the
  * design families ("Choose Your Style"), which is the wrong question -
- * a Texture skin is no use if it is not cut for your camera. So the
- * brands come first and the styles sit below them, where they are a
- * way to browse rather than a gate.
+ * a Texture skin is no use if it is not cut for your camera.
+ *
+ * Those design tiles are not here. They were, briefly, linking to
+ * /collections/<style> - and every one of them was a 404, because no
+ * product carries a style yet. They are empty on the live store too.
+ * A tile that leads nowhere is worse than no tile, so they stay out
+ * until there are designs behind them; STYLE_TILES still holds the
+ * names and the images, and the model page shows them greyed as the
+ * design step, so bringing them back is one block of markup.
  */
 
 export const dynamic = "force-dynamic";
@@ -50,7 +51,6 @@ export default async function CategoryPage({
 
   const intro = introFor(category);
   const brands = await getBrandsForCategory(category);
-  const styles = STYLE_TILES[category] ?? [];
 
   return (
     <div className="page py-10 md:py-20">
@@ -118,46 +118,6 @@ export default async function CategoryPage({
         </section>
       )}
 
-      {styles.length > 0 && (
-        <section className="mt-16 md:mt-24">
-          <div className="text-center">
-            <span className="text-[13px] font-bold uppercase tracking-[0.12em] text-accent">
-              Choose your style
-            </span>
-            <h2 className="mt-3 text-[26px] font-bold text-text-hi md:text-[34px]">
-              {CATEGORY_LABEL[category]} Skin Categories
-            </h2>
-          </div>
-
-          <ul className="mt-8 grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-5">
-            {styles.map((s) => (
-              <li key={s.slug}>
-                <Link
-                  href={`/collections/${s.slug}`}
-                  className="group relative block overflow-hidden rounded-[12px]"
-                >
-                  <span className="relative block aspect-square">
-                    <Image
-                      src={s.image}
-                      alt={s.title}
-                      fill
-                      sizes="(min-width: 1024px) 20vw, 50vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-[1.06]"
-                    />
-                  </span>
-                  <span
-                    aria-hidden
-                    className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"
-                  />
-                  <span className="absolute bottom-[18px] left-[18px] right-4 text-[15px] font-bold text-white">
-                    {s.title}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </div>
   );
 }
