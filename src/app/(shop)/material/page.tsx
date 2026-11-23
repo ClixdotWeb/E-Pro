@@ -23,8 +23,12 @@ export const metadata: Metadata = {
  *
  * The finish cards link to the store's own filtered collection URLs
  * (?filter.p.m.custom.finish=...). Those are Shopify metafield filters
- * that our catalogue does not carry, so they point at the matching
- * finish collection here instead.
+ * our catalogue does not carry. They pointed at /collections/<finish>
+ * instead, and every one of those was a 404 - no product is sold as
+ * "Embossed" or "Texture", here or on the live store. Until the
+ * designs exist there is nothing to filter, so each card sends the
+ * reader to pick a device, which is the question that has to be
+ * answered before any of these finishes can be cut.
  *
  * This replaces a page that used the generic ContentPage template with
  * copy I had written.
@@ -61,7 +65,7 @@ const FINISHES: Finish[] = [
     title: "Embossed 3D Series",
     body: "Deep physical grooves and topographical patterns with unmistakable depth you can feel with every touch.",
     cta: "Explore Embossed",
-    href: "/collections/embossed",
+    href: "/skins/phone",
     icon: (
       <path d="M12 2l9 5-9 5-9-5 9-5zM3 12l9 5 9-5M3 17l9 5 9-5" />
     ),
@@ -72,7 +76,7 @@ const FINISHES: Finish[] = [
     title: "Forged & Carbon Fiber",
     body: "Hyper-realistic woven twill pattern with light-shifting carbon fibers and outstanding abrasion defense.",
     cta: "Explore Carbon",
-    href: "/collections/texture",
+    href: "/skins/phone",
     icon: (
       <>
         <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -88,7 +92,7 @@ const FINISHES: Finish[] = [
     title: "Premium Matte Series",
     body: "Ultra-soft, non-reflective finish that completely eliminates smudges, fingerprints, and glare.",
     cta: "Explore Matte",
-    href: "/collections/solid-pattern",
+    href: "/skins/phone",
     icon: (
       <>
         <circle cx="12" cy="12" r="9" />
@@ -102,7 +106,7 @@ const FINISHES: Finish[] = [
     title: "Artisan Leather Series",
     body: "Authentic natural pebble texture providing premium handheld ergonomics and elegant executive style.",
     cta: "Explore Leather",
-    href: "/collections/texture",
+    href: "/skins/phone",
     icon: <path d="M12 2.5l8 3.2v6c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10v-6l8-3.2z" />,
   },
   {
@@ -111,7 +115,7 @@ const FINISHES: Finish[] = [
     title: "Solid Colors & Pastels",
     body: "Deep, rich, uniform color saturation designed for those who appreciate clean, distraction-free aesthetics.",
     cta: "Explore Solid",
-    href: "/collections/solid-pattern",
+    href: "/skins/phone",
     icon: (
       <>
         <circle cx="12" cy="12" r="9" />
@@ -125,7 +129,7 @@ const FINISHES: Finish[] = [
     title: "Graphic & Pattern Series",
     body: "Custom cyber-grid, camouflage, and abstract illustrations sealed under scratch-proof UV protective laminate.",
     cta: "Explore Patterns",
-    href: "/collections/printed-designs",
+    href: "/skins/phone",
     icon: (
       <path d="M12 2.5l2.2 5.9 5.9 2.2-5.9 2.2L12 18.7l-2.2-5.9L3.9 10.6l5.9-2.2L12 2.5z" />
     ),

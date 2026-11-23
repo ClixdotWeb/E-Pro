@@ -111,14 +111,20 @@ export default async function AdminOverviewPage() {
         <Stat
           label="Products"
           value={String(stats.products)}
-          sub={`${stats.totalVariants} options in total`}
+          sub={
+            stats.draftProducts > 0
+              ? `${stats.draftProducts} in draft — ${stats.draftVariants.toLocaleString("en-IN")} options waiting on a price`
+              : `${stats.totalVariants.toLocaleString("en-IN")} options in total`
+          }
           icon={ICON.box}
+          tone={stats.draftProducts > 0 ? "warning" : "default"}
         />
         {/* "Buyable options / in stock and priced" was wrong twice over:
             the number only excluded placeholder NAMES, and said nothing
             about stock. This is the count someone can actually add to a
-            cart. The denominator is the real options, not the raw 205 -
-            four of those are placeholders nobody is ever offered. */}
+            cart - in stock, priced, and on a product that is Active.
+            The denominator leaves out placeholder option names, so it
+            is smaller than the row count in the database. */}
         <Stat
           label="Options for sale"
           value={String(stats.inStock)}

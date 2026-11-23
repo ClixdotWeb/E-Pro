@@ -77,16 +77,25 @@ export default async function EditProductPage({
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Pill tone="accent">{product.variants.length} options</Pill>
-        <Link
-          href={`/products/${product.slug}`}
-          target="_blank"
-          className="inline-flex items-center gap-2 text-[13px] font-bold text-accent hover:underline"
-        >
-          See it on the shop
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M7 17L17 7M8 7h9v9" />
-          </svg>
-        </Link>
+
+        {/* A draft has no page on the shop - that is what draft means -
+            so offering to open it sent people to a 404. */}
+        {product.status === "ACTIVE" ? (
+          <Link
+            href={`/products/${product.slug}`}
+            target="_blank"
+            className="inline-flex items-center gap-2 text-[13px] font-bold text-accent hover:underline"
+          >
+            See it on the shop
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M7 17L17 7M8 7h9v9" />
+            </svg>
+          </Link>
+        ) : (
+          <span className="text-[13px] text-text-low">
+            Not on the shop — set it to Active below to publish it.
+          </span>
+        )}
       </div>
 
       <ProductForm initial={toDraft(product)} mode="edit" />

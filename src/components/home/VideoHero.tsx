@@ -22,17 +22,19 @@
  * rather than on top of the hero.
  */
 
-/** Desktop video (the theme's first <ecx-load-video>). */
-const HERO_VIDEO_DESKTOP =
-  "https://jaka1n-rd.myshopify.com/cdn/shop/videos/c/vp/bfcc7b3e56e8480a98f97854d42ad0bb/bfcc7b3e56e8480a98f97854d42ad0bb.HD-1080p-7.2Mbps-91009730.mp4?v=0";
-const HERO_POSTER_DESKTOP =
-  "https://jaka1n-rd.myshopify.com/cdn/shop/files/preview_images/bfcc7b3e56e8480a98f97854d42ad0bb.thumbnail.0000000000_1920x.jpg?v=1786095431";
-
-/** Mobile video (the theme's `d-none-md d-block` one). */
-const HERO_VIDEO_MOBILE =
-  "https://jaka1n-rd.myshopify.com/cdn/shop/videos/c/vp/5c0d947a243642b79ab7081df63c644c/5c0d947a243642b79ab7081df63c644c.HD-1080p-7.2Mbps-90999242.mp4?v=0";
-const HERO_POSTER_MOBILE =
-  "https://jaka1n-rd.myshopify.com/cdn/shop/files/preview_images/5c0d947a243642b79ab7081df63c644c.thumbnail.0000000000_small.jpg?v=1786087935";
+/**
+ * Both videos are served from this site.
+ *
+ * They were loaded straight off the Shopify CDN, which meant the
+ * homepage of the shop we are replacing depended on the shop it is
+ * replacing: the day that store closes, the hero goes black. The same
+ * files now live in public/brand/video - 13MB desktop, 45MB mobile,
+ * byte for byte what the live site serves.
+ */
+const HERO_VIDEO_DESKTOP = "/brand/video/hero-desktop.mp4";
+const HERO_POSTER_DESKTOP = "/brand/video/hero-desktop.jpg";
+const HERO_VIDEO_MOBILE = "/brand/video/hero-mobile.mp4";
+const HERO_POSTER_MOBILE = "/brand/video/hero-mobile.jpg";
 
 export function VideoHero() {
   return (

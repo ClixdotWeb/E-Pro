@@ -282,9 +282,16 @@ export async function getCatalogStats() {
 
   const totalVariants = products.reduce((n, p) => n + p.variants.length, 0);
 
+  // Drafts are the gap between what exists and what is for sale. The
+  // phone catalogue is 2400 options waiting on a price, and a
+  // dashboard that only counts the live ones does not say so.
+  const drafts = products.filter((p) => p.status !== "ACTIVE");
+
   return {
     products: products.length,
     totalVariants,
+    draftProducts: drafts.length,
+    draftVariants: drafts.reduce((n, p) => n + p.variants.length, 0),
     realOptions: offers.length,
     inStock: offers.filter((o) => o.available).length,
     missingImages: products.filter((p) => p.missingImages).length,
