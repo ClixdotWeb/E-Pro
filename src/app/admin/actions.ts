@@ -484,3 +484,101 @@ export async function deleteDiscount(code: string): Promise<ActionResult> {
     };
   }
 }
+
+/* ================= flat pricing ================= */
+
+/**
+ * Give every option under one product the same price.
+ *
+ * The phone list prices by coverage, not by model: a Full Wrap costs
+ * the same on a Galaxy S24 as on a Redmi 13. Setting 932 rows one at
+ * a time in the product editor is not a thing a person does, so this
+ * writes them in one statement.
+ *
+ * It also publishes. A priced draft that stays DRAFT is invisible to
+ * the shop, and the only reason those products were drafts is that
+ * they had no price - so the moment one arrives they go on sale, with
+ * stock, unless the caller says otherwise. Passing 0 is the way back:
+ * it unpublishes rather than putting free skins in the window.
+ */
+export async function setFlatPrice(
+  slug: string,
+  rupees: string,
+  opts: { publish?: boolean; stock?: number } = {},
+): Promise<ActionResult> {
+  assertCanWrite();
+
+  const paise = toPaise(rupees);
+  if (paise <= 0) {
+    return {
+      ok: false,
+      message: "Type a price above zero. A free skin is not a price.",
+    };
+  }
+
+  const publish = opts.publish ?? true;
+  const stock = Math.max(0, Math.round(opts.stock ?? 10));
+
+  try {
+    const product = await db.product.findUnique({
+      where: { slug },
+      select: { id: true, title: true },
+    });
+    if (!product) return { ok: false, message: "That product is gone." };
+
+    const { count } = await db.variant.updateMany({
+      where: { productId: product.id },
+      data: publish
+        ? { priceInPaise: paise, stock, active: true }
+        : { priceInPaise: paise },
+    });
+
+    if (publish) {
+      await db.product.update({
+        where: { id: product.id },
+        data: { status: "ACTIVE" },
+      });
+    }
+
+    revalidateCatalog(slug);
+    safeRevalidate("/admin/pricing");
+
+    return {
+      ok: true,
+      message: `${product.title}: ${count.toLocaleString("en-IN")} option${
+        count === 1 ? "" : "s"
+      } at Rs. ${(paise / 100).toLocaleString("en-IN")}${
+        publish ? " - now on sale." : "."
+      }`,
+      slug,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not set the price.",
+    };
+  }
+}
+
+/** Take a product off the shop without touching its prices. */
+export async function unpublishProduct(slug: string): Promise<ActionResult> {
+  assertCanWrite();
+
+  try {
+    const product = await db.product.update({
+      where: { slug },
+      data: { status: "DRAFT" },
+      select: { title: true },
+    });
+
+    revalidateCatalog(slug);
+    safeRevalidate("/admin/pricing");
+
+    return { ok: true, message: `${product.title} is off the shop.`, slug };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not unpublish it.",
+    };
+  }
+}

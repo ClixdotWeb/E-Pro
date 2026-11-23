@@ -74,6 +74,15 @@ export default async function AdminOverviewPage() {
   const soldOut = stats.realOptions - stats.inStock;
 
   const jobs = [
+    // Nothing else on this list stops a sale outright. A product with
+    // no price is not in the shop at all, so it goes first.
+    {
+      count: stats.draftVariants,
+      title: "options are waiting on a price",
+      body: "They are not in the shop until one is set. One number per product prices every device model under it.",
+      href: "/admin/pricing",
+      tone: "danger" as const,
+    },
     {
       count: oddPrices.length,
       title: "products have a price that looks wrong",

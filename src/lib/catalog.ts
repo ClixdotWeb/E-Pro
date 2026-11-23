@@ -522,3 +522,76 @@ export async function getModelPage(
     logoCutout: offersLogoCutout(category, model.brand),
   };
 }
+
+/* ================= flat pricing ================= */
+
+/**
+ * One row per product for the Pricing screen.
+ *
+ * A product here is a coverage or a material ("Phone Skins - Full
+ * Wrap", "Printed Skin"), and every option under it is that same
+ * thing for a different device model. When the price does not vary by
+ * model - which is how the phone list is sold - the whole product is
+ * one number, and this is the shape that lets the dashboard set it.
+ *
+ * Counted in SQL rather than by loading 3374 variants, because this
+ * screen exists to show all of them at once.
+ */
+export type PricingGroup = {
+  slug: string;
+  title: string;
+  /** category slug, or "" when the product has no device behind it */
+  category: string;
+  finish: string | null;
+  status: string;
+  options: number;
+  /** paise; null when nothing is priced yet */
+  minPaise: number | null;
+  maxPaise: number | null;
+  /** true when every option carries the same price */
+  flat: boolean;
+};
+
+export async function getPricingGroups(): Promise<PricingGroup[]> {
+  const rows = await db.$queryRaw<
+    {
+      slug: string;
+      title: string;
+      category: string | null;
+      finish: string | null;
+      status: string;
+      options: bigint;
+      min_paise: number | null;
+      max_paise: number | null;
+      prices: bigint;
+    }[]
+  >`
+    SELECT p.slug,
+           p.title,
+           MIN(c.slug)             AS category,
+           p.finish,
+           p.status::text          AS status,
+           COUNT(v.id)             AS options,
+           MIN(v."priceInPaise")   AS min_paise,
+           MAX(v."priceInPaise")   AS max_paise,
+           COUNT(DISTINCT v."priceInPaise") AS prices
+      FROM "Product" p
+      JOIN "Variant" v        ON v."productId" = p.id
+      JOIN "DeviceModel" m    ON v."deviceModelId" = m.id
+      JOIN "DeviceCategory" c ON m."categoryId" = c.id
+     GROUP BY p.id, p.slug, p.title, p.finish, p.status
+     ORDER BY MIN(c.slug), p.title
+  `;
+
+  return rows.map((r) => ({
+    slug: r.slug,
+    title: r.title,
+    category: r.category ?? "",
+    finish: r.finish,
+    status: r.status,
+    options: Number(r.options),
+    minPaise: r.min_paise,
+    maxPaise: r.max_paise,
+    flat: Number(r.prices) <= 1,
+  }));
+}

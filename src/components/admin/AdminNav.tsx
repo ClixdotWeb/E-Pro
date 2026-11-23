@@ -43,6 +43,16 @@ const NAV: { href: string; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
+    href: "/admin/pricing",
+    label: "Pricing",
+    icon: (
+      <>
+        <path d="M12 6v12M9.5 9.2A2.4 2.4 0 0 1 12 7.4c1.4 0 2.5.9 2.5 2M14.5 14.8A2.4 2.4 0 0 1 12 16.6c-1.4 0-2.5-.9-2.5-2" />
+        <circle cx="12" cy="12" r="9" />
+      </>
+    ),
+  },
+  {
     href: "/admin/stock",
     label: "Stock",
     icon: (
