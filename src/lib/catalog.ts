@@ -353,6 +353,21 @@ export type ModelSummary = {
   name: string;
   /** cheapest option on sale, or null when none is */
   fromPaise: number | null;
+  /**
+   * What can actually be made for this model, named.
+   *
+   * It is not the same for every model, which is the whole reason it
+   * is here: of 1290 models the price lists describe six different
+   * sets. 516 phones take a full wrap or a back-only skin, 407 take
+   * either of those or back-with-sides, 64 take nothing but back-only.
+   * Someone with a OnePlus Nord N20 needs to know that before they
+   * open the page, not after.
+   *
+   * Cameras and lenses are uniform - all four materials, every model -
+   * so the brand page says that once at the top instead of repeating
+   * it down 153 rows.
+   */
+  skins: string[];
 };
 
 export async function getModelsForBrand(
@@ -365,8 +380,11 @@ export async function getModelsForBrand(
       brand: true,
       name: true,
       variants: {
-        where: { active: true, product: { status: "ACTIVE" } },
-        select: { priceInPaise: true },
+        select: {
+          priceInPaise: true,
+          active: true,
+          product: { select: { finish: true, title: true, status: true } },
+        },
       },
     },
     orderBy: { name: "asc" },
@@ -377,13 +395,27 @@ export async function getModelsForBrand(
 
   return {
     brand: brandLabel(mine[0].brand),
-    models: mine.map((m) => ({
-      slug: urlSlug(m.name),
-      name: m.name,
-      fromPaise: m.variants.length
-        ? Math.min(...m.variants.map((v) => v.priceInPaise))
-        : null,
-    })),
+    models: mine.map((m) => {
+      // On sale now: what sets the "from" price.
+      const live = m.variants.filter(
+        (v) => v.active && v.product.status === "ACTIVE",
+      );
+
+      return {
+        slug: urlSlug(m.name),
+        name: m.name,
+        fromPaise: live.length
+          ? Math.min(...live.map((v) => v.priceInPaise))
+          : null,
+        // Everything we can cut for it, priced or not. A skin that is
+        // waiting on a price is still a skin that fits.
+        skins: m.variants.map(
+          (v) =>
+            (v.product.finish && FINISH_LABEL[v.product.finish]) ||
+            v.product.title,
+        ),
+      };
+    }),
   };
 }
 

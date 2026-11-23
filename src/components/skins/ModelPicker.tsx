@@ -42,6 +42,23 @@ export function ModelPicker({
     [models],
   );
 
+  /**
+   * Does every model here take the same skins?
+   *
+   * Cameras and lenses do - all four materials, every model - so the
+   * answer belongs once under the heading rather than repeated down
+   * 153 rows. Phones do not: within one brand some models take a full
+   * wrap and some only a back skin, and that is worth seeing before
+   * you click.
+   */
+  const shared = useMemo(() => {
+    if (models.length === 0) return null;
+    const first = [...models[0].skins].sort().join("|");
+    if (!first) return null;
+    const same = models.every((m) => [...m.skins].sort().join("|") === first);
+    return same ? models[0].skins : null;
+  }, [models]);
+
   const shown = useMemo(() => {
     const q = squash(query);
     if (!q) return models;
@@ -50,6 +67,14 @@ export function ModelPicker({
 
   return (
     <>
+      {shared && (
+        <p className="mx-auto mt-5 max-w-[640px] text-center text-[13px] leading-relaxed text-text-mid">
+          <span className="text-text-low">Available skins — </span>
+          {shared.join(" · ")}
+          <span className="text-text-low">, for every {brand} model.</span>
+        </p>
+      )}
+
       {models.length > SEARCH_THRESHOLD && (
         <div className="relative mx-auto mt-8 max-w-[520px]">
           <label htmlFor="model-search" className="sr-only">
@@ -114,8 +139,17 @@ export function ModelPicker({
                 href={`/skins/${category}/${brandSlug}/${m.slug}`}
                 className="group flex items-center justify-between gap-4 rounded-[var(--r-sm)] border border-hairline bg-surface-1 px-5 py-4 transition-colors hover:border-accent"
               >
-                <span className="min-w-0 truncate text-[14px] text-text-hi transition-colors group-hover:text-accent">
-                  {m.name}
+                <span className="min-w-0">
+                  <span className="block truncate text-[14px] text-text-hi transition-colors group-hover:text-accent">
+                    {m.name}
+                  </span>
+                  {/* Only when it differs model to model - otherwise it
+                      is already stated once above the list. */}
+                  {!shared && (
+                    <span className="mt-1 block truncate text-[12px] text-text-low">
+                      {m.skins.length ? m.skins.join(" · ") : "Not cut yet"}
+                    </span>
+                  )}
                 </span>
                 <span className="shrink-0 text-[13px] tabular-nums text-text-low">
                   {m.fromPaise === null

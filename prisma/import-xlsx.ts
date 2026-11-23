@@ -202,6 +202,29 @@ function readWorkbook(src: Source, dir: string) {
 
     for (const row of body) {
       const name = norm((row as unknown[])[1]);
+
+      /**
+       * Skip the sheet's signature row.
+       *
+       * Every phone sheet ends with the name of whoever filled it in -
+       * "MAJISHA", "SHEENA JOY", "MUHAMMED SHAN" - typed into the Model
+       * column with no serial number and no YES/NO against it. Twelve
+       * of them, and they were being sold as phones: a customer browsing
+       * Samsung saw "SHAN" in the list. A real model always carries a
+       * serial number or at least one option, so requiring one of those
+       * is enough and does not need a list of names to exclude.
+       */
+      const serial = norm((row as unknown[])[0]);
+      const anyOption = (row as unknown[])
+        .slice(2, 7)
+        .some((c) => norm(c) !== "");
+      if (!serial && !anyOption) {
+        warnings.push(
+          `${src.file} / ${sheetName}: ignored "${name}" - no serial number and nothing offered against it`,
+        );
+        continue;
+      }
+
       const modelSlug = slugify(`${src.category}-${brand}-${name}`);
       if (!models.has(modelSlug)) {
         models.set(modelSlug, {

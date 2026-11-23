@@ -85,11 +85,11 @@ export function SkinConfigurator({
         <section>
           <StepHeading
             n={step++}
-            title={`Pick the ${model.optionLabel.toLowerCase()}`}
+            title="Available skins"
             note={
               model.category === "phone"
-                ? "How much of the body the skin covers."
-                : "What the skin is made of. This is what sets the price."
+                ? `What we cut for the ${model.name}, and how much of the body each one covers.`
+                : `What we cut for the ${model.name}. The material is what sets the price.`
             }
           />
 
