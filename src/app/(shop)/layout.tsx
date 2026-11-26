@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { getNavCategories } from "@/lib/catalog";
 import { getCartCount } from "@/lib/cart";
 
@@ -45,6 +46,7 @@ export default async function ShopLayout({
       </main>
 
       <Footer />
+      <WhatsAppButton />
     </>
   );
 }

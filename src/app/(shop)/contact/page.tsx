@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { whatsappGeneral } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
   title: "Contact us",
@@ -21,8 +22,7 @@ export const metadata: Metadata = {
  * the only change needed.
  */
 
-const WHATSAPP =
-  "https://wa.me/918891202497?text=Hello%20Epro!%20I%20have%20a%20question.";
+const WHATSAPP = whatsappGeneral();
 
 const TOPICS = [
   "Custom Skin Request",

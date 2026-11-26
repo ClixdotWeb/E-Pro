@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { whatsappGeneral } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
   title: "Material",
@@ -34,8 +35,7 @@ export const metadata: Metadata = {
  * copy I had written.
  */
 
-const WHATSAPP =
-  "https://wa.me/918891202497?text=Hello%20Epro!%20I%20have%20a%20question%20about%20your%20materials.";
+const WHATSAPP = whatsappGeneral("your materials");
 
 /* ---------------- hero ---------------- */
 

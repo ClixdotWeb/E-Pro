@@ -4,6 +4,7 @@ import { CatalogMedia } from "@/components/CatalogMedia";
 import { formatPaise } from "@/lib/money";
 import { notFound } from "next/navigation";
 import { getOrder } from "@/lib/orders";
+import { whatsappAboutOrder } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 
@@ -179,6 +180,16 @@ export default async function OrderConfirmationPage({
         >
           View all orders
         </Link>
+        {/* The order number travels with the enquiry, so nobody has
+            to be asked for it. */}
+        <a
+          href={whatsappAboutOrder(order.orderNumber)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-[var(--r-md)] border border-hairline px-5 py-3 text-[13px] font-semibold text-text-hi transition-colors hover:border-hairline-strong"
+        >
+          Ask about it on WhatsApp
+        </a>
         <Link
           href="/find"
           className="rounded-[var(--r-md)] border border-hairline px-5 py-3 text-[13px] font-semibold text-text-hi transition-colors hover:border-hairline-strong"

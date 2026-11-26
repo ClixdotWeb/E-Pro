@@ -6,6 +6,7 @@ import {
   GST_RATE_BPS,
 } from "@/lib/pricing";
 import { formatPaise } from "@/lib/money";
+import { WHATSAPP_DISPLAY } from "@/lib/whatsapp";
 import { getCatalogStats } from "@/lib/catalog";
 
 export const metadata = { title: "Settings" };
@@ -61,6 +62,19 @@ export default async function AdminSettingsPage() {
               note="Nobody can make an account, and this dashboard has no password on it."
             />
           </ul>
+        </Card>
+
+        <Card
+          title="Where enquiries go"
+          hint="Set NEXT_PUBLIC_WHATSAPP_NUMBER to change it."
+        >
+          <dl className="space-y-3 text-[14px]">
+            <Row
+              label="WhatsApp"
+              value={WHATSAPP_DISPLAY}
+              note="Every Ask button, the request form and the floating button open a chat with this number"
+            />
+          </dl>
         </Card>
 
         <Card

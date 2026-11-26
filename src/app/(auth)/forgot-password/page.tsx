@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { AuthShell } from "@/components/AuthShell";
 import { AuthField } from "@/components/auth/fields";
+import { whatsappGeneral } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
   title: "Reset your password",
@@ -51,9 +52,14 @@ export default function ForgotPasswordPage() {
 
       <p className="mt-6 border-t border-hairline pt-5 text-[12px] text-text-low">
         Still stuck?{" "}
-        <Link href="/contact" className="text-accent hover:underline">
+        <a
+          href={whatsappGeneral("signing in")}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-accent hover:underline"
+        >
           Message us on WhatsApp
-        </Link>{" "}
+        </a>{" "}
         and we will sort it out.
       </p>
     </AuthShell>

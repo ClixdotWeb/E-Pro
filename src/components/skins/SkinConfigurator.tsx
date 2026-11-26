@@ -8,6 +8,7 @@ import { formatPaise } from "@/lib/money";
 import type { ModelPage } from "@/lib/catalog";
 import type { DesignRow } from "@/lib/designs";
 import { addToCart } from "@/app/cart-actions";
+import { whatsappAboutDevice } from "@/lib/whatsapp";
 
 /**
  * The page that sells: one model, configured and added to the cart.
@@ -352,6 +353,25 @@ export function SkinConfigurator({
             </p>
           )}
 
+          {/* The enquiry carries what has already been chosen, so
+              nobody has to ask "which phone, which skin" before they
+              can answer it. */}
+          <a
+            href={whatsappAboutDevice({
+              device: model.name,
+              category: model.categoryLabel,
+              design: design?.name ?? null,
+              coverage: chosen?.label ?? null,
+              logoCutout: model.logoCutout ? logoCutout : null,
+            })}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-hairline text-[14px] font-bold text-text-hi transition-colors hover:border-hairline-strong"
+          >
+            <WhatsAppMark />
+            Ask on WhatsApp
+          </a>
+
           <p className="mt-5 border-t border-hairline pt-5 text-[12px] leading-relaxed text-text-low">
             Cut to the millimetre for the {model.name}. Wrong model? Go back
             and pick again — a skin cut for another device will not fit.
@@ -359,6 +379,21 @@ export function SkinConfigurator({
         </div>
       </aside>
     </div>
+  );
+}
+
+export function WhatsAppMark() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+      className="shrink-0 text-[#25D366]"
+    >
+      <path d="M12.04 2a9.9 9.9 0 0 0-8.46 15.03L2 22.5l5.6-1.47A9.9 9.9 0 1 0 12.04 2zm0 1.84a8.06 8.06 0 1 1-4.1 14.99l-.29-.17-3.32.87.89-3.23-.19-.3A8.06 8.06 0 0 1 12.04 3.84zm-3.2 4.03c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.23.9 2.42 1.02 2.59.13.16 1.75 2.79 4.3 3.8 2.12.84 2.55.67 3.01.63.46-.04 1.48-.6 1.69-1.19.21-.58.21-1.08.15-1.19-.06-.1-.23-.16-.48-.29-.25-.12-1.48-.73-1.71-.81-.23-.09-.4-.13-.56.12-.17.25-.65.81-.8.98-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23a7.5 7.5 0 0 1-1.39-1.72c-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.44.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.44-.06-.12-.55-1.36-.76-1.86-.2-.49-.4-.42-.55-.43h-.44z" />
+    </svg>
   );
 }
 
@@ -453,12 +488,26 @@ function Unavailable({ model }: { model: string }) {
         We cut skins for the {model}, but it is not priced on the site yet.
         Ask us and we will quote it.
       </p>
-      <Link
-        href="/request-model"
-        className="mt-4 inline-flex h-11 items-center rounded-full bg-accent px-6 text-[14px] font-bold text-accent-ink"
-      >
-        Ask for a price
-      </Link>
+      {/* Straight to WhatsApp rather than to a form. Someone who
+          wants a price wants an answer, and the form was the long
+          way round to the same conversation. */}
+      <div className="mt-4 flex flex-wrap gap-2.5">
+        <a
+          href={whatsappAboutDevice({ device: model })}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex h-11 items-center gap-2 rounded-full bg-accent px-6 text-[14px] font-bold text-accent-ink"
+        >
+          <WhatsAppMark />
+          Ask for a price
+        </a>
+        <Link
+          href="/request-model"
+          className="inline-flex h-11 items-center rounded-full border border-hairline px-5 text-[14px] font-bold text-text-mid transition-colors hover:border-hairline-strong hover:text-text-hi"
+        >
+          Or send a request
+        </Link>
+      </div>
     </div>
   );
 }

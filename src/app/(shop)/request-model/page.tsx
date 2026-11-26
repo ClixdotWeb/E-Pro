@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { RequestModelForm } from "@/components/RequestModelForm";
 
 export const metadata: Metadata = {
   title: "Request a Device Model",
@@ -35,8 +36,11 @@ export const metadata: Metadata = {
  *
  * Every placeholder and label is the store's own text.
  *
- * The form posts nowhere yet. It is marked up so that pointing
- * `action` at a Server Action is the only change needed.
+ * The form sends the request to WhatsApp. It posted nowhere at all
+ * before, and the alternatives were a mail server nobody has set up
+ * or a table someone would have to remember to look at - while
+ * WhatsApp is already the phone these are answered on, and the
+ * customer keeps a copy of what they asked for.
  */
 
 export default function RequestModelPage() {
@@ -57,121 +61,10 @@ export default function RequestModelPage() {
             work on adding it to our list.
           </h2>
 
-          <form className="mt-10 grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2">
-            <Field
-              id="name"
-              label="Your name"
-              autoComplete="name"
-              placeholder="Enter your name"
-            />
-            <Field
-              id="email"
-              label="Your email"
-              type="email"
-              autoComplete="email"
-              placeholder="Enter your email"
-              required
-            />
-
-            <Field
-              id="productType"
-              label="Product Type"
-              placeholder="e.g. Camera, Lens, Smartphone, Drone..."
-              className="md:col-span-2"
-            />
-
-            <Field
-              id="brand"
-              label="Brand"
-              placeholder="e.g. Sony, Canon, Apple, DJI..."
-              required
-            />
-            <Field
-              id="model"
-              label="Model"
-              placeholder="e.g. A7 IV, 24-70mm GM II, iPhone 16 Pro..."
-              required
-            />
-
-            <div className="md:col-span-2">
-              <Label htmlFor="message" required>
-                Your message
-              </Label>
-              <textarea
-                id="message"
-                name="message"
-                rows={5}
-                required
-                placeholder="Enter your message"
-                className="min-h-[100px] w-full resize-y rounded-[6px] border border-hairline bg-surface-2 px-4 pt-2.5 text-[14px] leading-relaxed text-text-hi placeholder:text-text-low focus:border-accent focus:outline-none"
-              />
-            </div>
-
-            <div className="mt-2 flex justify-center md:col-span-2 md:mt-6">
-              <button
-                type="submit"
-                className="inline-flex h-11 items-center gap-2.5 rounded-full bg-accent px-7 text-sm font-bold text-black transition-colors hover:bg-accent-hover"
-              >
-                Send message
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-                </svg>
-              </button>
-            </div>
-          </form>
+          <RequestModelForm />
         </div>
       </section>
     </>
   );
 }
 
-function Label({
-  htmlFor,
-  required = false,
-  children,
-}: {
-  htmlFor: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label
-      htmlFor={htmlFor}
-      className="mb-2 block text-[11px] font-bold uppercase tracking-[0.08em] text-text-mid"
-    >
-      {children}
-      {/* .color-error is #eb544a in the theme */}
-      {required && <sup className="ml-1 text-danger">*</sup>}
-    </label>
-  );
-}
-
-function Field({
-  id,
-  label,
-  required = false,
-  className = "",
-  type = "text",
-  ...rest
-}: {
-  id: string;
-  label: string;
-  required?: boolean;
-  className?: string;
-} & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <div className={className}>
-      <Label htmlFor={id} required={required}>
-        {label}
-      </Label>
-      <input
-        id={id}
-        name={id}
-        type={type}
-        required={required}
-        className="h-11 w-full rounded-[6px] border border-hairline bg-surface-2 px-4 text-[14px] text-text-hi placeholder:text-text-low focus:border-accent focus:outline-none"
-        {...rest}
-      />
-    </div>
-  );
-}
