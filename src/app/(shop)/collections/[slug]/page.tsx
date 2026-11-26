@@ -8,6 +8,8 @@ import {
   type CatalogProduct,
 } from "@/lib/catalog-shared";
 import { getProductsForCategory, getProductsForFinish } from "@/lib/catalog";
+import { getCollection } from "@/lib/designs";
+import { DesignGrid } from "@/components/designs/DesignGrid";
 
 /**
  * Collection page, laid out like the live product grid.
@@ -25,10 +27,14 @@ import { getProductsForCategory, getProductsForFinish } from "@/lib/catalog";
  * The filter rail and option counts I had invented are gone; the real
  * header is a Filter button, a count and a Sort select, in that order.
  *
- * Sort and Filter are inert for now - sorting needs a query parameter
- * and the catalogue has no stock or option data to filter on yet.
- * They are rendered because they are part of the layout, and wiring
- * them is a later change that does not move anything.
+ * Three things live under this one path, and which one a slug means
+ * is decided by looking, not guessing: a design collection
+ * ("embossed"), a device category ("camera"), or a finish
+ * ("korean-skin"). Design collections win, because they are the ones
+ * customers are sent to - Categories -> Our Collections -> here.
+ *
+ * Sort and Filter are inert on the product variants for now. The
+ * design grid has real ones.
  */
 
 const ALL_CATEGORY_SLUGS = Object.keys(CATEGORY_LABEL);
@@ -78,6 +84,14 @@ export async function generateMetadata({
   params,
 }: PageProps<"/collections/[slug]">): Promise<Metadata> {
   const { slug } = await params;
+
+  const collection = await getCollection(slug);
+  if (collection)
+    return {
+      title: collection.name,
+      description: `${collection.name} skins, cut to the millimetre for your exact device.`,
+    };
+
   const found = await resolve(slug);
   if (!found) return { title: "Collection not found" };
   return { title: found.label };
@@ -85,8 +99,27 @@ export async function generateMetadata({
 
 export default async function CollectionPage({
   params,
+  searchParams,
 }: PageProps<"/collections/[slug]">) {
   const { slug } = await params;
+  const sp = await searchParams;
+
+  // The device the customer came in through, when they came through
+  // a category. It narrows the grid and travels on to the product so
+  // the brand list opens on the right one.
+  const device = typeof sp.device === "string" ? sp.device : undefined;
+
+  const collection = await getCollection(slug, device);
+  if (collection)
+    return (
+      <DesignGrid
+        slug={collection.slug}
+        name={collection.name}
+        designs={collection.designs}
+        device={device}
+      />
+    );
+
   const found = await resolve(slug);
   if (!found) notFound();
 

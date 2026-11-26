@@ -33,7 +33,7 @@ export async function CollectionStrip() {
           return (
             <li key={c.slug}>
               <Link
-                href={`/designs#${c.slug}`}
+                href={`/collections/${c.slug}`}
                 className="group block overflow-hidden rounded-[var(--r-md)] border border-hairline bg-surface-1 transition-colors hover:border-hairline-strong"
               >
                 <span className="relative block aspect-square bg-surface-2">

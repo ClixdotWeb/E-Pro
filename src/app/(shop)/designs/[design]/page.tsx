@@ -1,58 +1,21 @@
-import Link from "next/link";
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { DesignConfigurator } from "@/components/designs/DesignConfigurator";
+import { redirect } from "next/navigation";
 import { getDesignPage } from "@/lib/designs";
-import { formatPaise } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({
-  params,
-}: PageProps<"/designs/[design]">): Promise<Metadata> {
-  const { design } = await params;
-  const page = await getDesignPage(design);
-  if (!page) return { title: "Not found" };
-
-  return {
-    title: page.name,
-    description:
-      page.priceInPaise > 0
-        ? `${page.name} skin, cut to the millimetre for your device. From ${formatPaise(page.priceInPaise)}.`
-        : `${page.name} skin, cut to the millimetre for your device.`,
-  };
-}
-
 /**
- * One design, sold.
+ * /designs/<name> is a convenience, not a page.
  *
- * The design-first route: pick the artwork, then say what you own.
- * /skins is the other way round and both reach the same cart - someone
- * who arrives knowing only "I have a Canon R3" should not have to
- * browse pictures to find out whether we cut for it.
+ * The product lives under its collection, the way the live store has
+ * it - /collections/embossed/products/neon-dragon - and two URLs
+ * rendering the same thing is two of everything: two pages to keep in
+ * step, and a search engine choosing between them. This sends people
+ * to the real one.
  */
-export default async function DesignPage({
+export default async function DesignRedirect({
   params,
 }: PageProps<"/designs/[design]">) {
   const { design } = await params;
   const page = await getDesignPage(design);
-  if (!page) notFound();
-
-  return (
-    <div className="page py-8 md:py-12">
-      <nav aria-label="Breadcrumb" className="mb-8 text-[13px] text-text-low">
-        <Link href="/" className="hover:text-accent">
-          Home
-        </Link>
-        <span className="px-2">/</span>
-        <Link href="/designs" className="hover:text-accent">
-          Designs
-        </Link>
-        <span className="px-2">/</span>
-        <span className="text-text-mid">{page.name}</span>
-      </nav>
-
-      <DesignConfigurator design={page} />
-    </div>
-  );
+  redirect(page ? `/collections/${page.categorySlug}/products/${page.slug}` : "/designs");
 }

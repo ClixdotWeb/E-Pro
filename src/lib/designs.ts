@@ -218,3 +218,104 @@ export async function getActiveDesigns(): Promise<DesignRow[]> {
   });
   return rows.map(toRow);
 }
+
+/* ============ the category -> collection -> design walk ============ */
+
+/**
+ * The route the live store settled on, and the one this follows:
+ *
+ *   Categories      what do you own          /skins/phone
+ *   Our Collections what should it look like /collections/embossed
+ *   the grid        which one                /collections/embossed
+ *   the product     on which device exactly  .../products/neon-dragon
+ *
+ * The category is a doorway rather than a filter that survives: by
+ * the time someone is choosing artwork they have already said what
+ * they own, and the product page asks again anyway because that is
+ * where the answer has to be exact. What the category does decide is
+ * which collections are worth showing - a kind with nothing cut for
+ * phones is not a collection, it is a dead end.
+ */
+
+export type DeviceCollection = {
+  slug: string;
+  name: string;
+  count: number;
+  /** the first design in it, for the tile */
+  coverUrl: string | null;
+};
+
+export async function getCollectionsForDevice(
+  device: string,
+): Promise<DeviceCollection[]> {
+  const [categories, designs] = await Promise.all([
+    db.designCategory.findMany({ orderBy: { position: "asc" } }),
+    db.design.findMany({
+      where: {
+        active: true,
+        OR: [{ deviceSlugs: { isEmpty: true } }, { deviceSlugs: { has: device } }],
+      },
+      orderBy: [{ position: "asc" }, { name: "asc" }],
+      select: { categorySlug: true, imageUrl: true },
+    }),
+  ]);
+
+  return categories
+    .map((c) => {
+      const mine = designs.filter((d) => d.categorySlug === c.slug);
+      return {
+        slug: c.slug,
+        name: c.name,
+        count: mine.length,
+        coverUrl: mine.find((d) => d.imageUrl)?.imageUrl ?? null,
+      };
+    })
+    .filter((c) => c.count > 0);
+}
+
+export type DesignCollectionPage = {
+  slug: string;
+  name: string;
+  designs: DesignRow[];
+};
+
+/**
+ * One collection's grid.
+ *
+ * `device` narrows it when the customer arrived through a category,
+ * and is left out when they came in from the header - in which case
+ * the collection is everything of that kind, which is what
+ * /collections/<kind> means on the live store.
+ */
+export async function getCollection(
+  kind: string,
+  device?: string,
+): Promise<DesignCollectionPage | null> {
+  const category = await db.designCategory.findUnique({ where: { slug: kind } });
+  if (!category) return null;
+
+  const rows = await db.design.findMany({
+    where: {
+      categorySlug: kind,
+      active: true,
+      ...(device
+        ? {
+            OR: [
+              { deviceSlugs: { isEmpty: true } },
+              { deviceSlugs: { has: device } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: [{ position: "asc" }, { name: "asc" }],
+    include: { category: { select: { name: true } } },
+  });
+
+  return { slug: category.slug, name: category.name, designs: rows.map(toRow) };
+}
+
+/** Every collection slug, so a route can tell one from a category. */
+export async function getCollectionSlugs(): Promise<string[]> {
+  const rows = await db.designCategory.findMany({ select: { slug: true } });
+  return rows.map((r) => r.slug);
+}

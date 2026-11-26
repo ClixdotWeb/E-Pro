@@ -52,7 +52,7 @@ export default async function DesignsPage() {
                 {c.designs.map((d) => (
                   <li key={d.id}>
                     <Link
-                      href={`/designs/${d.slug}`}
+                      href={`/collections/${c.slug}/products/${d.slug}`}
                       className="group block overflow-hidden rounded-[var(--r-md)] border border-hairline bg-surface-1 transition-colors hover:border-hairline-strong"
                     >
                       <span className="relative block aspect-square bg-surface-2">

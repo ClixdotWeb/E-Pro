@@ -271,23 +271,23 @@ export function offersLogoCutout(category: string, brand: string): boolean {
 /** The device pages' own wording, taken from the live store. */
 export const CATEGORY_INTRO: Record<string, { eyebrow: string; heading: string; blurb: string }> = {
   camera: {
-    eyebrow: "Choose your camera",
+    eyebrow: "Choose your style",
     heading: "Camera Skins",
-    blurb: "Precision-cut protective skins for professional camera gear.",
+    blurb: "Precision-cut protective skins for professional camera gear. Pick a collection, then tell us which body you have.",
   },
   lens: {
-    eyebrow: "Choose your lens",
+    eyebrow: "Choose your style",
     heading: "Lens Skins",
-    blurb: "Precision-cut protective skins for professional camera lenses.",
+    blurb: "Precision-cut protective skins for professional camera lenses. Pick a collection, then tell us which lens you have.",
   },
   phone: {
-    eyebrow: "Choose your phone",
+    eyebrow: "Choose your style",
     heading: "Phone Skins",
-    blurb: "Cut to the millimetre for your exact model. Pick your brand to start.",
+    blurb: "Cut to the millimetre for your exact model. Pick a collection, then tell us what you carry.",
   },
   gimbal: {
-    eyebrow: "Choose your gimbal",
+    eyebrow: "Choose your style",
     heading: "Gimbal Skins",
-    blurb: "Protective skins cut for your stabiliser, grip and arms.",
+    blurb: "Protective skins cut for your stabiliser, grip and arms. Pick a collection, then tell us which one you have.",
   },
 };

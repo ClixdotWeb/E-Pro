@@ -30,13 +30,28 @@ import type { DesignPage } from "@/lib/designs";
  * answer; a quietly shorter list is not.
  */
 
-export function DesignConfigurator({ design }: { design: DesignPage }) {
+export function DesignConfigurator({
+  design,
+  device,
+}: {
+  design: DesignPage;
+  /** the category the customer came in through, if any */
+  device?: string;
+}) {
   const router = useRouter();
+
+  // Someone who clicked Camera should not have to scroll past twelve
+  // phone brands, so the chips open on the device they arrived on.
+  const inDevice = device
+    ? design.brands.filter((b) => b.category === device)
+    : design.brands;
+  const brandChoices = inDevice.length > 0 ? inDevice : design.brands;
+
   const [brandSlug, setBrandSlug] = useState<string | null>(
-    design.brands.length === 1 ? design.brands[0].slug : null,
+    brandChoices.length === 1 ? brandChoices[0].slug : null,
   );
   const [modelId, setModelId] = useState<string>("");
-  const [device, setDevice] = useState<DeviceCoverages | null>(null);
+  const [chosenDevice, setChosenDevice] = useState<DeviceCoverages | null>(null);
   const [variantId, setVariantId] = useState<string | null>(null);
   const [logoCutout, setLogoCutout] = useState(true);
   const [quantity, setQuantity] = useState(1);
@@ -47,10 +62,10 @@ export function DesignConfigurator({ design }: { design: DesignPage }) {
     null,
   );
 
-  const brand = design.brands.find((b) => b.slug === brandSlug) ?? null;
+  const brand = brandChoices.find((b) => b.slug === brandSlug) ?? null;
 
   const chosen =
-    device?.options.find((o) => o.variantId === variantId) ?? null;
+    chosenDevice?.options.find((o) => o.variantId === variantId) ?? null;
 
   const totalInPaise = chosen
     ? (chosen.priceInPaise + design.priceInPaise) * quantity
@@ -62,33 +77,33 @@ export function DesignConfigurator({ design }: { design: DesignPage }) {
   // than one, so the chip row is grouped by category rather than
   // pretending Canon and Apple belong in one list.
   const brandGroups = useMemo(() => {
-    const map = new Map<string, typeof design.brands>();
-    for (const b of design.brands) {
+    const map = new Map<string, typeof brandChoices>();
+    for (const b of brandChoices) {
       const list = map.get(b.category) ?? [];
       list.push(b);
       map.set(b.category, list);
     }
     return [...map.entries()];
-  }, [design]);
+  }, [brandChoices]);
 
   function pickBrand(slug: string) {
     setBrandSlug(slug);
     setModelId("");
-    setDevice(null);
+    setChosenDevice(null);
     setVariantId(null);
     setResult(null);
   }
 
   function pickModel(id: string) {
     setModelId(id);
-    setDevice(null);
+    setChosenDevice(null);
     setVariantId(null);
     setResult(null);
     if (!id) return;
 
     startLoad(async () => {
       const d = await getCoveragesFor(id);
-      setDevice(d);
+      setChosenDevice(d);
       // One real choice is not a choice; take it.
       const live = d?.options.filter((o) => o.available) ?? [];
       if (live.length === 1) setVariantId(live[0].variantId);
@@ -103,7 +118,7 @@ export function DesignConfigurator({ design }: { design: DesignPage }) {
         variantId: chosen.variantId,
         quantity,
         designId: design.id,
-        logoCutout: device?.logoCutout ? logoCutout : undefined,
+        logoCutout: chosenDevice?.logoCutout ? logoCutout : undefined,
       });
       setResult(r);
       if (r.ok) router.refresh();
@@ -186,8 +201,8 @@ export function DesignConfigurator({ design }: { design: DesignPage }) {
           n={2}
           title={brand ? `Select ${brand.name} model` : "Select model"}
           required
-          done={Boolean(device)}
-          value={device?.deviceName ?? (brand ? "None selected" : undefined)}
+          done={Boolean(chosenDevice)}
+          value={chosenDevice?.deviceName ?? (brand ? "None selected" : undefined)}
         >
           <select
             value={modelId}
@@ -213,14 +228,14 @@ export function DesignConfigurator({ design }: { design: DesignPage }) {
         {/* 3. coverage */}
         <Step
           n={3}
-          title={`${device?.optionLabel ?? "Coverage"} option`}
+          title={`${chosenDevice?.optionLabel ?? "Coverage"} option`}
           required
           done={Boolean(chosen)}
-          value={chosen?.label ?? (device ? undefined : "Select model first")}
+          value={chosen?.label ?? (chosenDevice ? undefined : "Select model first")}
         >
           <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
-            {(device?.options ?? PLACEHOLDERS).map((o, i) => {
-              const real = Boolean(device);
+            {(chosenDevice?.options ?? PLACEHOLDERS).map((o, i) => {
+              const real = Boolean(chosenDevice);
               const selected = real && o.variantId === variantId;
 
               return (
@@ -258,7 +273,7 @@ export function DesignConfigurator({ design }: { design: DesignPage }) {
         </Step>
 
         {/* 4. logo */}
-        {device?.logoCutout && (
+        {chosenDevice?.logoCutout && (
           <Step
             n={4}
             title="Apple logo cutout"
@@ -316,9 +331,9 @@ export function DesignConfigurator({ design }: { design: DesignPage }) {
                 ? "Add to cart"
                 : !brand
                   ? "Pick a brand"
-                  : !device
+                  : !chosenDevice
                     ? "Pick your model"
-                    : `Pick a ${(device.optionLabel ?? "coverage").toLowerCase()}`}
+                    : `Pick a ${chosenDevice.optionLabel.toLowerCase()}`}
           </button>
         </div>
 
@@ -342,10 +357,10 @@ export function DesignConfigurator({ design }: { design: DesignPage }) {
 
         <a
           href={whatsappAboutDevice({
-            device: device?.deviceName ?? "device",
+            device: chosenDevice?.deviceName ?? "device",
             design: design.name,
             coverage: chosen?.label ?? null,
-            logoCutout: device?.logoCutout ? logoCutout : null,
+            logoCutout: chosenDevice?.logoCutout ? logoCutout : null,
           })}
           target="_blank"
           rel="noopener noreferrer"
