@@ -5,6 +5,8 @@ import { formatPaise } from "@/lib/money";
 import { notFound } from "next/navigation";
 import { getOrder } from "@/lib/orders";
 import { whatsappAboutOrder } from "@/lib/whatsapp";
+import { PayNowButton } from "@/components/payment/PayNowButton";
+import { paymentStatus } from "@/lib/payments";
 
 export const dynamic = "force-dynamic";
 
@@ -167,7 +169,20 @@ export default async function OrderConfirmationPage({
       </section>
 
       {/* actions */}
-      <div className="mt-8 flex flex-wrap justify-center gap-3">
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        {/* A dismissed modal or a dead battery leaves a real order
+            unpaid. Finishing it should not mean ordering again. */}
+        {order.paymentStatus !== "PAID" && paymentStatus().usable && (
+          <PayNowButton
+            orderNumber={order.orderNumber}
+            amountLabel={formatPaise(order.totalInPaise)}
+            customer={{
+              name: order.customerName,
+              email: order.email,
+              phone: order.phone ?? undefined,
+            }}
+          />
+        )}
         <Link
           href={`/track?order=${orderNumber}`}
           className="rounded-[var(--r-md)] bg-accent px-5 py-3 text-[13px] font-semibold text-accent-ink transition-colors hover:bg-accent-hover"

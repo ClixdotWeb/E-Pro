@@ -51,6 +51,15 @@ export type ClientResult = Record<string, string>;
 export type VerifiedPayment = {
   ok: boolean;
   providerPaymentId: string | null;
+  /**
+   * The gateway order the handshake was for.
+   *
+   * It is here rather than read off the raw result by the caller
+   * because the field is named differently by every gateway, and a
+   * caller that guesses at one gateway's spelling silently fails to
+   * update the Payment row for all the others.
+   */
+  providerOrderId: string | null;
   /** present when ok === false */
   reason?: string;
 };

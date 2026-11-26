@@ -1,11 +1,11 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { cartToken } from "@/lib/cart";
 import { calculateTotals } from "@/lib/pricing";
+import { paymentStatus } from "@/lib/payments";
 
 /**
  * Placing an order.
@@ -28,14 +28,21 @@ import { calculateTotals } from "@/lib/pricing";
  * the sale and the other gets told, rather than both getting a
  * confirmation and one getting a phone call.
  *
- * No money changes hands. The gateway is not chosen yet, so the
- * order lands UNPAID and PENDING, which is exactly where a
- * pay-on-delivery order would sit too. When the gateway arrives it
- * goes between the totals and the commit, and nothing else here
- * changes.
+ * No money changes hands here, and it never will. The order is
+ * written UNPAID and PENDING and the order number is handed back;
+ * paying is a second step, in payment-actions, because the gateway
+ * needs an order to charge against and because an order that exists
+ * before the payment is an order we can still find when the
+ * customer's browser dies halfway through.
+ *
+ * With no gateway configured that second step is skipped and the
+ * order simply sits unpaid - which is where a pay-on-delivery order
+ * sits anyway.
  */
 
-export type PlaceOrderResult = { ok: false; message: string };
+export type PlaceOrderResult =
+  | { ok: false; message: string }
+  | { ok: true; orderNumber: string; pay: boolean };
 
 const PIN = /^[1-9][0-9]{5}$/;
 const PHONE = /^[6-9][0-9]{9}$/;
@@ -267,5 +274,8 @@ export async function placeOrder(
     // The order is placed. A cache hint is not worth failing over.
   }
 
-  redirect(`/order/${orderNumber}`);
+  // The caller decides what happens next: open the gateway, or go
+  // straight to the confirmation. Redirecting from here would have
+  // made paying impossible to add without unpicking it.
+  return { ok: true, orderNumber, pay: paymentStatus().usable };
 }

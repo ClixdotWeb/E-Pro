@@ -69,18 +69,36 @@ export function paymentProvider(): PaymentProvider {
 export function paymentStatus(): {
   id: PaymentProviderId;
   displayName: string;
+  /** real money can move - what the shop is allowed to claim */
   live: boolean;
+  /** a gateway flow can run at all, test gateway included */
+  usable: boolean;
 } {
   const requested = (process.env.PAYMENT_PROVIDER ?? "mock") as PaymentProviderId;
   const provider = REGISTRY[requested];
 
   if (!provider) {
-    return { id: "mock", displayName: "Not configured", live: false };
+    return {
+      id: "mock",
+      displayName: "Not configured",
+      live: false,
+      usable: false,
+    };
   }
+
+  // Two different questions, and conflating them meant the test
+  // gateway could never be exercised: "live" is what the checkout
+  // page is allowed to say about taking money, "usable" is whether
+  // there is a gateway to open at all. The mock is usable in
+  // development and nowhere else - it throws in production anyway.
+  const real = provider.id !== "mock";
 
   return {
     id: provider.id,
     displayName: provider.displayName,
-    live: provider.id !== "mock" && provider.configured,
+    live: real && provider.configured,
+    usable:
+      provider.configured &&
+      (real || process.env.NODE_ENV !== "production"),
   };
 }

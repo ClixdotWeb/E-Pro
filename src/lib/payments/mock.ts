@@ -64,15 +64,25 @@ export const mockProvider: PaymentProvider = {
     const signature = result.signature;
 
     if (!orderId || !paymentId || !signature) {
-      return { ok: false, providerPaymentId: null, reason: "missing fields" };
+      return {
+        ok: false,
+        providerPaymentId: null,
+        providerOrderId: orderId ?? null,
+        reason: "missing fields",
+      };
     }
 
     const expected = sign(`${orderId}|${paymentId}`);
     if (!timingSafeEqualHex(expected, signature)) {
-      return { ok: false, providerPaymentId: null, reason: "bad signature" };
+      return {
+        ok: false,
+        providerPaymentId: null,
+        providerOrderId: orderId,
+        reason: "bad signature",
+      };
     }
 
-    return { ok: true, providerPaymentId: paymentId };
+    return { ok: true, providerPaymentId: paymentId, providerOrderId: orderId };
   },
 
   verifyWebhook(rawBody: string, signature: string | null): boolean {

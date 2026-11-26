@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useMemo } from "react";
-import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
 import { placeOrder } from "@/app/checkout-actions";
+import { confirmPayment, startPayment } from "@/app/payment-actions";
+import { openGateway } from "./payment/openGateway";
 import { CatalogMedia } from "./CatalogMedia";
 import { formatPaise } from "@/lib/money";
 import { calculateTotals } from "@/lib/pricing";
@@ -73,7 +75,63 @@ export function CheckoutView({
   lines: CartLine[];
   payment: PaymentInfo;
 }) {
-  const [state, action] = useActionState(placeOrder, null);
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [stage, setStage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  /**
+   * Place the order, then pay for it.
+   *
+   * The order is written first and on purpose: if the modal is
+   * dismissed, the browser crashes or the phone dies, the order is
+   * still in the dashboard as unpaid rather than lost. The customer
+   * lands on its page either way, and that page says whether it is
+   * paid.
+   */
+  function submit(form: FormData) {
+    setError(null);
+    start(async () => {
+      setStage("Placing your order…");
+      const placed = await placeOrder(null, form);
+
+      if (!placed || !placed.ok) {
+        setStage(null);
+        setError(placed?.message ?? "Could not place the order.");
+        return;
+      }
+
+      const { orderNumber } = placed;
+
+      if (!placed.pay) {
+        router.push(`/order/${orderNumber}`);
+        return;
+      }
+
+      setStage("Opening the payment gateway…");
+      const intent = await startPayment(orderNumber);
+
+      if (!intent.ok) {
+        // The order exists; only the gateway failed. Send them to it
+        // rather than stranding them on a form they already submitted.
+        router.push(`/order/${orderNumber}`);
+        return;
+      }
+
+      const outcome = await openGateway(intent.intent, {
+        name: String(form.get("firstName") ?? ""),
+        email: String(form.get("email") ?? ""),
+        phone: String(form.get("phone") ?? ""),
+      });
+
+      if (outcome.status === "paid") {
+        setStage("Confirming the payment…");
+        await confirmPayment(orderNumber, outcome.result);
+      }
+
+      router.push(`/order/${orderNumber}`);
+    });
+  }
 
   const totals = useMemo(
     () =>
@@ -105,7 +163,7 @@ export function CheckoutView({
 
   return (
     <form
-      action={action}
+      action={submit}
       className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:gap-12"
     >
       <div className="space-y-8">
@@ -233,12 +291,12 @@ export function CheckoutView({
           )}
         </Step>
 
-        {state && (
+        {error && (
           <p
             role="alert"
             className="rounded-[var(--r-md)] border border-danger/35 bg-danger/10 px-4 py-3 text-[12px] leading-relaxed text-danger"
           >
-            {state.message}
+            {error}
           </p>
         )}
       </div>
@@ -306,13 +364,17 @@ export function CheckoutView({
             </span>
           </div>
 
-          <PlaceOrderButton
-            label={
-              payment.live
+          <button
+            type="submit"
+            disabled={pending}
+            className="mt-5 w-full rounded-[var(--r-md)] bg-accent px-5 py-3.5 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-60"
+          >
+            {pending
+              ? (stage ?? "One moment…")
+              : payment.live
                 ? `Pay ${formatPaise(totals.totalInPaise)}`
-                : `Place order · ${formatPaise(totals.totalInPaise)}`
-            }
-          />
+                : `Place order · ${formatPaise(totals.totalInPaise)}`}
+          </button>
 
           <Link
             href="/cart"
@@ -381,16 +443,3 @@ function Field({
   );
 }
 
-function PlaceOrderButton({ label }: { label: string }) {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="mt-5 w-full rounded-[var(--r-md)] bg-accent px-5 py-3.5 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-60"
-    >
-      {pending ? "Placing your order…" : label}
-    </button>
-  );
-}
