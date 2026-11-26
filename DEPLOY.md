@@ -42,7 +42,7 @@ Optional until the gateway is ready:
 |---|---|
 | `PAYMENT_PROVIDER` | `razorpay` once the keys exist. Leave unset and orders are placed unpaid |
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` / `RAZORPAY_WEBHOOK_SECRET` | from the Razorpay dashboard |
-| `NEXT_PUBLIC_WHATSAPP_NUMBER` | defaults to 918891202497. Also a **build argument** |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | defaults to 919562470470. Also a **build argument** |
 
 ### Build arguments, not just environment
 

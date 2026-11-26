@@ -20,10 +20,10 @@
 /** The shop's WhatsApp, in international form, digits only. */
 export const WHATSAPP_NUMBER =
   process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") ||
-  "918891202497";
+  "919562470470";
 
 /** How a human reads it back. */
-export const WHATSAPP_DISPLAY = "+91 88912 02497";
+export const WHATSAPP_DISPLAY = "+91 95624 70470";
 
 /**
  * A wa.me link with the message pre-typed.
