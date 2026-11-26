@@ -33,6 +33,12 @@ COPY . .
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 
+# The WhatsApp number every "Ask us" link opens. Also NEXT_PUBLIC_, so
+# also needed now: setting it only at runtime leaves the number that
+# was compiled in.
+ARG NEXT_PUBLIC_WHATSAPP_NUMBER=918891202497
+ENV NEXT_PUBLIC_WHATSAPP_NUMBER=$NEXT_PUBLIC_WHATSAPP_NUMBER
+
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Generate the Prisma client from the schema. This needs no database
@@ -81,6 +87,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # against this image without a second build.
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+
+# Design photographs the shop owner uploads land here. The directory
+# has to exist and be writable by the server's own user, and it has to
+# be a MOUNTED VOLUME in production - a container's filesystem is
+# thrown away on every deploy, and so is every photograph with it.
+RUN mkdir -p /app/public/uploads/designs  && chown -R nextjs:nodejs /app/public/uploads
 
 USER nextjs
 EXPOSE 3000
