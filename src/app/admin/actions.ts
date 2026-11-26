@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { currentStaff, isStaffRole } from "@/auth";
@@ -1041,6 +1042,234 @@ export async function deleteReview(id: string): Promise<ActionResult> {
     safeRevalidate(`/products/${review.product.slug}`);
 
     return { ok: true, message: `${review.authorName}'s review is deleted.` };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not delete it.",
+    };
+  }
+}
+
+/* ================= device models ================= */
+
+/**
+ * Devices: the thing a skin is cut for.
+ *
+ * These only ever arrived from the spreadsheets, which meant a phone
+ * released this month could not be sold until someone edited an
+ * Excel file and re-ran an import that replaces the whole catalogue.
+ * The dashboard could create a model, but only as a side effect of
+ * typing a variant title into the product editor, which is not
+ * something anyone would find.
+ *
+ * Adding a model offers to give it the same skins the rest of its
+ * category already sells, priced the same. That is the difference
+ * between adding a device and adding a device that can be bought: a
+ * model with no variants renders a page that says "we cut skins for
+ * this, but it is not priced yet", which is not what anyone means
+ * by "add the iPhone 17".
+ */
+
+/** Matches the importer, so a model added here slugs like its siblings. */
+function modelSlug(category: string, brand: string, name: string): string {
+  return slugify(`${category}-${brand}-${name}`);
+}
+
+function skuFor(finish: string, slug: string): string {
+  const full = `EPRO-${finish}-${slug}`.toUpperCase();
+  if (full.length <= 64) return full;
+  // Two long names sharing a prefix must not collide, so the tail is
+  // a hash of the whole string rather than a counter.
+  const hash = createHash("sha1").update(full).digest("hex").slice(0, 7);
+  return `${full.slice(0, 56)}-${hash.toUpperCase()}`;
+}
+
+export type DeviceModelInput = {
+  category: string;
+  brand: string;
+  name: string;
+  /** give it whatever the rest of the category sells */
+  withSkins: boolean;
+};
+
+export async function createDeviceModel(
+  input: DeviceModelInput,
+): Promise<ActionResult> {
+  await assertCanWrite();
+
+  const brand = input.brand.trim();
+  const name = input.name.trim();
+  if (!brand) return { ok: false, message: "Which brand is it?" };
+  if (!name) return { ok: false, message: "The model needs a name." };
+
+  try {
+    const category = await db.deviceCategory.findUnique({
+      where: { slug: input.category },
+      select: { id: true, name: true },
+    });
+    if (!category) return { ok: false, message: "No such category." };
+
+    const slug = modelSlug(input.category, brand, name);
+    const clash = await db.deviceModel.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+    if (clash)
+      return { ok: false, message: `${brand} ${name} is already there.` };
+
+    const model = await db.deviceModel.create({
+      data: { slug, brand, name, categoryId: category.id },
+      select: { id: true },
+    });
+
+    let added = 0;
+
+    if (input.withSkins) {
+      // What this category sells, and for how much. The price is the
+      // one most of its siblings carry rather than an average: an
+      // average of 899 and 1299 is a number nobody has ever charged.
+      const siblings = await db.variant.findMany({
+        where: { deviceModel: { categoryId: category.id }, productId: { not: undefined } },
+        select: { productId: true, priceInPaise: true },
+      });
+
+      const byProduct = new Map<string, Map<number, number>>();
+      for (const v of siblings) {
+        const counts = byProduct.get(v.productId) ?? new Map<number, number>();
+        counts.set(v.priceInPaise, (counts.get(v.priceInPaise) ?? 0) + 1);
+        byProduct.set(v.productId, counts);
+      }
+
+      const products = await db.product.findMany({
+        where: { id: { in: [...byProduct.keys()] } },
+        select: { id: true, slug: true, finish: true },
+      });
+
+      for (const p of products) {
+        const counts = byProduct.get(p.id);
+        if (!counts) continue;
+
+        let price = 0;
+        let best = -1;
+        for (const [paise, n] of counts) {
+          if (n > best || (n === best && paise > price)) {
+            best = n;
+            price = paise;
+          }
+        }
+        if (price <= 0) continue;
+
+        await db.variant.create({
+          data: {
+            productId: p.id,
+            deviceModelId: model.id,
+            sku: skuFor(p.finish ?? p.slug, slug),
+            priceInPaise: price,
+            stock: 10,
+            active: true,
+          },
+        });
+        added++;
+      }
+    }
+
+    revalidateCatalog();
+    safeRevalidate("/admin/models");
+
+    return {
+      ok: true,
+      message:
+        added > 0
+          ? `${brand} ${name} added with ${added} skin${added === 1 ? "" : "s"}.`
+          : `${brand} ${name} added. Give it skins and a price before it can be bought.`,
+      slug,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not add the model.",
+    };
+  }
+}
+
+export async function updateDeviceModel(
+  id: string,
+  input: { brand: string; name: string; active: boolean },
+): Promise<ActionResult> {
+  await assertCanWrite();
+
+  const brand = input.brand.trim();
+  const name = input.name.trim();
+  if (!brand || !name)
+    return { ok: false, message: "A model needs a brand and a name." };
+
+  try {
+    const existing = await db.deviceModel.findUnique({
+      where: { id },
+      select: { category: { select: { slug: true } } },
+    });
+    if (!existing) return { ok: false, message: "That model is gone." };
+
+    const slug = modelSlug(existing.category.slug, brand, name);
+    const clash = await db.deviceModel.findFirst({
+      where: { slug, NOT: { id } },
+      select: { id: true },
+    });
+    if (clash)
+      return { ok: false, message: `${brand} ${name} is already there.` };
+
+    await db.deviceModel.update({
+      where: { id },
+      data: { slug, brand, name, active: input.active },
+    });
+
+    revalidateCatalog();
+    safeRevalidate("/admin/models");
+
+    return { ok: true, message: `${brand} ${name} saved.`, slug };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not save the model.",
+    };
+  }
+}
+
+/**
+ * Deleting a device takes its skins with it, which is why anything
+ * ever sold on it is refused: an OrderItem points at the variant, and
+ * a receipt that cannot say what was bought is not a receipt. Those
+ * get switched off instead, which takes them off the shop and leaves
+ * the history intact.
+ */
+export async function deleteDeviceModel(id: string): Promise<ActionResult> {
+  await assertCanWrite();
+
+  try {
+    const model = await db.deviceModel.findUnique({
+      where: { id },
+      select: { brand: true, name: true },
+    });
+    if (!model) return { ok: false, message: "That model is already gone." };
+
+    const sold = await db.orderItem.count({
+      where: { variant: { deviceModelId: id } },
+    });
+    if (sold > 0)
+      return {
+        ok: false,
+        message: `${model.brand} ${model.name} has been ordered ${sold} time${sold === 1 ? "" : "s"}. Switch it off instead — deleting it would break those orders.`,
+      };
+
+    await db.$transaction([
+      db.variant.deleteMany({ where: { deviceModelId: id } }),
+      db.deviceModel.delete({ where: { id } }),
+    ]);
+
+    revalidateCatalog();
+    safeRevalidate("/admin/models");
+
+    return { ok: true, message: `${model.brand} ${model.name} deleted.` };
   } catch (e) {
     return {
       ok: false,

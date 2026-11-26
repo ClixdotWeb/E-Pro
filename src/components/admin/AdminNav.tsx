@@ -43,6 +43,16 @@ const NAV: { href: string; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
+    href: "/admin/models",
+    label: "Devices",
+    icon: (
+      <>
+        <rect x="7" y="2.5" width="10" height="19" rx="2.5" />
+        <path d="M10.5 5.5h3" />
+      </>
+    ),
+  },
+  {
     href: "/admin/designs",
     label: "Designs",
     icon: (

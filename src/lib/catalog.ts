@@ -595,3 +595,86 @@ export async function getPricingGroups(): Promise<PricingGroup[]> {
     flat: Number(r.prices) <= 1,
   }));
 }
+
+/* ================= devices, for the dashboard ================= */
+
+/**
+ * Every device in one category, with what it sells.
+ *
+ * The shop-facing readers above hide anything not on sale; this one
+ * must not, because a device with no skins and a device switched off
+ * are exactly the two the dashboard exists to show.
+ */
+export type AdminModelRow = {
+  id: string;
+  slug: string;
+  brand: string;
+  name: string;
+  active: boolean;
+  /** variants against this device, priced or not */
+  skins: number;
+  /** variants that a customer could actually buy today */
+  onSale: number;
+  /** times it has been ordered; deleting is refused above zero */
+  sold: number;
+};
+
+export async function getModelsForAdmin(
+  category: string,
+): Promise<AdminModelRow[]> {
+  const rows = await db.deviceModel.findMany({
+    where: { category: { slug: category } },
+    orderBy: [{ brand: "asc" }, { name: "asc" }],
+    select: {
+      id: true,
+      slug: true,
+      brand: true,
+      name: true,
+      active: true,
+      variants: {
+        select: {
+          active: true,
+          stock: true,
+          priceInPaise: true,
+          product: { select: { status: true } },
+          _count: { select: { orderItems: true } },
+        },
+      },
+    },
+  });
+
+  return rows.map((m) => ({
+    id: m.id,
+    slug: m.slug,
+    brand: m.brand,
+    name: m.name,
+    active: m.active,
+    skins: m.variants.length,
+    onSale: m.variants.filter(
+      (v) =>
+        v.active &&
+        v.stock > 0 &&
+        v.priceInPaise > 0 &&
+        v.product.status === "ACTIVE",
+    ).length,
+    sold: m.variants.reduce((n, v) => n + v._count.orderItems, 0),
+  }));
+}
+
+/** Category slugs and names for the dashboard's device picker. */
+export async function getCategoryChoices(): Promise<
+  { slug: string; name: string; models: number }[]
+> {
+  const rows = await db.deviceCategory.findMany({
+    orderBy: { position: "asc" },
+    select: {
+      slug: true,
+      name: true,
+      _count: { select: { models: true } },
+    },
+  });
+
+  return rows
+    .filter((c) => c.slug !== UNCATEGORISED)
+    .map((c) => ({ slug: c.slug, name: c.name, models: c._count.models }));
+}
