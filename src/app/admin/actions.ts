@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { currentStaff, isStaffRole } from "@/auth";
 import { UNCATEGORISED } from "@/lib/catalog-shared";
 
 /**
@@ -9,28 +10,37 @@ import { UNCATEGORISED } from "@/lib/catalog-shared";
  *
  * SECURITY, and this is not a footnote: a Server Action is a POST
  * endpoint. It is reachable whether or not the page that calls it
- * rendered, so locking the admin LAYOUT in production protects the
- * screens and nothing else. Without the guard below, anyone who knew
- * the deployment URL could delete the catalogue.
+ * rendered, so locking the admin LAYOUT protects the screens and
+ * nothing else. Without the guard below, anyone who knew the
+ * deployment URL could delete the catalogue.
  *
- * So every action here calls `assertCanWrite()` first. It is a
- * stand-in for a session check, using the same gate as the layout:
- * development, or production with ALLOW_INSECURE_ADMIN=1 explicitly
- * set. When Auth.js is wired, replace its body with the session and
- * role check and delete the env flag - do not add the session check
- * alongside it and leave the flag working.
+ * So every action here awaits `assertCanWrite()` first. It reads the
+ * role from the database rather than the session token, for the same
+ * reason the layout does: a token is a snapshot and revoking access
+ * must take effect on the next request, not in thirty days.
+ *
+ * The one exception is a shop with no staff at all, which is the
+ * state a fresh installation starts in: the dashboard needs an
+ * admin, and the only way to make one is the dashboard. While nobody
+ * holds a staff role, a signed-in user may write. That hole closes
+ * by itself the moment an admin exists, and it never opens to
+ * someone who is not signed in.
  */
 
-function assertCanWrite() {
-  const open =
-    process.env.NODE_ENV !== "production" ||
-    process.env.ALLOW_INSECURE_ADMIN === "1";
+async function assertCanWrite() {
+  const me = await currentStaff();
+  if (me && isStaffRole(me.role)) return;
 
-  if (!open) {
-    throw new Error(
-      "The dashboard is locked. Sign-in is not wired yet, so writing is refused in production.",
-    );
+  if (me) {
+    const staff = await db.user.count({
+      where: { role: { in: ["ADMIN", "STAFF"] } },
+    });
+    if (staff === 0) return;
   }
+
+  throw new Error(
+    "You are not signed in as staff, so this change was refused.",
+  );
 }
 
 /** Both the shop and the dashboard show this data. Refresh both. */
@@ -100,7 +110,7 @@ export async function saveProduct(
   input: ProductInput,
   mode: "new" | "edit",
 ): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   const title = input.title.trim();
   if (!title) return { ok: false, message: "A product needs a name." };
@@ -236,7 +246,7 @@ export async function saveProduct(
 }
 
 export async function deleteProduct(slug: string): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   try {
     const product = await db.product.findUnique({
@@ -278,7 +288,7 @@ export async function deleteProduct(slug: string): Promise<ActionResult> {
 export async function saveStock(
   changes: { id: string; stock: number }[],
 ): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   if (changes.length === 0) return { ok: true, message: "Nothing to save." };
 
@@ -313,7 +323,7 @@ export async function saveStock(
 /* ================= categories ================= */
 
 export async function createCategory(name: string): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   const clean = name.trim();
   if (!clean) return { ok: false, message: "A category needs a name." };
@@ -344,7 +354,7 @@ export async function renameCategory(
   slug: string,
   name: string,
 ): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   const clean = name.trim();
   if (!clean) return { ok: false, message: "A category needs a name." };
@@ -365,7 +375,7 @@ export async function renameCategory(
 }
 
 export async function deleteCategory(slug: string): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   if (slug === UNCATEGORISED) {
     return {
@@ -415,7 +425,7 @@ export type DiscountInput = {
 export async function createDiscount(
   input: DiscountInput,
 ): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   const code = input.code.trim().toUpperCase();
   if (!code) return { ok: false, message: "A code needs some letters." };
@@ -456,7 +466,7 @@ export async function setDiscountActive(
   code: string,
   active: boolean,
 ): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   try {
     await db.discount.update({ where: { code }, data: { active } });
@@ -471,7 +481,7 @@ export async function setDiscountActive(
 }
 
 export async function deleteDiscount(code: string): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   try {
     await db.discount.delete({ where: { code } });
@@ -506,7 +516,7 @@ export async function setFlatPrice(
   rupees: string,
   opts: { publish?: boolean; stock?: number } = {},
 ): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   const paise = toPaise(rupees);
   if (paise <= 0) {
@@ -562,7 +572,7 @@ export async function setFlatPrice(
 
 /** Take a product off the shop without touching its prices. */
 export async function unpublishProduct(slug: string): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   try {
     const product = await db.product.update({
@@ -657,7 +667,7 @@ export async function saveDesign(
   input: DesignInput,
   form?: FormData,
 ): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   const name = input.name.trim();
   if (!name) return { ok: false, message: "A design needs a name." };
@@ -722,7 +732,7 @@ export async function saveDesign(
 }
 
 export async function deleteDesign(id: string): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   try {
     const d = await db.design.delete({
@@ -746,7 +756,7 @@ export async function setDesignActive(
   id: string,
   active: boolean,
 ): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   try {
     const d = await db.design.update({
@@ -773,7 +783,7 @@ export async function setDesignActive(
 export async function createDesignCategory(
   name: string,
 ): Promise<ActionResult> {
-  assertCanWrite();
+  await assertCanWrite();
 
   const clean = name.trim();
   if (!clean) return { ok: false, message: "A kind of design needs a name." };
@@ -799,6 +809,181 @@ export async function createDesignCategory(
     return {
       ok: false,
       message: e instanceof Error ? e.message : "Could not add it.",
+    };
+  }
+}
+
+/* ================= orders ================= */
+
+/**
+ * Move an order to its next stage.
+ *
+ * One button, labelled with the actual next step, rather than a
+ * dropdown of seven statuses that lets someone mark an unpaid order
+ * delivered. The path is fixed and forward-only; cancelling is a
+ * separate decision and gets its own action.
+ *
+ * Every move writes an OrderEvent, because "when was this shipped"
+ * is a question the shop will be asked by a customer on the phone.
+ */
+// A "use server" module may only export async functions, so the
+// button's labels live beside the button in order-status.ts and only
+// the transition itself is here.
+const NEXT_STATUS: Record<string, { to: string; note: string }> = {
+  PENDING: { to: "CONFIRMED", note: "Order confirmed" },
+  CONFIRMED: { to: "PROCESSING", note: "Cutting started" },
+  PROCESSING: { to: "SHIPPED", note: "Shipped" },
+  SHIPPED: { to: "DELIVERED", note: "Delivered" },
+};
+
+export async function advanceOrder(
+  orderNumber: string,
+  opts: { trackingNumber?: string; courier?: string } = {},
+): Promise<ActionResult> {
+  await assertCanWrite();
+
+  try {
+    const order = await db.order.findUnique({
+      where: { orderNumber },
+      select: { id: true, status: true },
+    });
+    if (!order) return { ok: false, message: "No such order." };
+
+    const step = NEXT_STATUS[order.status];
+    if (!step)
+      return {
+        ok: false,
+        message: `An order that is ${order.status.toLowerCase()} has nowhere further to go.`,
+      };
+
+    await db.$transaction([
+      db.order.update({
+        where: { id: order.id },
+        data: {
+          status: step.to as never,
+          ...(opts.trackingNumber
+            ? { trackingNumber: opts.trackingNumber }
+            : {}),
+          ...(opts.courier ? { courier: opts.courier } : {}),
+        },
+      }),
+      db.orderEvent.create({
+        data: {
+          orderId: order.id,
+          type: step.to.toLowerCase(),
+          message: step.note,
+          actor: "dashboard",
+        },
+      }),
+    ]);
+
+    safeRevalidate("/admin/orders");
+    safeRevalidate(`/admin/orders/${orderNumber}`);
+    safeRevalidate("/admin");
+
+    return { ok: true, message: `${step.note}.` };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not update the order.",
+    };
+  }
+}
+
+export async function cancelOrder(orderNumber: string): Promise<ActionResult> {
+  await assertCanWrite();
+
+  try {
+    const order = await db.order.findUnique({
+      where: { orderNumber },
+      select: { id: true, status: true },
+    });
+    if (!order) return { ok: false, message: "No such order." };
+
+    if (["DELIVERED", "CANCELLED", "RETURNED"].includes(order.status))
+      return {
+        ok: false,
+        message: `An order that is ${order.status.toLowerCase()} cannot be cancelled.`,
+      };
+
+    await db.$transaction([
+      db.order.update({
+        where: { id: order.id },
+        data: { status: "CANCELLED", cancelledAt: new Date() },
+      }),
+      db.orderEvent.create({
+        data: {
+          orderId: order.id,
+          type: "cancelled",
+          message: "Cancelled",
+          actor: "dashboard",
+        },
+      }),
+    ]);
+
+    safeRevalidate("/admin/orders");
+    safeRevalidate(`/admin/orders/${orderNumber}`);
+    safeRevalidate("/admin");
+
+    return { ok: true, message: "Order cancelled." };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not cancel the order.",
+    };
+  }
+}
+
+/* ================= staff ================= */
+
+/**
+ * Who may use the dashboard.
+ *
+ * The last admin cannot demote themselves. It is the one mistake on
+ * this screen that cannot be undone from inside the application -
+ * with no admin left, nobody can make one - so it is refused rather
+ * than confirmed.
+ */
+export async function setUserRole(
+  userId: string,
+  role: "CUSTOMER" | "STAFF" | "ADMIN",
+): Promise<ActionResult> {
+  await assertCanWrite();
+
+  try {
+    const target = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, role: true },
+    });
+    if (!target) return { ok: false, message: "No such account." };
+
+    if (target.role === "ADMIN" && role !== "ADMIN") {
+      const admins = await db.user.count({ where: { role: "ADMIN" } });
+      if (admins <= 1)
+        return {
+          ok: false,
+          message:
+            "That is the only admin. Make someone else an admin first, or nobody can get back in.",
+        };
+    }
+
+    await db.user.update({ where: { id: userId }, data: { role } });
+
+    safeRevalidate("/admin/customers");
+    safeRevalidate("/admin");
+
+    const who = target.name ?? target.email;
+    return {
+      ok: true,
+      message:
+        role === "CUSTOMER"
+          ? `${who} can no longer use the dashboard.`
+          : `${who} is now ${role === "ADMIN" ? "an admin" : "staff"}.`,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not change that.",
     };
   }
 }

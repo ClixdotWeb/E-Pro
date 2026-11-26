@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Avatar, Card, PageHeader, Pill, Stat } from "@/components/admin/ui";
 import { formatPaise } from "@/lib/money";
 import { getAllProducts, getCatalogStats } from "@/lib/catalog";
+import { getOrders, getOrderStats } from "@/lib/orders";
+import { Empty } from "@/components/admin/ui";
 
 export const metadata = { title: "Overview" };
 
@@ -19,21 +21,24 @@ export const metadata = { title: "Overview" };
  * aligned table with the customer's initials to anchor the eye, not a
  * run of cramped lines.
  *
- * Orders are stubs until the database is connected.
+ * Orders are read from the database. Three invented ones used to sit
+ * at the bottom of this page linking to detail screens that did not
+ * exist, which made the first click the shop owner took a dead end.
  */
 
-const RECENT_ORDERS = [
-  { number: "EPRO-1042", customer: "Jayakrishnan R", at: "12 Nov", status: "Shipped", items: 3, totalInPaise: 231800 },
-  { number: "EPRO-1041", customer: "Arun Kumar", at: "12 Nov", status: "Processing", items: 1, totalInPaise: 94900 },
-  { number: "EPRO-1040", customer: "Meera S", at: "11 Nov", status: "Delivered", items: 2, totalInPaise: 169800 },
-];
+const STATUS_TONE: Record<string, "warning" | "accent" | "success" | "danger" | "neutral"> = {
+  PENDING: "warning",
+  CONFIRMED: "warning",
+  PROCESSING: "warning",
+  SHIPPED: "accent",
+  DELIVERED: "success",
+  CANCELLED: "danger",
+  RETURNED: "danger",
+};
 
-const STATUS_TONE = {
-  Processing: "warning",
-  Shipped: "accent",
-  Delivered: "success",
-  Cancelled: "danger",
-} as const;
+function pretty(status: string): string {
+  return status.charAt(0) + status.slice(1).toLowerCase();
+}
 
 const ICON = {
   box: (
@@ -63,9 +68,11 @@ const ICON = {
 };
 
 export default async function AdminOverviewPage() {
-  const [products, stats] = await Promise.all([
+  const [products, stats, orderStats, recentOrders] = await Promise.all([
     getAllProducts(),
     getCatalogStats(),
+    getOrderStats(),
+    getOrders(5),
   ]);
 
   const noPhoto = products.filter((p) => p.missingImages);
@@ -147,9 +154,14 @@ export default async function AdminOverviewPage() {
         />
         <Stat
           label="Orders today"
-          value="0"
-          sub="Needs the database"
+          value={String(orderStats.today)}
+          sub={
+            orderStats.total === 0
+              ? "No orders yet"
+              : `${orderStats.unfulfilled} still to dispatch · ${orderStats.total} in all`
+          }
           icon={ICON.bag}
+          tone={orderStats.unfulfilled > 0 ? "accent" : "default"}
         />
         <Stat
           label="Needs attention"
@@ -222,7 +234,11 @@ export default async function AdminOverviewPage() {
       <section className="mt-10">
         <Card
           title="Latest orders"
-          hint="Stub rows until the database is connected."
+          hint={
+            recentOrders.length === 0
+              ? "Nothing has been ordered yet."
+              : undefined
+          }
           flush
           action={
             <Link
@@ -233,50 +249,68 @@ export default async function AdminOverviewPage() {
             </Link>
           }
         >
-          {/* column headers, so the numbers on the right have a name */}
-          <div className="hidden items-center gap-4 border-b border-hairline px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-text-low md:flex">
-            <span className="w-[108px]">Order</span>
-            <span className="flex-1">Customer</span>
-            <span className="w-[110px]">Status</span>
-            <span className="w-[130px] text-right">Total</span>
-          </div>
+          {recentOrders.length === 0 ? (
+            <div className="p-6">
+              <Empty
+                title="No orders yet"
+                body="The first order placed on the shop appears here."
+              />
+            </div>
+          ) : (
+            <>
+              {/* column headers, so the numbers on the right have a name */}
+              <div className="hidden items-center gap-4 border-b border-hairline px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-text-low md:flex">
+                <span className="w-[108px]">Order</span>
+                <span className="flex-1">Customer</span>
+                <span className="w-[110px]">Status</span>
+                <span className="w-[130px] text-right">Total</span>
+              </div>
 
-          <ul>
-            {RECENT_ORDERS.map((o) => (
-              <li key={o.number} className="border-b border-hairline last:border-0">
-                <Link
-                  href={`/admin/orders/${o.number}`}
-                  className="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-4 transition-colors hover:bg-surface-2"
-                >
-                  <span className="w-[108px] font-mono text-[13px] font-bold text-text-hi">
-                    {o.number}
-                  </span>
-
-                  <span className="flex min-w-0 flex-1 items-center gap-3">
-                    <Avatar name={o.customer} />
-                    <span className="min-w-0">
-                      <span className="block truncate text-[14px] text-text-hi">
-                        {o.customer}
+              <ul>
+                {recentOrders.map((o) => (
+                  <li
+                    key={o.orderNumber}
+                    className="border-b border-hairline last:border-0"
+                  >
+                    <Link
+                      href={`/admin/orders/${o.orderNumber}`}
+                      className="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-4 transition-colors hover:bg-surface-2"
+                    >
+                      <span className="w-[108px] font-mono text-[13px] font-bold text-text-hi">
+                        {o.orderNumber}
                       </span>
-                      <span className="mt-0.5 block text-[12px] text-text-low">
-                        {o.at} · {o.items} item{o.items === 1 ? "" : "s"}
+
+                      <span className="flex min-w-0 flex-1 items-center gap-3">
+                        <Avatar name={o.customerName} />
+                        <span className="min-w-0">
+                          <span className="block truncate text-[14px] text-text-hi">
+                            {o.customerName}
+                          </span>
+                          <span className="mt-0.5 block text-[12px] text-text-low">
+                            {o.placedAt.toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                            })}{" "}
+                            · {o.itemCount} item{o.itemCount === 1 ? "" : "s"}
+                          </span>
+                        </span>
                       </span>
-                    </span>
-                  </span>
 
-                  <span className="w-[110px]">
-                    <Pill tone={STATUS_TONE[o.status as keyof typeof STATUS_TONE]}>
-                      {o.status}
-                    </Pill>
-                  </span>
+                      <span className="w-[110px]">
+                        <Pill tone={STATUS_TONE[o.status] ?? "neutral"}>
+                          {pretty(o.status)}
+                        </Pill>
+                      </span>
 
-                  <span className="w-[130px] text-right text-[13px] font-bold tabular-nums text-text-hi">
-                    {formatPaise(o.totalInPaise)}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                      <span className="w-[130px] text-right text-[13px] font-bold tabular-nums text-text-hi">
+                        {formatPaise(o.totalInPaise)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </Card>
       </section>
     </>

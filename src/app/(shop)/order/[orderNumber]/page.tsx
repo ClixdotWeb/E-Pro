@@ -2,9 +2,10 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { CatalogMedia } from "@/components/CatalogMedia";
 import { formatPaise } from "@/lib/money";
-import { calculateTotals } from "@/lib/pricing";
-import { optionLabelFor } from "@/lib/catalog-shared";
-import { getOffers, getProductBySlug } from "@/lib/catalog";
+import { notFound } from "next/navigation";
+import { getOrder } from "@/lib/orders";
+
+export const dynamic = "force-dynamic";
 
 /**
  * Order confirmation — where checkout lands after a successful payment.
@@ -14,9 +15,10 @@ import { getOffers, getProductBySlug } from "@/lib/catalog";
  * back to, so it carries the order number, what happens next, and the
  * delivery estimate rather than just "thank you".
  *
- * Rendered from stub data until orders exist in the database. When they
- * do, this becomes a server component that looks the order up by number
- * and 404s on anything else.
+ * It reads the order by number and 404s on anything else, so a
+ * guessed order number shows nothing. The totals are the ones
+ * frozen onto the order at checkout, not a fresh calculation - a
+ * receipt that recalculates is not a receipt.
  */
 
 export async function generateMetadata({
@@ -29,42 +31,14 @@ export async function generateMetadata({
   };
 }
 
-async function stubLines() {
-  const offers = await getOffers();
-
-  return Promise.all(
-    offers
-      .filter((o) => o.available && o.imageUrl)
-      .slice(0, 2)
-      .map(async (o, i) => {
-        const product = await getProductBySlug(o.productSlug);
-        return {
-          id: o.id,
-          productSlug: o.productSlug,
-          productTitle: o.productTitle,
-          variantTitle: o.variantTitle,
-          optionLabel: product ? optionLabelFor(product) : "Option",
-          unitInPaise: o.priceInPaise,
-          imageUrl: o.imageUrl,
-          quantity: i === 0 ? 1 : 2,
-        };
-      }),
-  );
-}
-
 export default async function OrderConfirmationPage({
   params,
 }: PageProps<"/order/[orderNumber]">) {
   const { orderNumber } = await params;
-  const lines = await stubLines();
+  const order = await getOrder(orderNumber);
+  if (!order) notFound();
 
-  const totals = calculateTotals(
-    lines.map((l) => ({
-      variantId: l.id,
-      quantity: l.quantity,
-      unitInPaise: l.unitInPaise,
-    })),
-  );
+  const lines = order.lines;
 
   return (
     <div className="page max-w-3xl py-12 md:py-16">
@@ -135,24 +109,22 @@ export default async function OrderConfirmationPage({
             <li key={l.id} className="flex gap-3.5 py-3.5">
               <CatalogMedia
                 src={l.imageUrl}
-                seed={l.productSlug}
-                alt={l.productTitle}
+                seed={l.sku}
+                alt={l.design ?? l.productTitle}
                 sizes="64px"
                 className="h-16 w-16 shrink-0 rounded-[var(--r-sm)] border border-hairline"
               />
               <div className="min-w-0 flex-1">
-                <Link
-                  href={`/products/${l.productSlug}`}
-                  className="truncate text-[13px] font-medium text-text-hi hover:text-accent"
-                >
-                  {l.productTitle}
-                </Link>
+                <p className="truncate text-[13px] font-medium text-text-hi">
+                  {l.deviceName}
+                </p>
                 <p className="mt-0.5 text-[11px] text-text-low">
-                  {l.optionLabel}: {l.variantTitle} · ×{l.quantity}
+                  {l.productTitle}
+                  {l.design ? ` · ${l.design}` : ""} · ×{l.quantity}
                 </p>
               </div>
               <p className="shrink-0 text-[13px] tabular-nums text-text-hi">
-                {formatPaise(l.unitInPaise * l.quantity)}
+                {formatPaise(l.totalInPaise)}
               </p>
             </li>
           ))}
@@ -162,21 +134,21 @@ export default async function OrderConfirmationPage({
           <div className="flex justify-between">
             <dt className="text-text-mid">Subtotal</dt>
             <dd className="tabular-nums text-text-hi">
-              {formatPaise(totals.subtotalInPaise)}
+              {formatPaise(order.subtotalInPaise)}
             </dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-text-mid">Shipping</dt>
             <dd className="tabular-nums text-text-hi">
-              {totals.shippingInPaise === 0
+              {order.shippingInPaise === 0
                 ? "Free"
-                : formatPaise(totals.shippingInPaise)}
+                : formatPaise(order.shippingInPaise)}
             </dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-text-low">GST (18%, included)</dt>
             <dd className="tabular-nums text-text-low">
-              {formatPaise(totals.taxInPaise)}
+              {formatPaise(order.taxInPaise)}
             </dd>
           </div>
         </dl>
@@ -184,7 +156,7 @@ export default async function OrderConfirmationPage({
         <div className="mt-4 flex items-baseline justify-between border-t border-hairline pt-4">
           <span className="text-sm font-semibold text-text-hi">Paid</span>
           <span className="text-lg font-semibold tabular-nums text-text-hi">
-            {formatPaise(totals.totalInPaise)}
+            {formatPaise(order.totalInPaise)}
           </span>
         </div>
       </section>

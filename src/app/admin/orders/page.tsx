@@ -1,91 +1,114 @@
 import Link from "next/link";
-import { Avatar, PageHeader, Pill, type Tone } from "@/components/admin/ui";
+import { Avatar, Empty, PageHeader, Pill, type Tone } from "@/components/admin/ui";
 import { formatPaise } from "@/lib/money";
+import { getOrders } from "@/lib/orders";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Orders" };
 
 /**
  * Orders list.
  *
  * Status first, because that is the only thing you scan for: what
- * still needs doing. "Processing" rows are the work; everything else
- * is history.
- *
- * Stub rows until the database is connected.
+ * still needs doing. The five invented rows that used to sit here
+ * were worse than nothing - they linked to detail pages for orders
+ * that did not exist, so the first thing the shop owner did on this
+ * screen was hit a dead end.
  */
 
-const ORDERS = [
-  { number: "EPRO-1042", customer: "Jayakrishnan R", at: "12 Nov 2026", status: "Shipped", items: 3, totalInPaise: 231800 },
-  { number: "EPRO-1041", customer: "Arun Kumar", at: "12 Nov 2026", status: "Processing", items: 1, totalInPaise: 94900 },
-  { number: "EPRO-1040", customer: "Meera S", at: "11 Nov 2026", status: "Delivered", items: 2, totalInPaise: 169800 },
-  { number: "EPRO-1039", customer: "Rahul P", at: "10 Nov 2026", status: "Delivered", items: 1, totalInPaise: 84900 },
-  { number: "EPRO-1038", customer: "Nithya V", at: "09 Nov 2026", status: "Cancelled", items: 2, totalInPaise: 139800 },
-];
-
 const TONE: Record<string, Tone> = {
-  Processing: "warning",
-  Shipped: "accent",
-  Delivered: "success",
-  Cancelled: "danger",
+  PENDING: "warning",
+  CONFIRMED: "warning",
+  PROCESSING: "warning",
+  SHIPPED: "accent",
+  DELIVERED: "success",
+  CANCELLED: "danger",
+  RETURNED: "danger",
 };
 
-export default function AdminOrdersPage() {
-  const needsWork = ORDERS.filter((o) => o.status === "Processing").length;
+function pretty(status: string): string {
+  return status.charAt(0) + status.slice(1).toLowerCase();
+}
+
+export default async function AdminOrdersPage() {
+  const orders = await getOrders();
+  const needsWork = orders.filter((o) =>
+    ["PENDING", "CONFIRMED", "PROCESSING"].includes(o.status),
+  ).length;
 
   return (
     <>
       <PageHeader
         title="Orders"
         description={
-          needsWork > 0
-            ? `${needsWork} order${needsWork === 1 ? "" : "s"} still to cut and dispatch.`
-            : "Nothing waiting to be dispatched."
+          orders.length === 0
+            ? "No orders yet."
+            : needsWork > 0
+              ? `${needsWork} order${needsWork === 1 ? "" : "s"} still to cut and dispatch.`
+              : "Nothing waiting to be dispatched."
         }
       />
 
-      <div className="overflow-hidden rounded-[14px] border border-hairline bg-surface-1">
-        <div className="hidden items-center gap-4 border-b border-hairline px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-text-low md:flex">
-          <span className="w-[108px]">Order</span>
-          <span className="flex-1">Customer</span>
-          <span className="w-[110px]">Status</span>
-          <span className="w-[130px] text-right">Total</span>
-        </div>
+      {orders.length === 0 ? (
+        <Empty
+          title="No orders yet"
+          body="The first order placed on the shop appears here, with what to cut and where to send it."
+        />
+      ) : (
+        <div className="overflow-hidden rounded-[14px] border border-hairline bg-surface-1">
+          <div className="hidden items-center gap-4 border-b border-hairline px-6 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-text-low md:flex">
+            <span className="w-[108px]">Order</span>
+            <span className="flex-1">Customer</span>
+            <span className="w-[110px]">Status</span>
+            <span className="w-[130px] text-right">Total</span>
+          </div>
 
-        <ul>
-          {ORDERS.map((o) => (
-            <li key={o.number} className="border-b border-hairline last:border-0">
-              <Link
-                href={`/admin/orders/${o.number}`}
-                className="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-4 transition-colors hover:bg-surface-2"
+          <ul>
+            {orders.map((o) => (
+              <li
+                key={o.orderNumber}
+                className="border-b border-hairline last:border-0"
               >
-                <span className="w-[108px] font-mono text-[13px] font-bold text-text-hi">
-                  {o.number}
-                </span>
+                <Link
+                  href={`/admin/orders/${o.orderNumber}`}
+                  className="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-4 transition-colors hover:bg-surface-2"
+                >
+                  <span className="w-[108px] font-mono text-[13px] font-bold text-text-hi">
+                    {o.orderNumber}
+                  </span>
 
-                <span className="flex min-w-0 flex-1 items-center gap-3">
-                  <Avatar name={o.customer} />
-                  <span className="min-w-0">
-                    <span className="block truncate text-[14px] text-text-hi">
-                      {o.customer}
-                    </span>
-                    <span className="mt-0.5 block text-[12px] text-text-low">
-                      {o.at} · {o.items} item{o.items === 1 ? "" : "s"}
+                  <span className="flex min-w-0 flex-1 items-center gap-3">
+                    <Avatar name={o.customerName} />
+                    <span className="min-w-0">
+                      <span className="block truncate text-[14px] text-text-hi">
+                        {o.customerName}
+                      </span>
+                      <span className="mt-0.5 block text-[12px] text-text-low">
+                        {o.placedAt.toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}{" "}
+                        · {o.itemCount} item{o.itemCount === 1 ? "" : "s"}
+                      </span>
                     </span>
                   </span>
-                </span>
 
-                <span className="w-[110px]">
-                  <Pill tone={TONE[o.status]}>{o.status}</Pill>
-                </span>
+                  <span className="w-[110px]">
+                    <Pill tone={TONE[o.status] ?? "neutral"}>
+                      {pretty(o.status)}
+                    </Pill>
+                  </span>
 
-                <span className="w-[130px] text-right text-[13px] font-bold tabular-nums text-text-hi">
-                  {formatPaise(o.totalInPaise)}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+                  <span className="w-[130px] text-right text-[13px] font-bold tabular-nums text-text-hi">
+                    {formatPaise(o.totalInPaise)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </>
   );
 }

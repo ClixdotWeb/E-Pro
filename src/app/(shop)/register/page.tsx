@@ -1,10 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import {
-  AuthField,
-  AuthShell,
-  SocialAuthButtons,
-} from "@/components/AuthShell";
+import { AuthShell, SocialAuthButtons } from "@/components/AuthShell";
+import { RegisterForm } from "@/components/auth/RegisterForm";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Create an account",
@@ -21,7 +20,12 @@ export const metadata: Metadata = {
  * collected at checkout where it is genuinely required for delivery,
  * not here where it would just be friction.
  */
-export default function RegisterPage() {
+export const dynamic = "force-dynamic";
+
+export default async function RegisterPage() {
+  const session = await auth();
+  if (session?.user) redirect("/account");
+
   return (
     <AuthShell
       kicker="Join us"
@@ -36,72 +40,7 @@ export default function RegisterPage() {
         </>
       }
     >
-      <form className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <AuthField
-            id="firstName"
-            label="First name"
-            autoComplete="given-name"
-            required
-          />
-          <AuthField
-            id="lastName"
-            label="Last name"
-            autoComplete="family-name"
-            required
-          />
-        </div>
-
-        <AuthField
-          id="email"
-          label="Email"
-          type="email"
-          autoComplete="email"
-          required
-          placeholder="you@example.com"
-          hint="Receipts and tracking links go here."
-        />
-
-        <AuthField
-          id="password"
-          label="Password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          hint="At least 8 characters."
-        />
-
-        <label className="flex items-start gap-2.5 pt-1">
-          <input
-            type="checkbox"
-            name="terms"
-            required
-            className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[var(--accent)]"
-          />
-          <span className="text-[12px] leading-relaxed text-text-mid">
-            I agree to the{" "}
-            <Link href="/policies/terms" className="text-accent hover:underline">
-              terms
-            </Link>{" "}
-            and{" "}
-            <Link
-              href="/policies/privacy"
-              className="text-accent hover:underline"
-            >
-              privacy policy
-            </Link>
-            .
-          </span>
-        </label>
-
-        <button
-          type="submit"
-          className="w-full rounded-[var(--r-md)] bg-accent px-5 py-3 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
-        >
-          Create account
-        </button>
-      </form>
+      <RegisterForm />
 
       <div className="mt-6">
         <SocialAuthButtons verb="Sign up" />
