@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { AuthShell, SocialAuthButtons } from "@/components/AuthShell";
+import { AuthShell } from "@/components/AuthShell";
+import { SocialAuthButtons } from "@/components/auth/fields";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
@@ -30,6 +31,7 @@ export default async function RegisterPage() {
     <AuthShell
       kicker="Join us"
       title="Create your account"
+      subtitle="Takes a minute. Everything you order after this is one tap to find again."
       footer={
         <>
           Already have one?{" "}

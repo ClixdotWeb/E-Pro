@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { AuthShell, SocialAuthButtons } from "@/components/AuthShell";
+import { AuthShell } from "@/components/AuthShell";
+import { SocialAuthButtons } from "@/components/auth/fields";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { auth } from "@/auth";
 
@@ -32,6 +33,7 @@ export default async function LoginPage({
     <AuthShell
       kicker="Welcome back"
       title="Sign in to your account"
+      subtitle="Your orders, your saved devices and your invoices, all in one place."
       footer={
         <>
           New here?{" "}

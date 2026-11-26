@@ -1,170 +1,197 @@
 import Link from "next/link";
 import Image from "next/image";
+import { db } from "@/lib/db";
 
 /**
  * Shared frame for /login and /register.
  *
- * Two columns on desktop: the form on the left, and on the right the
- * reason to bother making an account at all. A store this size gives
- * people no reason to sign up unless it is spelled out, and guest
- * checkout stays available either way — an account is never a wall in
- * front of a purchase.
+ * Rebuilt. The old one was a narrow form in the top-left corner of a
+ * page that then ran out of content, with a photograph on the right
+ * so dark it read as an empty rectangle and a list of four benefits
+ * pushed to the very bottom of it. Three quarters of the screen was
+ * black.
+ *
+ * Now it is a split that fills the viewport: the reason to make an
+ * account on the left, the form on the right, both vertically
+ * centred so neither leaves a hole under it. The left panel shows
+ * the actual product - the skins we photographed - instead of a
+ * stock composite at 45% opacity, and the numbers on it are counted
+ * from the catalogue rather than typed in, so they cannot go stale
+ * as devices are added.
+ *
+ * On a phone the panel collapses to a single strip above the form.
+ * Nobody signing in on a phone needs to be sold the idea first, and
+ * four photographs above the fold would push the password field off
+ * the screen.
  */
 
-export function AuthShell({
+const PANEL_DESIGNS = [
+  { src: "/brand/designs/neon-dragon.jpg", alt: "Neon Dragon skin" },
+  { src: "/brand/designs/forged-carbon.jpg", alt: "Forged Carbon skin" },
+  { src: "/brand/designs/black-honeycomb-back.jpg", alt: "Black Honeycomb skin" },
+  { src: "/brand/designs/black-leather.jpg", alt: "Black Leather skin" },
+];
+
+const BENEFITS: [string, string][] = [
+  ["Reorder in one tap", "Your exact model is remembered."],
+  ["Track every parcel", "Order history and AWB in one place."],
+  ["GST invoices on demand", "Download them any time."],
+  ["First dibs on new cuts", "We template new devices weekly."],
+];
+
+/** Counted, not claimed. One cheap indexed count each. */
+async function catalogueSize() {
+  try {
+    const [models, categories] = await Promise.all([
+      db.deviceModel.count({ where: { active: true } }),
+      db.deviceCategory.count(),
+    ]);
+    return { models, categories: Math.max(0, categories - 1) };
+  } catch {
+    // The marketing numbers are not worth a 500 on the sign-in page.
+    return null;
+  }
+}
+
+export async function AuthShell({
   kicker,
   title,
+  subtitle,
   children,
   footer,
 }: {
   kicker: string;
   title: string;
+  subtitle?: string;
   children: React.ReactNode;
   footer: React.ReactNode;
 }) {
+  const size = await catalogueSize();
+
   return (
-    <div className="page grid gap-12 py-12 lg:grid-cols-[minmax(0,420px)_1fr] lg:gap-20 lg:py-20">
-      <div className="w-full">
-        <p className="kicker">{kicker}</p>
-        <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-text-hi">
-          {title}
-        </h1>
+    <div className="grid min-h-[calc(100svh-var(--header-h))] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+      {/* ---------------- why bother ---------------- */}
+      <aside className="relative order-1 overflow-hidden border-b border-hairline bg-surface-1 lg:order-none lg:border-b-0 lg:border-r">
+        {/* a wash of colour behind the black, so the panel is not a void */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -left-24 top-[-10%] h-[520px] w-[520px] rounded-full opacity-[0.22] blur-[120px]"
+          style={{ background: "var(--accent)" }}
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -right-28 bottom-[-15%] h-[460px] w-[460px] rounded-full opacity-[0.16] blur-[130px]"
+          style={{ background: "#3b6ef5" }}
+        />
 
-        <div className="mt-8">{children}</div>
+        <div className="relative flex h-full flex-col justify-center px-6 py-12 sm:px-10 lg:px-14 lg:py-16 xl:px-20">
+          <h2 className="max-w-[12ch] text-[34px] font-bold leading-[1.05] tracking-tight text-text-hi sm:text-[42px] xl:text-[52px]">
+            Cut to the millimetre.
+          </h2>
 
-        <div className="mt-8 border-t border-hairline pt-5 text-[13px] text-text-mid">
-          {footer}
-        </div>
-      </div>
+          <p className="mt-4 max-w-[46ch] text-[15px] leading-relaxed text-text-mid">
+            {size
+              ? `Skins plotted to order for ${size.models.toLocaleString("en-IN")} devices across ${size.categories} kinds of gadget. Nothing sits on a shelf.`
+              : "Skins plotted to order for your exact device. Nothing sits on a shelf."}
+          </p>
 
-      {/* why bother */}
-      <aside className="hidden lg:block">
-        <div className="relative h-full min-h-[420px] overflow-hidden rounded-[var(--r-lg)] border border-hairline">
-          <Image
-            src="/brand/Untitled_design_3.png"
-            alt=""
-            fill
-            sizes="(min-width: 1024px) 50vw, 0px"
-            className="object-cover opacity-45"
+          {/* the product, actually visible */}
+          <ul
             aria-hidden
-          />
-          <div
-            aria-hidden
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.9) 100%)",
-            }}
-          />
+            className="mt-9 hidden grid-cols-4 gap-2.5 sm:grid lg:gap-3"
+          >
+            {PANEL_DESIGNS.map((d, i) => (
+              <li
+                key={d.src}
+                className={`relative aspect-[3/4] overflow-hidden rounded-[14px] border border-hairline ${
+                  i % 2 === 0 ? "lg:translate-y-3" : "lg:-translate-y-1"
+                }`}
+              >
+                <Image
+                  src={d.src}
+                  alt=""
+                  fill
+                  sizes="(min-width: 1024px) 12vw, 22vw"
+                  className="object-cover"
+                />
+                <span
+                  aria-hidden
+                  className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent"
+                />
+              </li>
+            ))}
+          </ul>
 
-          <div className="relative flex h-full flex-col justify-end p-8">
-            <p className="kicker text-white/50">With an account</p>
-            <ul className="mt-4 space-y-3.5">
-              {[
-                ["Reorder in one tap", "Your exact model is remembered — no searching it out again."],
-                ["Track every parcel", "Order history and AWB numbers in one place."],
-                ["GST invoices on demand", "Download them any time, not just from the email."],
-                ["First dibs on new cuts", "We template new devices weekly."],
-              ].map(([t, b]) => (
-                <li key={t} className="flex gap-3">
-                  <span aria-hidden className="mt-0.5 shrink-0 text-accent">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 6L9 17l-5-5" />
-                    </svg>
+          <ul className="mt-10 grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:mt-14">
+            {BENEFITS.map(([t, b]) => (
+              <li key={t} className="flex gap-3">
+                <span
+                  aria-hidden
+                  className="mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full bg-accent-soft text-accent"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[13.5px] font-bold text-text-hi">
+                    {t}
                   </span>
-                  <span>
-                    <span className="block text-[13px] font-medium text-white">
-                      {t}
-                    </span>
-                    <span className="mt-0.5 block text-[11px] leading-relaxed text-white/55">
-                      {b}
-                    </span>
+                  <span className="mt-0.5 block text-[12.5px] leading-relaxed text-text-mid">
+                    {b}
                   </span>
-                </li>
-              ))}
-            </ul>
+                </span>
+              </li>
+            ))}
+          </ul>
 
-            <p className="mt-7 border-t border-white/15 pt-5 text-[12px] leading-relaxed text-white/50">
-              You can also{" "}
-              <Link href="/checkout" className="text-accent hover:underline">
-                check out as a guest
-              </Link>
-              . An account is never required to buy.
-            </p>
-          </div>
+          <p className="mt-10 max-w-[48ch] border-t border-hairline pt-6 text-[12.5px] leading-relaxed text-text-low">
+            An account is never a wall in front of a purchase — you can{" "}
+            <Link href="/cart" className="text-accent hover:underline">
+              check out as a guest
+            </Link>{" "}
+            and make one later.
+          </p>
         </div>
       </aside>
-    </div>
-  );
-}
 
-export function AuthField({
-  id,
-  label,
-  hint,
-  type = "text",
-  ...rest
-}: {
-  id: string;
-  label: string;
-  hint?: string;
-} & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <div>
-      <label htmlFor={id} className="block text-[12px] text-text-low">
-        {label}
-      </label>
-      <input
-        id={id}
-        name={id}
-        type={type}
-        aria-describedby={hint ? `${id}-hint` : undefined}
-        className="mt-1.5 w-full rounded-[var(--r-md)] border border-hairline bg-surface-0 px-3.5 py-2.5 text-[13px] text-text-hi placeholder:text-text-low focus:border-accent"
-        {...rest}
-      />
-      {hint && (
-        <p id={`${id}-hint`} className="mt-1 text-[11px] text-text-low">
-          {hint}
-        </p>
-      )}
-    </div>
-  );
-}
+      {/* ---------------- the form ---------------- */}
+      <main className="order-2 flex items-center justify-center px-6 py-14 sm:px-10 lg:order-none lg:py-16">
+        <div className="w-full max-w-[400px]">
+          <Link
+            href="/"
+            aria-label="Epro Gadgets, home"
+            className="mb-9 inline-block lg:mb-11"
+          >
+            <Image
+              src="/brand/Epro_LOGO_LIGHT-01.png"
+              alt="Epro Gadgets"
+              width={132}
+              height={34}
+              className="h-[30px] w-auto"
+              priority
+            />
+          </Link>
 
-/**
- * Placeholder for the OAuth buttons. Rendered disabled until Auth.js
- * providers are configured, rather than hidden, so the layout that
- * ships is the layout that goes live.
- */
-export function SocialAuthButtons({ verb }: { verb: string }) {
-  return (
-    <div>
-      <div className="flex items-center gap-3">
-        <span className="h-px flex-1 bg-hairline" />
-        <span className="text-[11px] text-text-low">or</span>
-        <span className="h-px flex-1 bg-hairline" />
-      </div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-accent">
+            {kicker}
+          </p>
+          <h1 className="mt-2.5 text-[28px] font-bold leading-[1.15] tracking-tight text-text-hi sm:text-[32px]">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="mt-2.5 text-[14px] leading-relaxed text-text-mid">
+              {subtitle}
+            </p>
+          )}
 
-      <div className="mt-4 grid gap-2">
-        <button
-          type="button"
-          disabled
-          title="Google sign-in is not configured yet"
-          className="flex items-center justify-center gap-2.5 rounded-[var(--r-md)] border border-hairline px-4 py-2.5 text-[13px] font-medium text-text-mid opacity-55"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden>
-            <path fill="currentColor" d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.5a4.7 4.7 0 0 1-2 3.1v2.6h3.2c1.9-1.7 3-4.3 3-7.5z" />
-            <path fill="currentColor" d="M12 22c2.7 0 4.9-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z" />
-            <path fill="currentColor" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2L6.4 14z" />
-            <path fill="currentColor" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.4L6.4 10c.8-2.3 3-4.1 5.6-4.1z" />
-          </svg>
-          {verb} with Google
-        </button>
-      </div>
+          <div className="mt-8">{children}</div>
 
-      <p className="mt-2.5 text-center text-[11px] text-text-low">
-        Social sign-in is not switched on yet.
-      </p>
+          <div className="mt-8 border-t border-hairline pt-6 text-[13px] leading-relaxed text-text-mid">
+            {footer}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

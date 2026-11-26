@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { AuthField, AuthShell } from "@/components/AuthShell";
+import { AuthShell } from "@/components/AuthShell";
+import { AuthField } from "@/components/auth/fields";
 
 export const metadata: Metadata = {
   title: "Reset your password",

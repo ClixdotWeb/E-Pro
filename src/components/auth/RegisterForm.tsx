@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { AuthField } from "@/components/AuthShell";
+import { AuthField } from "@/components/auth/fields";
 import { Submit } from "./SignInForm";
 import { registerAccount } from "@/app/auth-actions";
 
@@ -28,7 +28,7 @@ export function RegisterForm() {
         form.set("name", [first, last].filter(Boolean).join(" "));
         return action(form);
       }}
-      className="space-y-4"
+      className="space-y-5"
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <AuthField
@@ -86,7 +86,24 @@ export function RegisterForm() {
       </label>
 
       {state && (
-        <p role="alert" className="text-[12px] font-bold text-danger">
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-[10px] border border-danger/30 bg-danger/10 px-3.5 py-3 text-[12.5px] font-medium leading-relaxed text-danger"
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            aria-hidden
+            className="mt-0.5 shrink-0"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8v5M12 16.5h.01" />
+          </svg>
           {state.message}
         </p>
       )}
