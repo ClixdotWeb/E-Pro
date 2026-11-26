@@ -43,10 +43,7 @@ export default async function RegisterPage() {
       }
     >
       <RegisterForm />
-
-      <div className="mt-6">
-        <SocialAuthButtons verb="Sign up" />
-      </div>
+      <SocialAuthButtons verb="Sign up" />
     </AuthShell>
   );
 }

@@ -39,20 +39,13 @@ export default async function LoginPage({
           New here?{" "}
           <Link href="/register" className="text-accent hover:underline">
             Create an account
-          </Link>{" "}
-          — or{" "}
-          <Link href="/find" className="text-accent hover:underline">
-            just start shopping
           </Link>
           .
         </>
       }
     >
       <SignInForm next={to} />
-
-      <div className="mt-6">
-        <SocialAuthButtons verb="Sign in" />
-      </div>
+      <SocialAuthButtons verb="Sign in" />
     </AuthShell>
   );
 }
