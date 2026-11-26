@@ -2,6 +2,7 @@
 
 import { AuthError } from "next-auth";
 import { unstable_rethrow } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { hash } from "bcryptjs";
 import { db } from "@/lib/db";
 import { auth, signIn, signOut } from "@/auth";
@@ -105,27 +106,221 @@ export async function signOutAction() {
   await signOut({ redirectTo: "/" });
 }
 
-/** Change the signed-in customer's own details. */
-export async function updateProfile(
-  _prev: AuthResult | null,
-  form: FormData,
-): Promise<AuthResult> {
-  const session = await auth();
-  if (!session?.user?.id)
-    return { ok: false, message: "Sign in first." };
+/**
+ * The signed-in customer's own details.
+ *
+ * The email is deliberately not editable here. It is the sign-in
+ * credential and the address a receipt has already gone to, so
+ * changing it needs a confirmation step to the new address that
+ * nothing sends yet. Offering the field and ignoring it would be
+ * worse than not offering it.
+ */
+export type SaveResult = { ok: boolean; message: string };
 
-  const name = String(form.get("name") ?? "").trim();
-  const phone = String(form.get("phone") ?? "").trim();
+export async function updateProfile(
+  _prev: SaveResult | null,
+  form: FormData,
+): Promise<SaveResult> {
+  const session = await auth();
+  if (!session?.user?.id) return { ok: false, message: "Sign in first." };
+
+  const name = [
+    String(form.get("firstName") ?? "").trim(),
+    String(form.get("lastName") ?? "").trim(),
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const phone = String(form.get("phone") ?? "").replace(/\s+/g, "");
 
   if (!name) return { ok: false, message: "A name cannot be empty." };
+  if (phone && !/^[6-9][0-9]{9}$/.test(phone))
+    return { ok: false, message: "Enter a 10-digit mobile number." };
 
   try {
     await db.user.update({
       where: { id: session.user.id },
       data: { name, phone: phone || null },
     });
-    return { ok: false, message: "Saved." };
+    revalidatePath("/account", "layout");
+    return { ok: true, message: "Saved." };
   } catch {
     return { ok: false, message: "Could not save that." };
+  }
+}
+
+/**
+ * Changing a password.
+ *
+ * The current one is required even though the session already proves
+ * who this is: a signed-in browser left open on a shared machine is
+ * the exact case this protects against.
+ */
+export async function changePassword(
+  _prev: SaveResult | null,
+  form: FormData,
+): Promise<SaveResult> {
+  const session = await auth();
+  if (!session?.user?.id) return { ok: false, message: "Sign in first." };
+
+  const current = String(form.get("currentPassword") ?? "");
+  const next = String(form.get("newPassword") ?? "");
+
+  if (next.length < MIN_PASSWORD)
+    return {
+      ok: false,
+      message: `Use at least ${MIN_PASSWORD} characters for the new password.`,
+    };
+
+  try {
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { passwordHash: true },
+    });
+    if (!user?.passwordHash)
+      return { ok: false, message: "This account has no password set." };
+
+    const { compare } = await import("bcryptjs");
+    if (!(await compare(current, user.passwordHash)))
+      return { ok: false, message: "That is not your current password." };
+
+    await db.user.update({
+      where: { id: session.user.id },
+      data: { passwordHash: await hash(next, 10) },
+    });
+
+    return { ok: true, message: "Password changed." };
+  } catch {
+    return { ok: false, message: "Could not change the password." };
+  }
+}
+
+/* ---------------- addresses ---------------- */
+
+/**
+ * Saved addresses.
+ *
+ * Every one of these proves the row belongs to the signed-in user
+ * before touching it - an id in a form field is otherwise a guess at
+ * someone else's home address, which is the worst thing in this
+ * application to get wrong.
+ *
+ * The first address saved becomes the default by being the only one.
+ * Checkout preselects the default, and a parcel sent to a stale
+ * address is a real cost, not a UI detail.
+ */
+export async function saveAddress(
+  _prev: SaveResult | null,
+  form: FormData,
+): Promise<SaveResult> {
+  const session = await auth();
+  if (!session?.user?.id) return { ok: false, message: "Sign in first." };
+  const userId = session.user.id;
+
+  const id = String(form.get("id") ?? "").trim();
+  const fullName = String(form.get("fullName") ?? "").trim();
+  const phone = String(form.get("phone") ?? "").replace(/\s+/g, "");
+  const line1 = String(form.get("line1") ?? "").trim();
+  const line2 = String(form.get("line2") ?? "").trim();
+  const city = String(form.get("city") ?? "").trim();
+  const state = String(form.get("state") ?? "").trim();
+  const pincode = String(form.get("pincode") ?? "").replace(/\s+/g, "");
+
+  if (!fullName) return { ok: false, message: "We need a name for the parcel." };
+  if (!/^[6-9][0-9]{9}$/.test(phone))
+    return { ok: false, message: "Enter a 10-digit mobile number." };
+  if (!line1 || !city || !state)
+    return { ok: false, message: "The address is not complete." };
+  if (!/^[1-9][0-9]{5}$/.test(pincode))
+    return { ok: false, message: "That PIN code is not a real one." };
+
+  const data = {
+    fullName,
+    phone,
+    line1,
+    line2: line2 || null,
+    city,
+    state,
+    pincode,
+  };
+
+  try {
+    if (id) {
+      const mine = await db.address.findFirst({
+        where: { id, userId },
+        select: { id: true },
+      });
+      if (!mine) return { ok: false, message: "That address is not yours." };
+      await db.address.update({ where: { id }, data });
+    } else {
+      const count = await db.address.count({ where: { userId } });
+      await db.address.create({
+        data: { ...data, userId, isDefault: count === 0 },
+      });
+    }
+
+    revalidatePath("/account/addresses");
+    return { ok: true, message: id ? "Address saved." : "Address added." };
+  } catch {
+    return { ok: false, message: "Could not save the address." };
+  }
+}
+
+export async function setDefaultAddress(id: string): Promise<SaveResult> {
+  const session = await auth();
+  if (!session?.user?.id) return { ok: false, message: "Sign in first." };
+  const userId = session.user.id;
+
+  try {
+    const mine = await db.address.findFirst({
+      where: { id, userId },
+      select: { id: true },
+    });
+    if (!mine) return { ok: false, message: "That address is not yours." };
+
+    await db.$transaction([
+      db.address.updateMany({ where: { userId }, data: { isDefault: false } }),
+      db.address.update({ where: { id }, data: { isDefault: true } }),
+    ]);
+
+    revalidatePath("/account/addresses");
+    return { ok: true, message: "Default address changed." };
+  } catch {
+    return { ok: false, message: "Could not change it." };
+  }
+}
+
+export async function deleteAddress(id: string): Promise<SaveResult> {
+  const session = await auth();
+  if (!session?.user?.id) return { ok: false, message: "Sign in first." };
+  const userId = session.user.id;
+
+  try {
+    const mine = await db.address.findFirst({
+      where: { id, userId },
+      select: { id: true, isDefault: true },
+    });
+    if (!mine) return { ok: false, message: "That address is not yours." };
+
+    await db.address.delete({ where: { id } });
+
+    // Deleting the default leaves nobody holding it, so the oldest
+    // remaining address takes over rather than checkout having none.
+    if (mine.isDefault) {
+      const next = await db.address.findFirst({
+        where: { userId },
+        orderBy: { id: "asc" },
+        select: { id: true },
+      });
+      if (next)
+        await db.address.update({
+          where: { id: next.id },
+          data: { isDefault: true },
+        });
+    }
+
+    revalidatePath("/account/addresses");
+    return { ok: true, message: "Address deleted." };
+  } catch {
+    return { ok: false, message: "Could not delete it." };
   }
 }
