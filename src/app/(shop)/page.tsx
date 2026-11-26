@@ -1,5 +1,6 @@
 import { VideoHero } from "@/components/home/VideoHero";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
+import { CollectionStrip } from "@/components/home/CollectionStrip";
 import { RealCustomers } from "@/components/home/RealCustomers";
 import { BeforeAfter } from "@/components/home/BeforeAfter";
 import { Faq } from "@/components/home/Faq";
@@ -36,6 +37,7 @@ export default function HomePage() {
     <>
       <VideoHero />
       <CategoryGrid />
+      <CollectionStrip />
       <RealCustomers />
       <BeforeAfter />
       <Faq />

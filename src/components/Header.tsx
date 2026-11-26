@@ -141,6 +141,10 @@ function SkinDropdown({ open, menu }: { open: boolean; menu: SkinMenu }) {
 }
 
 const NAV = [
+  // Designs sits beside the Skin menu on purpose: that one asks what
+  // you own, this one asks what you want it to look like, and they
+  // are the two ways into the same catalogue.
+  { label: "Designs", href: "/designs" },
   { label: "Request Model", href: "/request-model" },
   { label: "Material", href: "/material" },
   { label: "How to apply", href: "/how-to-apply" },

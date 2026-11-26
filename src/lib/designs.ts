@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "./db";
+import { brandLabel, urlSlug } from "./catalog-shared";
 
 /**
  * Designs: the artwork that goes on a skin.
@@ -95,6 +96,123 @@ export async function getDesignsFor(device: string): Promise<DesignRow[]> {
       active: true,
       OR: [{ deviceSlugs: { isEmpty: true } }, { deviceSlugs: { has: device } }],
     },
+    orderBy: [{ position: "asc" }, { name: "asc" }],
+    include: { category: { select: { name: true } } },
+  });
+  return rows.map(toRow);
+}
+
+/* ================= one design, sold on its own page ================= */
+
+/**
+ * The design-first product page.
+ *
+ * The shop is navigated two ways now, and this is the one the live
+ * store settled on: the customer picks the artwork first, then says
+ * what they own. The other way round - device first, artwork second -
+ * still exists at /skins, because someone who arrives knowing only
+ * "I have a Canon R3" should not have to browse pictures to find out
+ * whether we cut for it.
+ *
+ * Only the names are loaded here. A design cut for phones has 1,033
+ * devices behind it and 2,400 options; shipping those to pick four is
+ * absurd, so the coverages come from a round trip once a device is
+ * chosen. Names are two short columns and compress to nothing.
+ */
+
+export type DesignBrand = {
+  slug: string;
+  name: string;
+  /** device category this brand belongs to, for multi-category designs */
+  category: string;
+  models: { id: string; name: string }[];
+};
+
+export type DesignPage = {
+  id: string;
+  slug: string;
+  name: string;
+  categoryName: string;
+  categorySlug: string;
+  imageUrl: string | null;
+  priceInPaise: number;
+  /** device categories this artwork is cut for */
+  devices: string[];
+  brands: DesignBrand[];
+};
+
+export async function getDesignPage(slug: string): Promise<DesignPage | null> {
+  const design = await db.design.findFirst({
+    where: { slug, active: true },
+    include: { category: { select: { name: true } } },
+  });
+  if (!design) return null;
+
+  // No device list means every device, which is the default someone
+  // gets by adding a design and not thinking about it.
+  const where =
+    design.deviceSlugs.length > 0
+      ? { category: { slug: { in: design.deviceSlugs } } }
+      : {};
+
+  const models = await db.deviceModel.findMany({
+    where: { ...where, active: true },
+    orderBy: [{ brand: "asc" }, { name: "asc" }],
+    select: {
+      id: true,
+      brand: true,
+      name: true,
+      category: { select: { slug: true } },
+    },
+  });
+
+  const byBrand = new Map<string, DesignBrand>();
+  for (const m of models) {
+    const key = `${m.category.slug}:${m.brand}`;
+    const entry = byBrand.get(key) ?? {
+      slug: urlSlug(m.brand),
+      name: brandLabel(m.brand),
+      category: m.category.slug,
+      models: [],
+    };
+    entry.models.push({ id: m.id, name: m.name });
+    byBrand.set(key, entry);
+  }
+
+  return {
+    id: design.id,
+    slug: design.slug,
+    name: design.name,
+    categoryName: design.category.name,
+    categorySlug: design.categorySlug,
+    imageUrl: design.imageUrl,
+    priceInPaise: design.priceInPaise,
+    devices: design.deviceSlugs,
+    brands: [...byBrand.values()],
+  };
+}
+
+/** Designs grouped by kind, for the collections strip and its page. */
+export async function getDesignCollections(): Promise<
+  { slug: string; name: string; designs: DesignRow[] }[]
+> {
+  const [categories, designs] = await Promise.all([
+    db.designCategory.findMany({ orderBy: { position: "asc" } }),
+    getActiveDesigns(),
+  ]);
+
+  return categories
+    .map((c) => ({
+      slug: c.slug,
+      name: c.name,
+      designs: designs.filter((d) => d.categorySlug === c.slug),
+    }))
+    .filter((c) => c.designs.length > 0);
+}
+
+export async function getActiveDesigns(): Promise<DesignRow[]> {
+  const rows = await db.design.findMany({
+    where: { active: true },
     orderBy: [{ position: "asc" }, { name: "asc" }],
     include: { category: { select: { name: true } } },
   });
