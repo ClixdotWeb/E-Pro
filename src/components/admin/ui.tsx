@@ -352,18 +352,3 @@ export function Empty({
     </div>
   );
 }
-
-/* ---------------- not-saving notice ---------------- */
-
-/**
- * Shown on every screen that looks editable but is not yet. Being
- * explicit about this is the difference between a demo and a lie.
- */
-export function NotSavingYet({ what }: { what: string }) {
-  return (
-    <p className="mb-6 rounded-[8px] border border-warning/30 bg-warning/10 px-4 py-3 text-[13px] leading-relaxed text-warning">
-      {what} is not saved yet — the database is not connected. Everything
-      here works, but it resets when you reload.
-    </p>
-  );
-}

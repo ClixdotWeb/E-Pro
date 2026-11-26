@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
+import { deleteReview, setReviewApproved } from "@/app/admin/actions";
 import { Avatar, Empty, Pill } from "./ui";
 
 /**
@@ -32,7 +34,10 @@ export type ReviewRow = {
 type Tab = "waiting" | "published" | "all";
 
 export function ReviewList({ initial }: { initial: ReviewRow[] }) {
-  const [rows, setRows] = useState(initial);
+  const router = useRouter();
+  const rows = initial;
+  const [, start] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("waiting");
 
   const counts = useMemo(
@@ -49,11 +54,21 @@ export function ReviewList({ initial }: { initial: ReviewRow[] }) {
   );
 
   function publish(id: string) {
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, approved: true } : r)));
+    setError(null);
+    start(async () => {
+      const r = await setReviewApproved(id, true);
+      if (!r.ok) setError(r.message);
+      else router.refresh();
+    });
   }
 
   function hide(id: string) {
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, approved: false } : r)));
+    setError(null);
+    start(async () => {
+      const r = await setReviewApproved(id, false);
+      if (!r.ok) setError(r.message);
+      else router.refresh();
+    });
   }
 
   function remove(row: ReviewRow) {
@@ -63,11 +78,22 @@ export function ReviewList({ initial }: { initial: ReviewRow[] }) {
       )
     )
       return;
-    setRows((rs) => rs.filter((r) => r.id !== row.id));
+    setError(null);
+    start(async () => {
+      const r = await deleteReview(row.id);
+      if (!r.ok) setError(r.message);
+      else router.refresh();
+    });
   }
 
   return (
     <>
+      {error && (
+        <p role="status" className="mb-4 text-[13px] font-bold text-danger">
+          {error}
+        </p>
+      )}
+
       <div className="mb-6 flex flex-wrap gap-2">
         {(
           [

@@ -1,61 +1,47 @@
-import { NotSavingYet, PageHeader } from "@/components/admin/ui";
-import { ReviewList, type ReviewRow } from "@/components/admin/ReviewList";
-import { getAllProducts } from "@/lib/catalog";
+import { Empty, PageHeader } from "@/components/admin/ui";
+import { ReviewList } from "@/components/admin/ReviewList";
+import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Reviews" };
 
 /**
  * Reviews.
  *
- * The shop does not collect reviews yet - there is no form on the
- * product page - but the Review model is in the schema with an
- * `approved` flag, so the moderation screen is built against it. These
- * rows are examples showing the two states; real ones arrive when the
- * form and the database do.
+ * Read from the Review table. The three example reviews that used to
+ * fill this screen had names and opinions attached to them, which is
+ * a worse thing to invent than a number: publishing one did nothing
+ * and the next reload brought it back unpublished.
+ *
+ * The shop has no review form yet, so this will be empty until one
+ * is added - but the moderation half is real, and a review that
+ * arrives from anywhere stays hidden until someone here publishes it.
  */
-async function examples(): Promise<ReviewRow[]> {
-  const all = await getAllProducts();
-  const [a, b, c] = all.filter((p) => p.images.length > 0).slice(0, 3);
-
-  return [
-    {
-      id: "r1",
-      productSlug: a?.slug ?? "cam-skin",
-      productTitle: a?.title ?? "cam skin",
-      author: "Arun Kumar",
-      rating: 5,
-      title: "Fits perfectly",
-      body: "Applied it in ten minutes with a hairdryer. No bubbles, no lifting at the edges. The cutouts line up exactly.",
-      at: "2 days ago",
-      approved: false,
-    },
-    {
-      id: "r2",
-      productSlug: b?.slug ?? "canon-lens-skin",
-      productTitle: b?.title ?? "Canon Lens Skin",
-      author: "Meera S",
-      rating: 4,
-      title: null,
-      body: "Good grip and it looks sharp. Took off half a star because the focus ring cutout is a hair tight.",
-      at: "5 days ago",
-      approved: false,
-    },
-    {
-      id: "r3",
-      productSlug: c?.slug ?? "sony-lens-skin",
-      productTitle: c?.title ?? "Sony Lens Skin",
-      author: "Jayakrishnan R",
-      rating: 5,
-      title: "Second one I have bought",
-      body: "Peeled the old one off after a year — not a mark on the lens barrel. Ordering for the body next.",
-      at: "3 weeks ago",
-      approved: true,
-    },
-  ];
+function ago(then: Date): string {
+  const days = Math.floor((Date.now() - then.getTime()) / 86_400_000);
+  if (days < 1) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 30) return `${days} days ago`;
+  const months = Math.floor(days / 30);
+  return months === 1 ? "a month ago" : `${months} months ago`;
 }
 
 export default async function AdminReviewsPage() {
-  const rows = await examples();
+  const rows = await db.review.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 200,
+    select: {
+      id: true,
+      authorName: true,
+      rating: true,
+      title: true,
+      body: true,
+      approved: true,
+      createdAt: true,
+      product: { select: { slug: true, title: true } },
+    },
+  });
+
   return (
     <>
       <PageHeader
@@ -63,9 +49,26 @@ export default async function AdminReviewsPage() {
         description="New reviews stay hidden from the shop until you publish them."
       />
 
-      <NotSavingYet what="Publishing and deleting" />
-
-      <ReviewList initial={rows} />
+      {rows.length === 0 ? (
+        <Empty
+          title="No reviews yet"
+          body="There is no review form on the shop yet, so nothing can arrive here. When one is added, every review lands here hidden and waits for you."
+        />
+      ) : (
+        <ReviewList
+          initial={rows.map((r) => ({
+            id: r.id,
+            productSlug: r.product.slug,
+            productTitle: r.product.title,
+            author: r.authorName,
+            rating: r.rating,
+            title: r.title,
+            body: r.body ?? "",
+            at: ago(r.createdAt),
+            approved: r.approved,
+          }))}
+        />
+      )}
     </>
   );
 }

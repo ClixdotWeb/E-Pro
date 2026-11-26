@@ -987,3 +987,64 @@ export async function setUserRole(
     };
   }
 }
+
+/* ================= reviews ================= */
+
+/**
+ * Moderation.
+ *
+ * A review arrives hidden and stays hidden until someone here
+ * publishes it. That is the whole feature: the shop reads only
+ * approved rows, so nothing a stranger types appears on a product
+ * page without a person seeing it first.
+ */
+export async function setReviewApproved(
+  id: string,
+  approved: boolean,
+): Promise<ActionResult> {
+  await assertCanWrite();
+
+  try {
+    const review = await db.review.update({
+      where: { id },
+      data: { approved },
+      select: { authorName: true, product: { select: { slug: true } } },
+    });
+
+    safeRevalidate("/admin/reviews");
+    safeRevalidate(`/products/${review.product.slug}`);
+
+    return {
+      ok: true,
+      message: approved
+        ? `${review.authorName}'s review is on the shop.`
+        : `${review.authorName}'s review is hidden again.`,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not change that.",
+    };
+  }
+}
+
+export async function deleteReview(id: string): Promise<ActionResult> {
+  await assertCanWrite();
+
+  try {
+    const review = await db.review.delete({
+      where: { id },
+      select: { authorName: true, product: { select: { slug: true } } },
+    });
+
+    safeRevalidate("/admin/reviews");
+    safeRevalidate(`/products/${review.product.slug}`);
+
+    return { ok: true, message: `${review.authorName}'s review is deleted.` };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not delete it.",
+    };
+  }
+}

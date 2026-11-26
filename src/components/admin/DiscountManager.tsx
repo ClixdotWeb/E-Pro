@@ -1,6 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import {
+  createDiscount,
+  deleteDiscount,
+  setDiscountActive,
+} from "@/app/admin/actions";
 import { Card, Empty, Switch } from "./ui";
 import { formatPaise } from "@/lib/money";
 import type { DiscountType } from "@/lib/pricing";
@@ -66,8 +72,10 @@ function describe(d: {
 }
 
 export function DiscountManager({ initial }: { initial: DiscountRow[] }) {
-  const [rows, setRows] = useState<DiscountRow[]>(initial);
+  const router = useRouter();
+  const rows = initial;
   const [open, setOpen] = useState(initial.length === 0);
+  const [pending, start] = useTransition();
 
   const [code, setCode] = useState("");
   const [type, setType] = useState<DiscountType>("PERCENT");
@@ -96,43 +104,44 @@ export function DiscountManager({ initial }: { initial: DiscountRow[] }) {
           ? "A percentage cannot be more than 100."
           : null;
 
-  const canAdd = Boolean(cleanCode) && !valueProblem;
+  const canAdd = Boolean(cleanCode) && !valueProblem && !pending;
 
   function add(e: React.FormEvent) {
     e.preventDefault();
     if (!canAdd) return;
 
-    if (rows.some((r) => r.code === cleanCode)) {
-      setError(`${cleanCode} already exists.`);
-      return;
-    }
-
-    setRows((r) => [
-      {
-        id: `d${Date.now()}`,
+    setError(null);
+    start(async () => {
+      const r = await createDiscount({
         code: cleanCode,
         type,
         value:
           type === "FIXED" ? Math.round(numericValue * 100) : numericValue,
         minOrderInPaise: minPaise,
         maxUses: maxUses ? Number(maxUses) : null,
-        usedCount: 0,
-        active: true,
-      },
-      ...r,
-    ]);
-
-    setCode("");
-    setMinOrder("");
-    setMaxUses("");
-    setError(null);
-    setOpen(false);
+      });
+      if (!r.ok) {
+        setError(r.message);
+        return;
+      }
+      setCode("");
+      setMinOrder("");
+      setMaxUses("");
+      setOpen(false);
+      router.refresh();
+    });
   }
 
   function toggle(id: string) {
-    setRows((rs) =>
-      rs.map((r) => (r.id === id ? { ...r, active: !r.active } : r)),
-    );
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
+
+    setError(null);
+    start(async () => {
+      const r = await setDiscountActive(row.code, !row.active);
+      if (!r.ok) setError(r.message);
+      else router.refresh();
+    });
   }
 
   function remove(row: DiscountRow) {
@@ -144,7 +153,12 @@ export function DiscountManager({ initial }: { initial: DiscountRow[] }) {
     if (!confirm(`Delete ${row.code}?${used}\n\nThis cannot be undone.`))
       return;
 
-    setRows((rs) => rs.filter((r) => r.id !== row.id));
+    setError(null);
+    start(async () => {
+      const r = await deleteDiscount(row.code);
+      if (!r.ok) setError(r.message);
+      else router.refresh();
+    });
   }
 
   return (

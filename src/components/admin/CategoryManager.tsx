@@ -1,8 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { Card, Pill } from "./ui";
+import {
+  createCategory,
+  deleteCategory,
+  renameCategory,
+} from "@/app/admin/actions";
 
 /**
  * Categories.
@@ -16,6 +22,10 @@ import { Card, Pill } from "./ui";
  * Adding is a single field at the top rather than a separate page.
  * There is only one thing to type, and a round trip for one field is
  * a round trip too many.
+ *
+ * Every change is written through to the database and the list is
+ * re-read from the server afterwards, so the slug shown is the one
+ * the server actually made rather than this component's guess at it.
  */
 
 export type CategoryRow = {
@@ -33,11 +43,13 @@ function slugify(s: string) {
 }
 
 export function CategoryManager({ initial }: { initial: CategoryRow[] }) {
-  const [rows, setRows] = useState<CategoryRow[]>(initial);
+  const router = useRouter();
+  const rows = initial;
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
+  const [pending, start] = useTransition();
 
   function add(e: React.FormEvent) {
     e.preventDefault();
@@ -45,32 +57,53 @@ export function CategoryManager({ initial }: { initial: CategoryRow[] }) {
     const clean = name.trim();
     if (!clean) return;
 
-    const slug = slugify(clean);
-    if (rows.some((r) => r.slug === slug)) {
-      setError(`“${clean}” is already there.`);
-      return;
-    }
-
-    setRows((r) => [...r, { slug, name: clean, count: 0 }]);
-    setName("");
     setError(null);
+    start(async () => {
+      const r = await createCategory(clean);
+      if (!r.ok) {
+        setError(r.message);
+        return;
+      }
+      setName("");
+      router.refresh();
+    });
   }
 
   function saveEdit(slug: string) {
     const clean = draftName.trim();
     if (!clean) return;
-    setRows((r) => r.map((x) => (x.slug === slug ? { ...x, name: clean } : x)));
-    setEditing(null);
+
+    setError(null);
+    start(async () => {
+      const r = await renameCategory(slug, clean);
+      if (!r.ok) {
+        setError(r.message);
+        return;
+      }
+      setEditing(null);
+      router.refresh();
+    });
   }
 
   function remove(row: CategoryRow) {
     const message =
       row.count === 0
         ? `Delete “${row.name}”? Nothing is in it, so nothing else changes.`
-        : `Delete “${row.name}”?\n\n${row.count} product${row.count === 1 ? "" : "s"} will be left with no category, which means ${row.count === 1 ? "it disappears" : "they disappear"} from browsing until you give ${row.count === 1 ? "it" : "them"} a new one.`;
+        : `Delete “${row.name}”?
+
+${row.count} product${row.count === 1 ? "" : "s"} will be left with no category, which means ${row.count === 1 ? "it disappears" : "they disappear"} from browsing until you give ${row.count === 1 ? "it" : "them"} a new one.`;
 
     if (!confirm(message)) return;
-    setRows((r) => r.filter((x) => x.slug !== row.slug));
+
+    setError(null);
+    start(async () => {
+      const r = await deleteCategory(row.slug);
+      if (!r.ok) {
+        setError(r.message);
+        return;
+      }
+      router.refresh();
+    });
   }
 
   return (
@@ -100,23 +133,29 @@ export function CategoryManager({ initial }: { initial: CategoryRow[] }) {
             >
               {error ??
                 (name.trim()
-                  ? `It will live at /collections/${slugify(name)}`
+                  ? `It will live at /skins/${slugify(name)}`
                   : "The device name, as a customer would say it.")}
             </p>
           </div>
 
           <button
             type="submit"
-            disabled={!name.trim()}
+            disabled={!name.trim() || pending}
             className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-accent px-6 text-[14px] font-bold text-black transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
               <path d="M12 5v14M5 12h14" />
             </svg>
-            Add
+            {pending ? "Saving…" : "Add"}
           </button>
         </form>
       </Card>
+
+      {error && (
+        <p role="status" className="mb-4 text-[13px] font-bold text-danger">
+          {error}
+        </p>
+      )}
 
       {/* list */}
       <div className="overflow-hidden rounded-[14px] border border-hairline bg-surface-1">
@@ -169,7 +208,7 @@ export function CategoryManager({ initial }: { initial: CategoryRow[] }) {
                       {row.name}
                     </p>
                     <p className="mt-0.5 truncate font-mono text-[12px] text-text-low">
-                      /collections/{row.slug}
+                      /skins/{row.slug}
                     </p>
                   </div>
 
