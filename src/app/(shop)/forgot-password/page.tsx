@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 export default function ForgotPasswordPage() {
   return (
     <AuthShell
-      kicker="Locked out?"
       title="Reset your password"
+      subtitle="Tell us the email on your account and we will send a link to set a new password."
       footer={
         <>
           Remembered it?{" "}
@@ -23,11 +23,6 @@ export default function ForgotPasswordPage() {
         </>
       }
     >
-      <p className="-mt-2 mb-6 text-[13px] leading-relaxed text-text-mid">
-        Enter the email on your account and we will send a reset link. The
-        link expires in one hour.
-      </p>
-
       <form className="space-y-4">
         <AuthField
           id="email"

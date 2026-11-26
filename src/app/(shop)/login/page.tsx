@@ -31,7 +31,6 @@ export default async function LoginPage({
 
   return (
     <AuthShell
-      kicker="Welcome back"
       title="Sign in to your account"
       subtitle="Your orders, your saved devices and your invoices, all in one place."
       footer={

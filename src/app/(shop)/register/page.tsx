@@ -29,7 +29,6 @@ export default async function RegisterPage() {
 
   return (
     <AuthShell
-      kicker="Join us"
       title="Create your account"
       subtitle="Takes a minute. Everything you order after this is one tap to find again."
       footer={
