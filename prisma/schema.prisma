@@ -426,3 +426,38 @@ model Counter {
   name  String @id
   value Int    @default(1000)
 }
+
+// ---------------- Designs ----------------
+// The picture that goes on the skin, as opposed to the material it is
+// printed on (Product.finish) or how much of the body it covers.
+// Kept separate from Product because one design sells on every device:
+// "Neon Dragon" is the same artwork on an iPhone 11 and a Canon R3.
+
+model DesignCategory {
+  slug     String @id
+  name     String
+  position Int    @default(0)
+
+  designs Design[]
+}
+
+model Design {
+  id           String  @id @default(cuid())
+  slug         String  @unique
+  name         String
+  categorySlug String
+  imageUrl     String?
+  /** Device categories this artwork is cut for; empty means all. */
+  deviceSlugs  String[]
+  priceInPaise Int     @default(0)
+  active       Boolean @default(true)
+  position     Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category DesignCategory @relation(fields: [categorySlug], references: [slug], onDelete: Restrict)
+
+  @@index([categorySlug, position])
+  @@index([active])
+}

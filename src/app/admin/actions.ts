@@ -582,3 +582,223 @@ export async function unpublishProduct(slug: string): Promise<ActionResult> {
     };
   }
 }
+
+/* ================= designs ================= */
+
+/**
+ * Design artwork is uploaded, not typed, so these actions take a File
+ * and put it on disk under public/uploads/designs. That directory
+ * must be a mounted volume in production - a container's filesystem
+ * is thrown away on every deploy, and so would every photograph the
+ * shop owner had added.
+ *
+ * What is accepted is checked against the bytes, not the name: an
+ * uploaded file is the one input here that a stranger could choose
+ * freely if the dashboard is ever opened up, and "neon.jpg" is not a
+ * promise about what is inside it. The stored name is derived from
+ * the design's slug and never from the upload's own filename.
+ */
+
+const DESIGN_DIR = "public/uploads/designs";
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+
+/** Magic numbers, so the extension cannot lie about the contents. */
+function sniffImage(bytes: Uint8Array): "jpg" | "png" | "webp" | null {
+  if (bytes.length < 12) return null;
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "jpg";
+  if (
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47
+  )
+    return "png";
+  const ascii = (i: number, s: string) =>
+    String.fromCharCode(...bytes.slice(i, i + s.length)) === s;
+  if (ascii(0, "RIFF") && ascii(8, "WEBP")) return "webp";
+  return null;
+}
+
+async function storeDesignImage(
+  file: File,
+  slug: string,
+): Promise<{ url: string } | { error: string }> {
+  if (file.size === 0) return { error: "That file is empty." };
+  if (file.size > MAX_IMAGE_BYTES)
+    return { error: "That image is over 8 MB. Export it smaller." };
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const kind = sniffImage(bytes);
+  if (!kind)
+    return { error: "Only JPG, PNG and WebP images can be used here." };
+
+  const { mkdir, writeFile } = await import("node:fs/promises");
+  const path = await import("node:path");
+
+  await mkdir(DESIGN_DIR, { recursive: true });
+  const name = `${slug}-${Date.now()}.${kind}`;
+  await writeFile(path.join(DESIGN_DIR, name), bytes);
+
+  return { url: `/uploads/designs/${name}` };
+}
+
+export type DesignInput = {
+  /** empty for a new design */
+  id: string;
+  name: string;
+  categorySlug: string;
+  deviceSlugs: string[];
+  active: boolean;
+  /** rupees, "" or "0" for "no extra charge" */
+  price: string;
+};
+
+export async function saveDesign(
+  input: DesignInput,
+  form?: FormData,
+): Promise<ActionResult> {
+  assertCanWrite();
+
+  const name = input.name.trim();
+  if (!name) return { ok: false, message: "A design needs a name." };
+  if (!input.categorySlug)
+    return { ok: false, message: "Pick which kind of design this is." };
+
+  const slug = slugify(name) || `design-${Date.now()}`;
+
+  try {
+    const clash = await db.design.findFirst({
+      where: { slug, NOT: input.id ? { id: input.id } : undefined },
+      select: { id: true },
+    });
+    if (clash)
+      return { ok: false, message: `There is already a design called ${name}.` };
+
+    let imageUrl: string | undefined;
+    const file = form?.get("image");
+    if (file instanceof File && file.size > 0) {
+      const stored = await storeDesignImage(file, slug);
+      if ("error" in stored) return { ok: false, message: stored.error };
+      imageUrl = stored.url;
+    }
+
+    const data = {
+      slug,
+      name,
+      categorySlug: input.categorySlug,
+      deviceSlugs: input.deviceSlugs,
+      active: input.active,
+      priceInPaise: toPaise(input.price || "0"),
+      ...(imageUrl ? { imageUrl } : {}),
+    };
+
+    if (input.id) {
+      await db.design.update({ where: { id: input.id }, data });
+    } else {
+      const last = await db.design.findFirst({
+        where: { categorySlug: input.categorySlug },
+        orderBy: { position: "desc" },
+        select: { position: true },
+      });
+      await db.design.create({
+        data: { ...data, position: (last?.position ?? -1) + 1 },
+      });
+    }
+
+    revalidateCatalog();
+    safeRevalidate("/admin/designs");
+
+    return {
+      ok: true,
+      message: input.id ? `${name} saved.` : `${name} added.`,
+      slug,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not save the design.",
+    };
+  }
+}
+
+export async function deleteDesign(id: string): Promise<ActionResult> {
+  assertCanWrite();
+
+  try {
+    const d = await db.design.delete({
+      where: { id },
+      select: { name: true },
+    });
+
+    revalidateCatalog();
+    safeRevalidate("/admin/designs");
+
+    return { ok: true, message: `${d.name} deleted.` };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not delete it.",
+    };
+  }
+}
+
+export async function setDesignActive(
+  id: string,
+  active: boolean,
+): Promise<ActionResult> {
+  assertCanWrite();
+
+  try {
+    const d = await db.design.update({
+      where: { id },
+      data: { active },
+      select: { name: true },
+    });
+
+    revalidateCatalog();
+    safeRevalidate("/admin/designs");
+
+    return {
+      ok: true,
+      message: active ? `${d.name} is on the shop.` : `${d.name} is hidden.`,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not change it.",
+    };
+  }
+}
+
+export async function createDesignCategory(
+  name: string,
+): Promise<ActionResult> {
+  assertCanWrite();
+
+  const clean = name.trim();
+  if (!clean) return { ok: false, message: "A kind of design needs a name." };
+
+  const slug = slugify(clean);
+  if (!slug) return { ok: false, message: "Use letters or numbers in the name." };
+
+  try {
+    const exists = await db.designCategory.findUnique({ where: { slug } });
+    if (exists) return { ok: false, message: `${clean} is already there.` };
+
+    const last = await db.designCategory.findFirst({
+      orderBy: { position: "desc" },
+      select: { position: true },
+    });
+    await db.designCategory.create({
+      data: { slug, name: clean, position: (last?.position ?? -1) + 1 },
+    });
+
+    safeRevalidate("/admin/designs");
+    return { ok: true, message: `${clean} added.`, slug };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not add it.",
+    };
+  }
+}

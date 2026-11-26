@@ -49,3 +49,7 @@ next-env.d.ts
 
 # prisma generated client
 /src/generated
+
+# Designs the shop owner uploads. Keep these on a volume in production,
+# not in the image - a deploy would throw them away.
+/public/uploads/

@@ -2,42 +2,66 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { formatPaise } from "@/lib/money";
 import type { ModelPage } from "@/lib/catalog";
-import type { StyleTile } from "@/lib/catalog-shared";
+import type { DesignRow } from "@/lib/designs";
 
 /**
  * The page that sells: one model, configured and added to the cart.
  *
  * It asks in the order the answers exist. The model is already settled
- * by the URL, so what is left is how the skin should look, what it is
- * made of, and - on an iPhone - whether the logo stays visible. The
- * price only appears once there is something to price, because a
- * number that changes under the customer's hand reads as a trick.
+ * by the URL, so what is left is which artwork, what it is cut from,
+ * and - on an iPhone - whether the logo stays visible.
  *
- * Styles have no designs behind them yet, on this site or the live
- * one, so those tiles are shown as unavailable rather than hidden:
- * the customer should see what is coming, and nobody should be able
- * to buy a design that does not exist.
+ * The design is a real choice now, not a row of greyed tiles: the
+ * shop owner adds artwork in the dashboard and only what is marked
+ * for this kind of device appears here. A design may carry its own
+ * surcharge, so the total is the skin plus the artwork, and the
+ * breakdown is shown rather than one number that cannot be checked.
+ *
+ * Where no design has been added for this device, the step is left
+ * out entirely instead of standing there empty, and the skin sells on
+ * its coverage alone - which is what the camera and lens lists have
+ * always done.
  */
 
 export function SkinConfigurator({
   model,
-  styles,
+  designs,
 }: {
   model: ModelPage;
-  styles: StyleTile[];
+  designs: DesignRow[];
 }) {
   const buyable = model.options.filter((o) => !o.pending);
   const [optionId, setOptionId] = useState<string | null>(
     buyable.length === 1 ? buyable[0].variantId : null,
   );
+  const [designId, setDesignId] = useState<string | null>(
+    designs.length === 1 ? designs[0].id : null,
+  );
+  const [kind, setKind] = useState<string>("all");
   const [logoCutout, setLogoCutout] = useState(true);
   const [added, setAdded] = useState(0);
 
+  const kinds = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const d of designs) seen.set(d.categorySlug, d.categoryName);
+    return [...seen.entries()].map(([slug, name]) => ({ slug, name }));
+  }, [designs]);
+
+  const shown = kind === "all" ? designs : designs.filter((d) => d.categorySlug === kind);
+
   const chosen = model.options.find((o) => o.variantId === optionId) ?? null;
-  const canBuy = Boolean(chosen?.available);
+  const design = designs.find((d) => d.id === designId) ?? null;
+
+  const needsDesign = designs.length > 0;
+  const canBuy = Boolean(chosen?.available) && (!needsDesign || !!design);
+
+  const totalInPaise =
+    chosen && !chosen.pending
+      ? chosen.priceInPaise + (design?.priceInPaise ?? 0)
+      : null;
 
   let step = 1;
 
@@ -45,39 +69,88 @@ export function SkinConfigurator({
     <div className="grid gap-10 lg:grid-cols-[1fr_minmax(0,420px)] lg:gap-14">
       {/* ---------------- choices ---------------- */}
       <div className="min-w-0">
-        {styles.length > 0 && (
+        {needsDesign && (
           <section className="mb-10">
             <StepHeading
               n={step++}
               title="Pick a design"
-              note="Designs are being photographed — choose a finish below for now."
+              note="This is the artwork that gets printed on your skin."
             />
-            <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              {styles.map((s) => (
-                <li key={s.slug}>
-                  <div
-                    aria-disabled
-                    className="relative block cursor-not-allowed overflow-hidden rounded-[12px] opacity-45"
+
+            {kinds.length > 1 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Chip on={kind === "all"} onClick={() => setKind("all")}>
+                  All
+                </Chip>
+                {kinds.map((k) => (
+                  <Chip
+                    key={k.slug}
+                    on={kind === k.slug}
+                    onClick={() => setKind(k.slug)}
                   >
-                    <span className="relative block aspect-square">
-                      <Image
-                        src={s.image}
-                        alt={s.title}
-                        fill
-                        sizes="(min-width: 1024px) 15vw, 45vw"
-                        className="object-cover"
+                    {k.name}
+                  </Chip>
+                ))}
+              </div>
+            )}
+
+            <ul
+              className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+              role="radiogroup"
+              aria-label="Design"
+            >
+              {shown.map((d) => {
+                const selected = d.id === designId;
+                return (
+                  <li key={d.id}>
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => setDesignId(d.id)}
+                      className={`relative block w-full overflow-hidden rounded-[12px] border-2 text-left transition-colors ${
+                        selected ? "border-accent" : "border-transparent hover:border-hairline-strong"
+                      }`}
+                    >
+                      <span className="relative block aspect-square bg-surface-2">
+                        {d.imageUrl && (
+                          <Image
+                            src={d.imageUrl}
+                            alt={d.name}
+                            fill
+                            sizes="(min-width: 1024px) 20vw, 45vw"
+                            className="object-cover"
+                          />
+                        )}
+                      </span>
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"
                       />
-                    </span>
-                    <span
-                      aria-hidden
-                      className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"
-                    />
-                    <span className="absolute bottom-3 left-3 right-3 text-[13px] font-bold text-white">
-                      {s.title}
-                    </span>
-                  </div>
-                </li>
-              ))}
+                      <span className="absolute bottom-3 left-3 right-3">
+                        <span className="block text-[13px] font-bold text-white">
+                          {d.name}
+                        </span>
+                        {d.priceInPaise > 0 && (
+                          <span className="block text-[12px] text-white/75">
+                            +{formatPaise(d.priceInPaise)}
+                          </span>
+                        )}
+                      </span>
+                      {selected && (
+                        <span
+                          aria-hidden
+                          className="absolute right-2.5 top-2.5 grid h-6 w-6 place-items-center rounded-full bg-accent text-accent-ink"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         )}
@@ -195,6 +268,7 @@ export function SkinConfigurator({
           </h2>
 
           <dl className="mt-5 space-y-2 border-t border-hairline pt-5 text-[14px]">
+            {needsDesign && <Row label="Design" value={design?.name ?? "—"} />}
             <Row label={model.optionLabel} value={chosen?.label ?? "—"} />
             {model.logoCutout && (
               <Row
@@ -204,12 +278,20 @@ export function SkinConfigurator({
             )}
           </dl>
 
+          {/* Where the artwork costs extra, the sum is shown adding up.
+              A single total that is more than the price on the skin
+              the customer just clicked reads as a mistake. */}
+          {design && design.priceInPaise > 0 && chosen && !chosen.pending && (
+            <dl className="mt-4 space-y-1.5 border-t border-hairline pt-4 text-[13px] text-text-mid">
+              <Row label="Skin" value={formatPaise(chosen.priceInPaise)} />
+              <Row label={design.name} value={`+${formatPaise(design.priceInPaise)}`} />
+            </dl>
+          )}
+
           <p className="mt-5 flex items-baseline justify-between border-t border-hairline pt-5">
             <span className="text-[14px] text-text-mid">Total</span>
             <span className="text-[24px] font-bold tabular-nums text-text-hi">
-              {chosen && !chosen.pending
-                ? formatPaise(chosen.priceInPaise)
-                : "—"}
+              {totalInPaise === null ? "—" : formatPaise(totalInPaise)}
             </span>
           </p>
 
@@ -223,7 +305,9 @@ export function SkinConfigurator({
               ? "Add to cart"
               : model.options.length === 0
                 ? "Not available yet"
-                : `Choose a ${model.optionLabel.toLowerCase()}`}
+                : needsDesign && !design
+                  ? "Pick a design"
+                  : `Choose a ${model.optionLabel.toLowerCase()}`}
           </button>
 
           {added > 0 && (
@@ -240,6 +324,31 @@ export function SkinConfigurator({
         </div>
       </aside>
     </div>
+  );
+}
+
+function Chip({
+  on,
+  onClick,
+  children,
+}: {
+  on: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      className={`h-9 rounded-full border px-4 text-[13px] font-bold transition-colors ${
+        on
+          ? "border-accent bg-accent text-accent-ink"
+          : "border-hairline text-text-mid hover:border-hairline-strong hover:text-text-hi"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 

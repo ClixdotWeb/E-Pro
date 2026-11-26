@@ -12,13 +12,10 @@ import { getBrandsForCategory } from "@/lib/catalog";
  * design families ("Choose Your Style"), which is the wrong question -
  * a Texture skin is no use if it is not cut for your camera.
  *
- * Those design tiles are not here. They were, briefly, linking to
- * /collections/<style> - and every one of them was a 404, because no
- * product carries a style yet. They are empty on the live store too.
- * A tile that leads nowhere is worse than no tile, so they stay out
- * until there are designs behind them; STYLE_TILES still holds the
- * names and the images, and the model page shows them greyed as the
- * design step, so bringing them back is one block of markup.
+ * The design tiles are not here either. Designs live on the model
+ * page now, where the device is already settled and the choice is
+ * real - and the shop owner adds them in the dashboard, so this page
+ * would be guessing at a list that changes.
  */
 
 export const dynamic = "force-dynamic";

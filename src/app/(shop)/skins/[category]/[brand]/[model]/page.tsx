@@ -1,9 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CATEGORY_LABEL, STYLE_TILES } from "@/lib/catalog-shared";
+import { CATEGORY_LABEL } from "@/lib/catalog-shared";
 import { formatPaise } from "@/lib/money";
 import { getModelPage } from "@/lib/catalog";
+import { getDesignsFor } from "@/lib/designs";
 import { SkinConfigurator } from "@/components/skins/SkinConfigurator";
 
 /**
@@ -39,6 +40,8 @@ export default async function ModelSkinPage({
   const page = await getModelPage(category, brand, model);
   if (!page) notFound();
 
+  const designs = await getDesignsFor(category);
+
   return (
     <div className="page py-8 md:py-12">
       <nav aria-label="Breadcrumb" className="mb-8 text-[13px] text-text-low">
@@ -68,10 +71,7 @@ export default async function ModelSkinPage({
       </p>
 
       <div className="mt-10">
-        <SkinConfigurator
-          model={page}
-          styles={STYLE_TILES[category] ?? []}
-        />
+        <SkinConfigurator model={page} designs={designs} />
       </div>
     </div>
   );

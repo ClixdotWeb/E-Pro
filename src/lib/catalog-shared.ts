@@ -268,53 +268,6 @@ export function offersLogoCutout(category: string, brand: string): boolean {
   return category === "phone" && urlSlug(brand) === "iphone";
 }
 
-/**
- * The design families, per device, exactly as the live store's own
- * device pages list them - including its spelling of "Empossed".
- *
- * These are a look, not a material: a Texture skin and a Korean skin
- * are different questions, and the price lists only answer the second.
- * Almost every one of these collections is empty on the live store
- * too, so the tiles are shown as "coming soon" until there is
- * something behind them.
- *
- * Wireless earbuds and the gaming console are left out on purpose.
- * Their pages on the live store show the camera tiles - the same three
- * links, captioned "- Camera" - which is an unfinished page, not a
- * decision worth copying.
- */
-export type StyleTile = { slug: string; title: string; image: string };
-
-export const STYLE_TILES: Record<string, StyleTile[]> = {
-  camera: [
-    { slug: "design-pattern-camera", title: "Design Pattern", image: "/brand/styles/design-pattern-camera.jpg" },
-    { slug: "solid-pattern-camera", title: "Solid Pattern", image: "/brand/styles/solid-pattern-camera.jpg" },
-    { slug: "texture-camera", title: "Texture", image: "/brand/styles/texture-camera.jpg" },
-  ],
-  lens: [
-    { slug: "design-pattern-lens", title: "Design Pattern", image: "/brand/styles/design-pattern-lens.jpg" },
-    { slug: "texture-lens", title: "Texture", image: "/brand/styles/texture-lens.jpg" },
-  ],
-  phone: [
-    { slug: "embossed", title: "Embossed", image: "/brand/styles/embossed.jpg" },
-    { slug: "printed-designs", title: "Printed Designs", image: "/brand/styles/printed-designs.jpg" },
-    { slug: "design-patterns", title: "Design Patterns", image: "/brand/styles/design-patterns.jpg" },
-    { slug: "solid-pattern", title: "Solid Pattern", image: "/brand/styles/solid-pattern.jpg" },
-    { slug: "texture", title: "Texture", image: "/brand/styles/texture.jpg" },
-  ],
-  laptop: [
-    { slug: "empossed-laptop", title: "Embossed", image: "/brand/styles/empossed-laptop.jpg" },
-    { slug: "design-patterns-laptop", title: "Design Patterns", image: "/brand/styles/design-patterns-laptop.jpg" },
-    { slug: "solid-pattern-laptop", title: "Solid Pattern", image: "/brand/styles/solid-pattern-laptop.jpg" },
-    { slug: "printed-design-laptop-1", title: "Printed Design", image: "/brand/styles/printed-design-laptop-1.jpg" },
-  ],
-  tablet: [
-    { slug: "printed-design-tab", title: "Printed Design", image: "/brand/styles/printed-design-tab.jpg" },
-    { slug: "design-pattern-tab", title: "Design Pattern", image: "/brand/styles/design-pattern-tab.jpg" },
-    { slug: "solid-pattern-tab", title: "Solid Pattern", image: "/brand/styles/solid-pattern-tab.jpg" },
-  ],
-};
-
 /** The device pages' own wording, taken from the live store. */
 export const CATEGORY_INTRO: Record<string, { eyebrow: string; heading: string; blurb: string }> = {
   camera: {
