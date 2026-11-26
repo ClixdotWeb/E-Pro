@@ -1,23 +1,24 @@
+import Link from "next/link";
 import Image from "next/image";
 
 /**
  * Shared frame for /login, /register and /forgot-password.
  *
- * A single card floating on a tinted field, split in two: artwork on
- * the left, the form on the right. The card is the whole page - there
- * is no second screenful under it to scroll to, which is what was
- * wrong with both of the versions before this one.
+ * One card, the size of the window less a small margin on all four
+ * sides. There is no header and no footer behind it: the page is the
+ * card, and the only way out of it is the one link back to the shop,
+ * which is the only way out anybody here wants.
  *
- * The artwork is drawn, not photographed. Four blurred columns of
- * the brand green rising out of the bottom of a black panel: it
- * costs nothing to load, it cannot go stale the way a product photo
- * does, and it carries the colour that makes the page ours. The
- * headline on it is the only argument made anywhere here, and it is
- * about the product rather than about signing up.
+ * Inside, the usual split - artwork left, form right. The artwork is
+ * drawn rather than photographed: columns of the brand green rising
+ * out of a black panel, over a fine weave so the black reads as a
+ * material and not a hole. Nothing to load, nothing that goes stale
+ * the way a product photo does, and it needs no second asset for the
+ * light theme.
  *
- * On anything narrower than lg the panel is dropped rather than
- * stacked. It is decoration, and decoration above a password field
- * on a phone is just something to scroll past.
+ * Under lg the panel is dropped rather than stacked. It is
+ * decoration, and decoration above a password field on a phone is
+ * something to scroll past.
  */
 
 export function AuthShell({
@@ -32,49 +33,39 @@ export function AuthShell({
   footer: React.ReactNode;
 }) {
   return (
-    <div className="relative flex justify-center px-4 py-10 sm:px-6 md:py-16">
-      {/* the field the card sits on - brand green, almost black */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(120% 80% at 50% 0%, rgba(0,164,79,0.16) 0%, rgba(0,164,79,0.04) 45%, transparent 75%)",
-        }}
-      />
-
-      <div className="relative w-full max-w-[980px] overflow-hidden rounded-[28px] border border-hairline bg-surface-1 p-3 shadow-[var(--shadow-pop)] sm:p-4">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)]">
+    <div className="flex min-h-svh bg-surface-0 p-2.5 sm:p-4">
+      <div className="flex w-full overflow-hidden rounded-[24px] border border-hairline bg-surface-1 p-2.5 sm:p-3">
+        <div className="grid w-full gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           {/* ---------------- artwork ---------------- */}
-          <aside
-            aria-hidden
-            className="relative hidden overflow-hidden rounded-[22px] bg-black lg:block"
-          >
-            {/* light leaks: four columns of green, blurred, rising */}
-            <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%]">
+          <aside className="relative hidden overflow-hidden rounded-[18px] bg-black lg:flex lg:flex-col lg:justify-between lg:p-10">
+            {/* light leaks: columns of green, blurred, rising */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-[70%]"
+            >
               <span
-                className="absolute bottom-0 left-[6%] h-full w-[16%] rounded-t-full opacity-90 blur-[26px]"
+                className="absolute bottom-0 left-[8%] h-full w-[15%] rounded-t-full opacity-90 blur-[34px]"
                 style={{
                   background:
-                    "linear-gradient(to top, #ffffff 0%, #35e58a 28%, #00a44f 62%, transparent 100%)",
+                    "linear-gradient(to top, #ffffff 0%, #35e58a 26%, #00a44f 60%, transparent 100%)",
                 }}
               />
               <span
-                className="absolute bottom-0 left-[26%] h-[78%] w-[13%] rounded-t-full opacity-80 blur-[22px]"
+                className="absolute bottom-0 left-[27%] h-[76%] w-[12%] rounded-t-full opacity-80 blur-[28px]"
                 style={{
                   background:
                     "linear-gradient(to top, #d9ffe9 0%, #00c763 45%, transparent 100%)",
                 }}
               />
               <span
-                className="absolute bottom-0 left-[44%] h-[92%] w-[18%] rounded-t-full opacity-70 blur-[30px]"
+                className="absolute bottom-0 left-[44%] h-[94%] w-[18%] rounded-t-full opacity-70 blur-[40px]"
                 style={{
                   background:
-                    "linear-gradient(to top, #ffffff 0%, #00a44f 50%, transparent 100%)",
+                    "linear-gradient(to top, #ffffff 0%, #00a44f 48%, transparent 100%)",
                 }}
               />
               <span
-                className="absolute bottom-0 left-[66%] h-[58%] w-[11%] rounded-t-full opacity-60 blur-[24px]"
+                className="absolute bottom-0 left-[68%] h-[60%] w-[11%] rounded-t-full opacity-55 blur-[30px]"
                 style={{
                   background:
                     "linear-gradient(to top, #8bf5bd 0%, #00a44f 55%, transparent 100%)",
@@ -84,6 +75,7 @@ export function AuthShell({
 
             {/* a fine weave, so the black is a material and not a hole */}
             <span
+              aria-hidden
               className="pointer-events-none absolute inset-0 opacity-[0.07]"
               style={{
                 backgroundImage:
@@ -91,42 +83,78 @@ export function AuthShell({
               }}
             />
 
-            <div className="relative flex h-full min-h-[380px] flex-col p-8">
-              <p className="max-w-[14ch] text-[30px] font-bold leading-[1.1] tracking-tight text-white xl:text-[34px]">
+            <Link
+              href="/"
+              aria-label="Epro Gadgets, home"
+              className="relative w-fit"
+            >
+              <Image
+                src="/brand/Epro_LOGO_LIGHT-01.png"
+                alt="Epro Gadgets"
+                width={2833}
+                height={942}
+                className="h-[30px] w-auto"
+                priority
+              />
+            </Link>
+
+            <div className="relative">
+              <p className="max-w-[13ch] text-[36px] font-bold leading-[1.05] tracking-tight text-white xl:text-[46px]">
                 Cut to the millimetre.
               </p>
-              <p className="mt-3 max-w-[26ch] text-[13px] leading-relaxed text-white/55">
-                Plotted to order for your exact device.
+              <p className="mt-4 max-w-[30ch] text-[14px] leading-relaxed text-white/60">
+                Plotted to order for your exact device. Nothing sits on a
+                shelf.
               </p>
             </div>
           </aside>
 
           {/* ---------------- form ---------------- */}
-          <main className="flex flex-col justify-center px-2 py-8 sm:px-6 lg:px-8 lg:py-10">
-            <Image
-              src="/brand/Epro_gadgets_Favicon_image.png"
-              alt=""
-              width={44}
-              height={44}
-              className="h-10 w-10 rounded-[10px]"
-              aria-hidden
-            />
+          <section className="relative flex flex-col px-2 py-6 sm:px-6 lg:px-10 lg:py-8">
+            <div className="flex items-center justify-between gap-4">
+              {/* the wordmark lives on the panel, which a phone does
+                  not get - so the mark comes back here instead */}
+              <Link href="/" aria-label="Epro Gadgets, home" className="lg:hidden">
+                <Image
+                  src="/brand/Epro_LOGO_LIGHT-01.png"
+                  alt="Epro Gadgets"
+                  width={2833}
+                  height={942}
+                  className="h-[26px] w-auto"
+                  priority
+                />
+              </Link>
 
-            <h1 className="mt-6 text-[30px] font-bold leading-[1.1] tracking-tight text-text-hi">
-              {title}
-            </h1>
-            {subtitle && (
-              <p className="mt-2.5 text-[13.5px] leading-relaxed text-text-mid">
-                {subtitle}
-              </p>
-            )}
-
-            <div className="mt-7 border-t border-hairline pt-7">{children}</div>
-
-            <div className="mt-7 text-center text-[13px] leading-relaxed text-text-mid">
-              {footer}
+              <Link
+                href="/"
+                className="ml-auto inline-flex items-center gap-1.5 text-[12.5px] text-text-low transition-colors hover:text-text-hi"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to the shop
+              </Link>
             </div>
-          </main>
+
+            <div className="mx-auto flex w-full max-w-[380px] flex-1 flex-col justify-center py-10">
+              <h1 className="text-[30px] font-bold leading-[1.1] tracking-tight text-text-hi">
+                {title}
+              </h1>
+              {subtitle && (
+                <p className="mt-2.5 text-[13.5px] leading-relaxed text-text-mid">
+                  {subtitle}
+                </p>
+              )}
+
+              <div className="mt-7 border-t border-hairline pt-7">
+                {children}
+              </div>
+
+              <div className="mt-7 text-center text-[13px] leading-relaxed text-text-mid">
+                {footer}
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>
