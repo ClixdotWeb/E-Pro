@@ -56,9 +56,11 @@ export default async function OrderConfirmationPage({
         <h1 className="mt-5 text-3xl font-semibold tracking-tight text-text-hi">
           Order confirmed
         </h1>
+        {/* No email is sent yet, so it does not promise one. The
+            order number is what the customer needs to keep. */}
         <p className="mt-3 text-sm leading-relaxed text-text-mid">
-          Thanks — we have your order and the receipt is on its way to your
-          email.
+          Thanks — we have your order. Keep this number; it is how you
+          track the parcel and how we find you if we call.
         </p>
 
         <p className="mt-5 inline-block rounded-[var(--r-md)] border border-hairline bg-surface-1 px-4 py-2.5 font-mono text-sm font-semibold text-text-hi">
@@ -80,7 +82,7 @@ export default async function OrderConfirmationPage({
             },
             {
               title: "Dispatch in 1–2 business days",
-              body: "You get a tracking link by email and WhatsApp the moment it leaves us.",
+              body: "Come back to this page, or use the track link below, to see where it is.",
             },
             {
               title: "Delivery",
@@ -154,7 +156,9 @@ export default async function OrderConfirmationPage({
         </dl>
 
         <div className="mt-4 flex items-baseline justify-between border-t border-hairline pt-4">
-          <span className="text-sm font-semibold text-text-hi">Paid</span>
+          <span className="text-sm font-semibold text-text-hi">
+            {order.paymentStatus === "PAID" ? "Paid" : "To pay"}
+          </span>
           <span className="text-lg font-semibold tabular-nums text-text-hi">
             {formatPaise(order.totalInPaise)}
           </span>

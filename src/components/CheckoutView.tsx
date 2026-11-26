@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useActionState, useMemo } from "react";
+import { useFormStatus } from "react-dom";
+import { placeOrder } from "@/app/checkout-actions";
 import { CatalogMedia } from "./CatalogMedia";
 import { formatPaise } from "@/lib/money";
 import { calculateTotals } from "@/lib/pricing";
@@ -71,7 +73,7 @@ export function CheckoutView({
   lines: CartLine[];
   payment: PaymentInfo;
 }) {
-  const [notice, setNotice] = useState<React.ReactNode | null>(null);
+  const [state, action] = useActionState(placeOrder, null);
 
   const totals = useMemo(
     () =>
@@ -84,24 +86,6 @@ export function CheckoutView({
       ),
     [lines],
   );
-
-  function pay(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setNotice(
-      <>
-        No order was placed — checkout needs a database connection and a
-        payment gateway before it can take money. To see where a real
-        purchase lands,{" "}
-        <Link
-          href="/order/EPRO-1042"
-          className="text-accent hover:underline"
-        >
-          open a sample confirmation
-        </Link>
-        .
-      </>,
-    );
-  }
 
   if (lines.length === 0) {
     return (
@@ -121,7 +105,7 @@ export function CheckoutView({
 
   return (
     <form
-      onSubmit={pay}
+      action={action}
       className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:gap-12"
     >
       <div className="space-y-8">
@@ -239,21 +223,22 @@ export function CheckoutView({
                 No payment gateway configured yet
               </p>
               <p className="mt-1.5 text-[11px] leading-relaxed text-text-mid">
-                The gateway has not been chosen. The store runs on a local
-                test gateway, so this button will not take money. Set
-                PAYMENT_PROVIDER and its credentials to go live — the rest of
-                checkout does not change.
+                The gateway has not been chosen yet, so nothing is charged
+                here. Your order is placed and held unpaid, and we will call
+                you to arrange payment. Set PAYMENT_PROVIDER and its
+                credentials to take money online — nothing else about
+                checkout changes.
               </p>
             </div>
           )}
         </Step>
 
-        {notice && (
+        {state && (
           <p
-            role="status"
-            className="rounded-[var(--r-md)] border border-hairline bg-surface-1 px-4 py-3 text-[12px] leading-relaxed text-text-mid"
+            role="alert"
+            className="rounded-[var(--r-md)] border border-danger/35 bg-danger/10 px-4 py-3 text-[12px] leading-relaxed text-danger"
           >
-            {notice}
+            {state.message}
           </p>
         )}
       </div>
@@ -321,14 +306,13 @@ export function CheckoutView({
             </span>
           </div>
 
-          <button
-            type="submit"
-            className="mt-5 w-full rounded-[var(--r-md)] bg-accent px-5 py-3.5 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
-          >
-            {payment.live
-              ? `Pay ${formatPaise(totals.totalInPaise)}`
-              : "Place order (disabled)"}
-          </button>
+          <PlaceOrderButton
+            label={
+              payment.live
+                ? `Pay ${formatPaise(totals.totalInPaise)}`
+                : `Place order · ${formatPaise(totals.totalInPaise)}`
+            }
+          />
 
           <Link
             href="/cart"
@@ -394,5 +378,19 @@ function Field({
         </p>
       )}
     </div>
+  );
+}
+
+function PlaceOrderButton({ label }: { label: string }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="mt-5 w-full rounded-[var(--r-md)] bg-accent px-5 py-3.5 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-60"
+    >
+      {pending ? "Placing your order…" : label}
+    </button>
   );
 }
