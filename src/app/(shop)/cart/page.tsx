@@ -1,54 +1,20 @@
 import type { Metadata } from "next";
-import { CartView, type CartLine } from "@/components/CartView";
-import { optionLabelFor } from "@/lib/catalog-shared";
-import { getOffers, getProductBySlug } from "@/lib/catalog";
+import { CartView } from "@/components/CartView";
+import { getCart } from "@/lib/cart";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Cart",
   description: "Review your skins before checkout.",
 };
 
-/**
- * Cart shell.
- *
- * Until the database is connected there is no persisted cart, so the
- * page seeds itself with two real, buyable offers from the imported
- * catalog. That keeps the layout honest — real titles, real prices, real
- * photos where Shopify has them — without pretending an order exists.
- *
- * When the cart table lands, this function reads the session's cart
- * instead and nothing in CartView changes.
- */
-async function demoLines(): Promise<CartLine[]> {
-  const offers = await getOffers();
-  const picks = offers.filter((o) => o.available && o.imageUrl).slice(0, 2);
-
-  return Promise.all(
-    picks.map(async (o, i) => {
-      const product = await getProductBySlug(o.productSlug);
-
-      return {
-        id: o.id,
-        productSlug: o.productSlug,
-        productTitle: o.productTitle,
-        variantTitle: o.variantTitle,
-        optionLabel: product ? optionLabelFor(product) : "Option",
-        unitInPaise: o.priceInPaise,
-        imageUrl: o.imageUrl,
-        quantity: i === 0 ? 1 : 2,
-      };
-    }),
-  );
-}
-
 export default async function CartPage() {
-  const lines = await demoLines();
+  const cart = await getCart();
 
-  // The live cart page has no kicker and no rule under the title - the
-  // heading is centred and the content starts straight after it.
   return (
-    <div className="page py-10 md:py-20">
-      <CartView initialLines={lines} />
+    <div className="page py-10 md:py-14">
+      <CartView initialLines={cart?.lines ?? []} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { getNavCategories } from "@/lib/catalog";
+import { getCartCount } from "@/lib/cart";
 
 /**
  * Storefront chrome. Everything a customer sees sits inside this.
@@ -23,7 +24,10 @@ export default async function ShopLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const navCategories = await getNavCategories();
+  const [navCategories, cartCount] = await Promise.all([
+    getNavCategories(),
+    getCartCount(),
+  ]);
 
   return (
     <>
@@ -34,7 +38,7 @@ export default async function ShopLayout({
         Skip to content
       </a>
 
-      <Header navCategories={navCategories} />
+      <Header navCategories={navCategories} cartCount={cartCount} />
 
       <main id="main" className="flex-1">
         {children}

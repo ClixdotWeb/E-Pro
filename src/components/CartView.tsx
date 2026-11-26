@@ -1,62 +1,65 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { CatalogMedia } from "./CatalogMedia";
-import { formatPaise } from "@/lib/money";
-import { sumPaise } from "@/lib/money";
+import { formatPaise, sumPaise } from "@/lib/money";
+import { setLineQuantity } from "@/app/cart-actions";
+import type { CartLine } from "@/lib/cart";
 
 /**
  * Cart, rebuilt from the live /cart page's own markup.
  *
  *   h1.h2.ta-center          "Your cart (N)"
  *   empty state              "Your cart is empty" + a primary
- *                            "Continue shopping" to /collections/all
+ *                            "Continue shopping"
  *   form .rw                 items --w-md 8, summary --w-md 4
  *   .cart-amount             corner-radius-s, p-20, p-sticky top-0
  *     "Total" h5  +  amount h5 right
  *     primary "Check out", then a link "Continue shopping"
  *     small: "Tax included. Shipping calculated at checkout."
  *
- * Everything I had added on top of that is gone: the free-shipping
- * progress bar, the discount code field and the GST line are not on
- * the real cart. It shows a total and nothing else, because Shopify
- * works the rest out at checkout.
+ * The free-shipping bar, the discount field and the GST line are not
+ * on the real cart and are not here. It shows a total and nothing
+ * else, because the rest is worked out at checkout.
  *
- * The line-item row could not be observed - the live cart is empty and
- * filling it would have meant adding an item to their real store - so
- * the row below is the theme's standard arrangement (media, title,
- * variant, quantity, line total, remove). Worth a second look once
- * there is a real cart to compare against.
- *
- * State is local until the database is connected; nothing here
- * survives a reload yet.
+ * Quantities are written through to the database as they change, with
+ * the new number shown immediately and rolled back if the server
+ * refuses - the usual reason being that the last one sold while this
+ * cart sat open, and the server clamps to what is left rather than
+ * carrying the lie as far as a payment page.
  */
 
-export type CartLine = {
-  id: string;
-  productSlug: string;
-  productTitle: string;
-  variantTitle: string;
-  optionLabel: string;
-  unitInPaise: number;
-  imageUrl: string | null;
-  quantity: number;
-};
-
 export function CartView({ initialLines }: { initialLines: CartLine[] }) {
+  const router = useRouter();
   const [lines, setLines] = useState<CartLine[]>(initialLines);
+  const [, startTransition] = useTransition();
+  const [note, setNote] = useState<string | null>(null);
 
   const total = sumPaise(lines.map((l) => l.unitInPaise * l.quantity));
+  const soldOut = lines.filter((l) => l.available <= 0);
 
   function setQuantity(id: string, next: number) {
+    const before = lines;
     setLines((prev) =>
       next <= 0
         ? prev.filter((l) => l.id !== id)
-        : prev.map((l) =>
-            l.id === id ? { ...l, quantity: Math.min(10, next) } : l,
-          ),
+        : prev.map((l) => (l.id === id ? { ...l, quantity: next } : l)),
     );
+    setNote(null);
+
+    startTransition(async () => {
+      const r = await setLineQuantity(id, next);
+      if (!r.ok) {
+        setLines(before);
+        setNote(r.message);
+        return;
+      }
+      if (r.message !== "Cart updated." && r.message !== "Removed.")
+        setNote(r.message);
+      router.refresh();
+    });
   }
 
   return (
@@ -82,38 +85,43 @@ export function CartView({ initialLines }: { initialLines: CartLine[] }) {
             <ul className="divide-y divide-hairline border-y border-hairline">
               {lines.map((line) => (
                 <li key={line.id} className="flex gap-4 py-5">
-                  <Link
-                    href={`/products/${line.productSlug}`}
-                    className="shrink-0"
-                    aria-label={line.productTitle}
-                  >
+                  <span className="shrink-0">
                     <CatalogMedia
                       src={line.imageUrl}
                       seed={line.productSlug}
-                      alt={line.productTitle}
+                      alt={line.design ?? line.productTitle}
                       sizes="96px"
                       className="h-20 w-20 rounded-[12px] sm:h-24 sm:w-24"
                     />
-                  </Link>
+                  </span>
 
                   <div className="min-w-0 flex-1">
-                    <Link
-                      href={`/products/${line.productSlug}`}
-                      className="text-sm font-bold text-text-hi hover:text-accent"
-                    >
-                      {line.productTitle}
-                    </Link>
+                    <p className="text-sm font-bold text-text-hi">
+                      {line.deviceName}
+                    </p>
                     <p className="mt-1 text-[12px] text-text-low">
-                      {line.variantTitle}
+                      {line.productTitle}
+                      {line.design ? ` · ${line.design}` : ""}
+                      {line.logoCutout === null
+                        ? ""
+                        : line.logoCutout
+                          ? " · Logo cutout"
+                          : " · Logo covered"}
                     </p>
                     <p className="mt-1.5 text-[12px] text-text-mid">
                       {formatPaise(line.unitInPaise)}
                     </p>
 
+                    {line.available <= 0 && (
+                      <p className="mt-1.5 text-[12px] font-bold text-danger">
+                        Out of stock — remove it to check out
+                      </p>
+                    )}
+
                     <div className="mt-3 flex items-center gap-3">
                       <div className="flex items-center rounded-[6px] border border-hairline">
                         <QtyButton
-                          label={`Decrease quantity of ${line.productTitle}`}
+                          label={`Decrease quantity of ${line.deviceName}`}
                           onClick={() => setQuantity(line.id, line.quantity - 1)}
                         >
                           −
@@ -122,8 +130,11 @@ export function CartView({ initialLines }: { initialLines: CartLine[] }) {
                           {line.quantity}
                         </span>
                         <QtyButton
-                          label={`Increase quantity of ${line.productTitle}`}
-                          disabled={line.quantity >= 10}
+                          label={`Increase quantity of ${line.deviceName}`}
+                          disabled={
+                            line.quantity >= 10 ||
+                            line.quantity >= line.available
+                          }
                           onClick={() => setQuantity(line.id, line.quantity + 1)}
                         >
                           +
@@ -146,6 +157,12 @@ export function CartView({ initialLines }: { initialLines: CartLine[] }) {
                 </li>
               ))}
             </ul>
+
+            {note && (
+              <p role="status" className="mt-4 text-[13px] font-bold text-warning">
+                {note}
+              </p>
+            )}
           </div>
 
           {/* summary - 4/12 */}
@@ -158,12 +175,18 @@ export function CartView({ initialLines }: { initialLines: CartLine[] }) {
                 </p>
               </div>
 
-              <Link
-                href="/checkout"
-                className="flex h-12 w-full items-center justify-center rounded-full bg-accent text-sm font-bold text-black transition-colors hover:bg-accent-hover"
-              >
-                Check out
-              </Link>
+              {soldOut.length > 0 ? (
+                <p className="flex h-12 w-full items-center justify-center rounded-full bg-surface-2 text-sm font-bold text-text-low">
+                  Remove what is sold out
+                </p>
+              ) : (
+                <Link
+                  href="/checkout"
+                  className="flex h-12 w-full items-center justify-center rounded-full bg-accent text-sm font-bold text-black transition-colors hover:bg-accent-hover"
+                >
+                  Check out
+                </Link>
+              )}
 
               <p className="mt-3 text-center">
                 <Link
@@ -206,10 +229,10 @@ function QtyButton({
   return (
     <button
       type="button"
+      aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      aria-label={label}
-      className="grid h-9 w-9 place-items-center text-[15px] text-text-mid transition-colors hover:text-text-hi disabled:cursor-not-allowed disabled:opacity-35"
+      className="h-9 w-9 text-[15px] text-text-mid transition-colors hover:text-text-hi disabled:opacity-35"
     >
       {children}
     </button>

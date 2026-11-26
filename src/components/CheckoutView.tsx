@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { CatalogMedia } from "./CatalogMedia";
 import { formatPaise } from "@/lib/money";
 import { calculateTotals } from "@/lib/pricing";
-import type { CartLine } from "./CartView";
+import type { CartLine } from "@/lib/cart";
 
 /**
  * Checkout in the live theme's layout: a single column of steps with a
@@ -271,16 +271,17 @@ export function CheckoutView({
                 <CatalogMedia
                   src={l.imageUrl}
                   seed={l.productSlug}
-                  alt={l.productTitle}
+                  alt={l.design ?? l.productTitle}
                   sizes="56px"
                   className="h-14 w-14 shrink-0 rounded-[var(--r-sm)] border border-hairline"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] text-text-hi">
-                    {l.productTitle}
+                    {l.deviceName}
                   </p>
                   <p className="truncate text-[11px] text-text-low">
-                    {l.variantTitle} · ×{l.quantity}
+                    {l.productTitle}
+                    {l.design ? ` · ${l.design}` : ""} · ×{l.quantity}
                   </p>
                 </div>
                 <p className="shrink-0 text-[13px] tabular-nums text-text-hi">

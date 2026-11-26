@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
 import { formatPaise } from "@/lib/money";
 import type { ModelPage } from "@/lib/catalog";
 import type { DesignRow } from "@/lib/designs";
+import { addToCart } from "@/app/cart-actions";
 
 /**
  * The page that sells: one model, configured and added to the cart.
@@ -42,7 +44,11 @@ export function SkinConfigurator({
   );
   const [kind, setKind] = useState<string>("all");
   const [logoCutout, setLogoCutout] = useState(true);
-  const [added, setAdded] = useState(0);
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(
+    null,
+  );
 
   const kinds = useMemo(() => {
     const seen = new Map<string, string>();
@@ -62,6 +68,20 @@ export function SkinConfigurator({
     chosen && !chosen.pending
       ? chosen.priceInPaise + (design?.priceInPaise ?? 0)
       : null;
+
+  function add() {
+    if (!chosen) return;
+    setResult(null);
+    startTransition(async () => {
+      const r = await addToCart({
+        variantId: chosen.variantId,
+        designId: design?.id,
+        logoCutout: model.logoCutout ? logoCutout : undefined,
+      });
+      setResult(r);
+      if (r.ok) router.refresh();
+    });
+  }
 
   let step = 1;
 
@@ -297,11 +317,13 @@ export function SkinConfigurator({
 
           <button
             type="button"
-            disabled={!canBuy}
-            onClick={() => setAdded((n) => n + 1)}
+            disabled={!canBuy || pending}
+            onClick={add}
             className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-full bg-accent text-[15px] font-bold text-accent-ink transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-45"
           >
-            {canBuy
+            {pending
+              ? "Adding…"
+              : canBuy
               ? "Add to cart"
               : model.options.length === 0
                 ? "Not available yet"
@@ -310,10 +332,23 @@ export function SkinConfigurator({
                   : `Choose a ${model.optionLabel.toLowerCase()}`}
           </button>
 
-          {added > 0 && (
-            <p className="mt-3 text-center text-[13px] text-text-mid">
-              Added {added}× — the cart is not switched on yet, so nothing is
-              held.
+          {result && (
+            <p
+              role="status"
+              className={`mt-3 text-center text-[13px] ${
+                result.ok ? "text-text-mid" : "text-danger"
+              }`}
+            >
+              {result.ok ? (
+                <>
+                  Added.{" "}
+                  <Link href="/cart" className="font-bold text-accent hover:underline">
+                    Go to cart
+                  </Link>
+                </>
+              ) : (
+                result.message
+              )}
             </p>
           )}
 
