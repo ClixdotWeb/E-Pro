@@ -260,6 +260,62 @@ export function brandLabel(brand: string): string {
 }
 
 /**
+ * The order brands are offered in.
+ *
+ * Not alphabetical, and not by how many models we cut - that would
+ * put Apple eighth behind Poco, because Samsung and Realme ship
+ * forty phones a year and Apple ships four. This is roughly how
+ * often someone walks in holding one.
+ *
+ * Anything not named here follows, alphabetically.
+ *
+ * Both spellings of the two renamed brands are listed, because this
+ * is asked both before and after BRAND_LABEL has had its way: the
+ * price lists say "iPhone" and "mi", a customer reads Apple and
+ * Xiaomi, and ranking only one of the pair silently dropped Apple to
+ * the end of the row.
+ */
+const BRAND_ORDER = [
+  "apple",
+  "iphone",
+  "samsung",
+  "oneplus",
+  "xiaomi",
+  "mi",
+  "redmi",
+  "poco",
+  "realme",
+  "vivo",
+  "iqoo",
+  "oppo",
+  "google",
+  "nothing",
+  "motorola",
+  // camera and lens
+  "canon",
+  "sony",
+  "nikon",
+  "fujifilm",
+  "panasonic",
+  "sigma",
+  "tamron",
+  "samyang",
+  "viltrox",
+  "dji",
+  "zhiyun",
+];
+
+export function brandRank(brand: string): number {
+  const i = BRAND_ORDER.indexOf(urlSlug(brand));
+  return i === -1 ? BRAND_ORDER.length : i;
+}
+
+export function compareBrands(a: string, b: string): number {
+  const d = brandRank(a) - brandRank(b);
+  return d !== 0 ? d : brandLabel(a).localeCompare(brandLabel(b));
+}
+
+/**
  * Apple puts its logo on the back of every iPhone, and a lot of people
  * want it left showing. No other brand in the catalogue has that
  * decision to make, so no other brand is asked.

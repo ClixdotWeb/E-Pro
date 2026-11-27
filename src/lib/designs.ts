@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "./db";
-import { brandLabel, urlSlug } from "./catalog-shared";
+import { brandLabel, compareBrands, urlSlug } from "./catalog-shared";
 
 /**
  * Designs: the artwork that goes on a skin.
@@ -188,7 +188,8 @@ export async function getDesignPage(slug: string): Promise<DesignPage | null> {
     imageUrl: design.imageUrl,
     priceInPaise: design.priceInPaise,
     devices: design.deviceSlugs,
-    brands: [...byBrand.values()],
+    // Apple first, not Poco. See compareBrands.
+    brands: [...byBrand.values()].sort((a, b) => compareBrands(a.name, b.name)),
   };
 }
 
