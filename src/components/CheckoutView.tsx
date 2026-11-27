@@ -162,14 +162,21 @@ export function CheckoutView({
   }
 
   return (
+    // Every track here is minmax(0, ...) and every item carries
+    // min-w-0, and both are load-bearing. A grid track sized `auto` -
+    // which is what an implicit column is - cannot shrink below its
+    // content's min-content width, and a grid item's own min-width is
+    // `auto`, which means the same thing. One <select> full of Indian
+    // state names was enough to push this form wider than a phone and
+    // scroll the entire document sideways.
     <form
       action={submit}
-      className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:gap-12"
+      className="grid w-full grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] lg:gap-12"
     >
-      <div className="space-y-8">
+      <div className="min-w-0 space-y-8">
         {/* ---- 1. contact ---- */}
         <Step n={1} title="Contact">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
             <Field
               id="email"
               label="Email"
@@ -193,12 +200,12 @@ export function CheckoutView({
 
         {/* ---- 2. shipping ---- */}
         <Step n={2} title="Shipping address">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
             <Field id="firstName" label="First name" autoComplete="given-name" required />
             <Field id="lastName" label="Last name" autoComplete="family-name" required />
           </div>
 
-          <div className="mt-4 grid gap-4">
+          <div className="mt-4 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4">
             <Field
               id="line1"
               label="Address"
@@ -212,7 +219,7 @@ export function CheckoutView({
             />
           </div>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div className="mt-4 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-3">
             <Field id="city" label="City" autoComplete="address-level2" required />
 
             {/* min-w-0 on the wrapper and the select both.
@@ -308,7 +315,7 @@ export function CheckoutView({
       </div>
 
       {/* ---- summary ---- */}
-      <aside className="lg:sticky lg:top-[calc(var(--header-h)+24px)] lg:self-start">
+      <aside className="min-w-0 lg:sticky lg:top-[calc(var(--header-h)+24px)] lg:self-start">
         <div className="card p-5">
           <h2 className="text-sm font-semibold text-text-hi">
             {lines.length} item{lines.length === 1 ? "" : "s"}
@@ -404,8 +411,8 @@ function Step({
   children: React.ReactNode;
 }) {
   return (
-    <section>
-      <h2 className="flex items-center gap-2.5 text-sm font-semibold text-text-hi">
+    <section className="min-w-0">
+      <h2 className="flex min-w-0 items-center gap-2.5 text-sm font-semibold text-text-hi">
         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-surface-2 text-[11px] tabular-nums text-text-mid">
           {n}
         </span>
@@ -428,7 +435,9 @@ function Field({
   hint?: string;
 } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <div>
+    // A grid item, so min-w-0: without it the cell is floored at the
+    // input's min-content width and cannot shrink on a phone.
+    <div className="min-w-0">
       <label htmlFor={id} className="block text-[12px] text-text-low">
         {label}
       </label>

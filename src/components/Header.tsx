@@ -87,7 +87,7 @@ function SkinDropdown({ open, menu }: { open: boolean; menu: SkinMenu }) {
   if (!open) return null;
 
   return (
-    <div className="absolute left-0 top-full z-50 hidden w-[400px] pt-2 md:block">
+    <div className="absolute left-0 top-full z-50 hidden w-[400px] pt-2 lg:block">
       <div className="overflow-hidden rounded-lg bg-[#4a4a4a] py-2 shadow-pop">
         {menu.map((item) => {
           const href = `/skins/${item.slug}`;
@@ -200,13 +200,18 @@ export function Header({
           additions. */}
       <header className="sticky top-0 z-50 bg-surface-0">
         {/* Theme grid: "header-logo header-nav header-icons" - the nav
-            is centred in the page, not pushed up against the logo. */}
+            is centred in the page, not pushed up against the logo.
+            
+            The nav switches on at lg, not md. Seven items with
+            nowrap and padding measure 810px, so at 768 the header
+            was 219px wider than the screen and scrolled the whole
+            document sideways. The burger holds until there is room. */}
         <div className="page grid h-[var(--header-h)] grid-cols-[auto_1fr_auto] items-center gap-3">
           {/* mobile menu button */}
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="-ml-1 rounded-[var(--r-sm)] p-2 text-text-mid hover:text-text-hi md:hidden"
+            className="-ml-1 rounded-[var(--r-sm)] p-2 text-text-mid hover:text-text-hi lg:hidden"
             aria-label="Open menu"
             aria-expanded={mobileOpen}
           >
@@ -219,7 +224,7 @@ export function Header({
 
           {/* desktop nav - centred */}
           <nav
-            className="hidden items-center justify-center gap-1 md:flex"
+            className="hidden items-center justify-center gap-0.5 lg:flex"
             onMouseLeave={() => setSkinOpen(false)}
           >
             {/* The panel is anchored to this wrapper, so it hangs
@@ -232,7 +237,7 @@ export function Header({
                 onMouseEnter={() => setSkinOpen(true)}
                 /* "Skin" is the one top-level item the live header
                    keeps bold; the rest are weight 400. */
-                className={`nav-link flex items-center gap-1 px-4 py-2 text-base font-bold transition-colors ${
+                className={`nav-link flex items-center gap-1 px-3 py-2 text-[15px] font-bold transition-colors xl:px-4 xl:text-base ${
                   skinOpen ? "text-accent" : "text-text-hi"
                 }`}
                 aria-expanded={skinOpen}
@@ -253,7 +258,7 @@ export function Header({
                 key={item.href}
                 href={item.href}
                 aria-current={pathname === item.href ? "page" : undefined}
-                className="nav-link whitespace-nowrap px-4 py-2 text-base text-text-hi"
+                className="nav-link whitespace-nowrap px-3 py-2 text-[15px] text-text-hi xl:px-4 xl:text-base"
               >
                 {item.label}
               </Link>
@@ -294,7 +299,7 @@ export function Header({
 
       {/* mobile sheet */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-[60] md:hidden">
+        <div className="fixed inset-0 z-[60] lg:hidden">
           <button
             type="button"
             className="absolute inset-0 bg-black/70"
