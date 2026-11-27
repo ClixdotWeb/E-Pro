@@ -19,12 +19,18 @@
  */
 import { db } from "../src/lib/db";
 
+/**
+ * The five collections, with the tile images the live store used for
+ * them. A collection is shown whether or not anything is in it yet -
+ * that is how the store reads, and an empty one is a promise rather
+ * than a dead end as long as the page inside says so.
+ */
 const CATEGORIES = [
-  { slug: "embossed", name: "Embossed", position: 0 },
-  { slug: "printed-designs", name: "Printed Designs", position: 1 },
-  { slug: "design-patterns", name: "Design Patterns", position: 2 },
-  { slug: "solid-pattern", name: "Solid Pattern", position: 3 },
-  { slug: "texture", name: "Texture", position: 4 },
+  { slug: "embossed", name: "Embossed", position: 0, imageUrl: "/brand/styles/embossed.jpg" },
+  { slug: "printed-designs", name: "Printed Designs", position: 1, imageUrl: "/brand/styles/printed-designs.jpg" },
+  { slug: "design-patterns", name: "Design Patterns", position: 2, imageUrl: "/brand/styles/design-patterns.jpg" },
+  { slug: "solid-pattern", name: "Solid Pattern", position: 3, imageUrl: "/brand/styles/solid-pattern.jpg" },
+  { slug: "texture", name: "Texture", position: 4, imageUrl: "/brand/styles/texture.jpg" },
 ];
 
 const DESIGNS = [
@@ -74,7 +80,7 @@ async function main() {
   for (const c of CATEGORIES) {
     await db.designCategory.upsert({
       where: { slug: c.slug },
-      update: { name: c.name, position: c.position },
+      update: { name: c.name, position: c.position, imageUrl: c.imageUrl },
       create: c,
     });
   }

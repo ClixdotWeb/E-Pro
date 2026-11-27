@@ -10,12 +10,11 @@ import { getDesignCollections } from "@/lib/designs";
  * "what do you own", this asks "what do you want it to look like".
  * Both end at the same cart.
  *
- * One design per kind, the first one, so the row is five pictures
- * rather than fifty. The kind's name is the label and the whole tile
- * goes to its section on /designs.
- *
- * Renders nothing when there are no designs - a heading over an
- * empty row reads as a page that failed to load.
+ * One tile per kind, so the row is five pictures rather than fifty.
+ * The picture is the collection's own, which is why it has to be a
+ * collection and not just the first design in it: a collection with
+ * nothing in it yet still shows, the way the live store reads, and
+ * it still needs a picture.
  */
 export async function CollectionStrip() {
   const collections = await getDesignCollections();
@@ -29,7 +28,7 @@ export async function CollectionStrip() {
 
       <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {collections.map((c) => {
-          const cover = c.designs[0];
+          const cover = c.coverUrl ?? c.designs[0]?.imageUrl ?? null;
           return (
             <li key={c.slug}>
               <Link
@@ -37,9 +36,9 @@ export async function CollectionStrip() {
                 className="group block overflow-hidden rounded-[var(--r-md)] border border-hairline bg-surface-1 transition-colors hover:border-hairline-strong"
               >
                 <span className="relative block aspect-square bg-surface-2">
-                  {cover.imageUrl && (
+                  {cover && (
                     <Image
-                      src={cover.imageUrl}
+                      src={cover}
                       alt=""
                       fill
                       sizes="(min-width: 1024px) 18vw, 45vw"
@@ -55,7 +54,9 @@ export async function CollectionStrip() {
                       {c.name}
                     </span>
                     <span className="mt-0.5 block text-[11px] text-white/60">
-                      {c.designs.length} {c.designs.length === 1 ? "design" : "designs"}
+                      {c.designs.length === 0
+                        ? "Coming soon"
+                        : `${c.designs.length} ${c.designs.length === 1 ? "design" : "designs"}`}
                     </span>
                   </span>
                 </span>

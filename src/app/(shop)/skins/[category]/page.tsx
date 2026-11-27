@@ -101,24 +101,6 @@ export default async function CategoryPage({
             Request your model
           </Link>
         </div>
-      ) : collections.length === 0 ? (
-        <div className="mx-auto mt-12 max-w-[560px] rounded-[var(--r-md)] border border-hairline bg-surface-1 p-8 text-center">
-          <h2 className="text-[18px] font-bold text-text-hi">
-            Designs are on the way
-          </h2>
-          <p className="mt-3 text-[14px] leading-relaxed text-text-mid">
-            We cut for {brands.length} {label?.toLowerCase()} brand
-            {brands.length === 1 ? "" : "s"}, but no artwork has been
-            photographed for them yet. Browse by device, or ask us what we
-            have.
-          </p>
-          <Link
-            href={`/skins/${category}/${brands[0].slug}`}
-            className="mt-6 inline-flex h-11 items-center rounded-full bg-accent px-7 text-[14px] font-bold text-accent-ink"
-          >
-            Browse by device
-          </Link>
-        </div>
       ) : (
         <section className="mt-12 md:mt-16">
           <h2 className="text-center text-[26px] font-bold tracking-tight text-text-hi md:text-[32px]">
@@ -151,7 +133,9 @@ export default async function CategoryPage({
                         {c.name}
                       </span>
                       <span className="mt-0.5 block text-[11px] text-white/60">
-                        {c.count} {c.count === 1 ? "design" : "designs"}
+                        {c.count === 0
+                          ? "Coming soon"
+                          : `${c.count} ${c.count === 1 ? "design" : "designs"}`}
                       </span>
                     </span>
                   </span>

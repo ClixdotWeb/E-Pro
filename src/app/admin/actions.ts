@@ -1277,3 +1277,90 @@ export async function deleteDeviceModel(id: string): Promise<ActionResult> {
     };
   }
 }
+
+/**
+ * A collection's own name and tile.
+ *
+ * The tile matters more than it looks: every collection shows on
+ * every device page whether or not anything is in it yet, which is
+ * how the live store reads - so an empty collection still has to
+ * have a picture, and it cannot borrow one from a design it does
+ * not have.
+ */
+export async function updateDesignCategory(
+  slug: string,
+  input: { name: string },
+  form?: FormData,
+): Promise<ActionResult> {
+  await assertCanWrite();
+
+  const name = input.name.trim();
+  if (!name) return { ok: false, message: "A collection needs a name." };
+
+  try {
+    const existing = await db.designCategory.findUnique({ where: { slug } });
+    if (!existing) return { ok: false, message: "That collection is gone." };
+
+    let imageUrl: string | undefined;
+    const file = form?.get("image");
+    if (file instanceof File && file.size > 0) {
+      const stored = await storeDesignImage(file, `collection-${slug}`);
+      if ("error" in stored) return { ok: false, message: stored.error };
+      imageUrl = stored.url;
+    }
+
+    await db.designCategory.update({
+      where: { slug },
+      data: { name, ...(imageUrl ? { imageUrl } : {}) },
+    });
+
+    revalidateCatalog();
+    safeRevalidate("/admin/designs");
+
+    return { ok: true, message: `${name} saved.`, slug };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not save it.",
+    };
+  }
+}
+
+/**
+ * Remove a collection.
+ *
+ * Refused while designs still point at it: they would be orphaned,
+ * and the alternative - moving them somewhere arbitrary - is a
+ * decision this screen has no business making on its own.
+ */
+export async function deleteDesignCategory(
+  slug: string,
+): Promise<ActionResult> {
+  await assertCanWrite();
+
+  try {
+    const category = await db.designCategory.findUnique({
+      where: { slug },
+      select: { name: true, _count: { select: { designs: true } } },
+    });
+    if (!category) return { ok: false, message: "Already gone." };
+
+    if (category._count.designs > 0)
+      return {
+        ok: false,
+        message: `${category.name} still holds ${category._count.designs} design${category._count.designs === 1 ? "" : "s"}. Move or delete those first.`,
+      };
+
+    await db.designCategory.delete({ where: { slug } });
+
+    revalidateCatalog();
+    safeRevalidate("/admin/designs");
+
+    return { ok: true, message: `${category.name} deleted.` };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not delete it.",
+    };
+  }
+}

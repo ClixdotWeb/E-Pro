@@ -48,6 +48,15 @@ export default async function DesignsPage() {
                 {c.name}
               </h2>
 
+              {c.designs.length === 0 ? (
+                <p className="rounded-[var(--r-md)] border border-hairline bg-surface-1 px-5 py-6 text-[13px] text-text-mid">
+                  Nothing photographed in this one yet.{" "}
+                  <Link href="/request-model" className="text-accent hover:underline">
+                    Ask us what we have
+                  </Link>
+                  .
+                </p>
+              ) : (
               <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                 {c.designs.map((d) => (
                   <li key={d.id}>
@@ -80,6 +89,7 @@ export default async function DesignsPage() {
                   </li>
                 ))}
               </ul>
+              )}
             </section>
           ))}
         </div>

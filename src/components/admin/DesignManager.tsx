@@ -8,8 +8,10 @@ import { CATEGORY_LABEL } from "@/lib/catalog-shared";
 import {
   createDesignCategory,
   deleteDesign,
+  deleteDesignCategory,
   saveDesign,
   setDesignActive,
+  updateDesignCategory,
 } from "@/app/admin/actions";
 import type { DesignCategoryRow, DesignRow } from "@/lib/designs";
 
@@ -66,6 +68,9 @@ export function DesignManager({
   const [draft, setDraft] = useState<Draft | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [newCategory, setNewCategory] = useState("");
+  const coverRef = useRef<HTMLInputElement>(null);
+  const [editingKind, setEditingKind] = useState<DesignCategoryRow | null>(null);
+  const [kindName, setKindName] = useState("");
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(
     null,
@@ -138,6 +143,45 @@ export function DesignManager({
     });
   }
 
+  function openKind(c: DesignCategoryRow) {
+    setResult(null);
+    setEditingKind(c);
+    setKindName(c.name);
+    if (coverRef.current) coverRef.current.value = "";
+  }
+
+  function saveKind() {
+    if (!editingKind) return;
+    const form = new FormData();
+    const file = coverRef.current?.files?.[0];
+    if (file) form.set("image", file);
+
+    startTransition(async () => {
+      const r = await updateDesignCategory(
+        editingKind.slug,
+        { name: kindName },
+        form,
+      );
+      setResult(r);
+      if (r.ok) {
+        setEditingKind(null);
+        router.refresh();
+      }
+    });
+  }
+
+  function removeKind(c: DesignCategoryRow) {
+    if (!window.confirm(`Delete the ${c.name} collection?`)) return;
+    startTransition(async () => {
+      const r = await deleteDesignCategory(c.slug);
+      setResult(r);
+      if (r.ok) {
+        setEditingKind(null);
+        router.refresh();
+      }
+    });
+  }
+
   function addCategory() {
     const name = newCategory.trim();
     if (!name) return;
@@ -195,6 +239,53 @@ export function DesignManager({
           </button>
         </span>
       </div>
+
+      {/* The collections themselves. Every one shows on the shop,
+          empty or not, so every one needs a name and a tile - and an
+          empty collection cannot borrow a picture from a design it
+          does not have. */}
+      <section className="mb-10">
+        <h2 className="mb-3 text-[15px] font-bold tracking-tight text-text-hi">
+          Collections
+        </h2>
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {categories.map((c) => (
+            <li
+              key={c.slug}
+              className="overflow-hidden rounded-[12px] border border-hairline bg-surface-1"
+            >
+              <span className="relative block aspect-square bg-surface-2">
+                {c.imageUrl && (
+                  <Image
+                    src={c.imageUrl}
+                    alt=""
+                    fill
+                    sizes="20vw"
+                    className="object-cover"
+                  />
+                )}
+              </span>
+              <span className="block px-3 py-2.5">
+                <span className="block truncate text-[13px] font-bold text-text-hi">
+                  {c.name}
+                </span>
+                <span className="mt-0.5 flex items-center justify-between gap-2">
+                  <span className="text-[11.5px] text-text-low">
+                    {c.designs === 0 ? "Empty" : `${c.designs} design${c.designs === 1 ? "" : "s"}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => openKind(c)}
+                    className="text-[11.5px] font-bold text-accent hover:underline"
+                  >
+                    Edit
+                  </button>
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {designs.length === 0 ? (
         <Empty
@@ -295,6 +386,104 @@ export function DesignManager({
         >
           {result.message}
         </p>
+      )}
+
+      {editingKind && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Edit the ${editingKind.name} collection`}
+          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/70 p-4"
+        >
+          <div className="w-full max-w-[460px] rounded-[16px] border border-hairline bg-surface-1 p-6">
+            <h2 className="text-[17px] font-bold tracking-tight text-text-hi">
+              {editingKind.name}
+            </h2>
+            <p className="mt-1 text-[12.5px] text-text-mid">
+              This collection shows on every device page, with or without
+              designs in it, so its tile is its own picture.
+            </p>
+
+            <div className="mt-5 space-y-5">
+              <div>
+                <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.08em] text-text-low">
+                  Tile
+                </p>
+                <div className="flex items-center gap-4">
+                  <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[8px] border border-hairline bg-surface-2">
+                    {editingKind.imageUrl && (
+                      <Image
+                        src={editingKind.imageUrl}
+                        alt=""
+                        fill
+                        sizes="80px"
+                        className="object-cover"
+                      />
+                    )}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <input
+                      ref={coverRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="w-full text-[13px] text-text-mid file:mr-3 file:rounded-[6px] file:border-0 file:bg-surface-2 file:px-3 file:py-2 file:text-[13px] file:font-bold file:text-text-hi"
+                    />
+                    <p className="mt-2 text-[12px] text-text-low">
+                      Leave empty to keep the one there now.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.08em] text-text-low">
+                  Name
+                </p>
+                <input
+                  value={kindName}
+                  onChange={(e) => setKindName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveKind();
+                    if (e.key === "Escape") setEditingKind(null);
+                  }}
+                  className="h-11 w-full rounded-[8px] border border-hairline bg-surface-2 px-4 text-[14px] text-text-hi focus:border-accent focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {result && !result.ok && (
+              <p role="status" className="mt-4 text-[13px] font-bold text-danger">
+                {result.message}
+              </p>
+            )}
+
+            <div className="mt-6 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={saveKind}
+                disabled={pending || !kindName.trim()}
+                className="h-11 rounded-[8px] bg-accent px-6 text-[14px] font-bold text-black disabled:opacity-50"
+              >
+                {pending ? "Saving…" : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingKind(null)}
+                className="h-11 rounded-[8px] border border-hairline px-5 text-[14px] text-text-mid hover:border-hairline-strong hover:text-text-hi"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => removeKind(editingKind)}
+                disabled={pending}
+                className="ml-auto text-[12.5px] font-bold text-text-low hover:text-danger disabled:opacity-40"
+              >
+                Delete collection
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {draft && (

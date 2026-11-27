@@ -18,6 +18,8 @@ export type DesignCategoryRow = {
   name: string;
   position: number;
   designs: number;
+  /** the tile on "Our Collections" */
+  imageUrl: string | null;
 };
 
 export type DesignRow = {
@@ -44,6 +46,7 @@ export async function getDesignCategories(): Promise<DesignCategoryRow[]> {
     name: c.name,
     position: c.position,
     designs: c._count.designs,
+    imageUrl: c.imageUrl,
   }));
 }
 
@@ -195,20 +198,19 @@ export async function getDesignPage(slug: string): Promise<DesignPage | null> {
 
 /** Designs grouped by kind, for the collections strip and its page. */
 export async function getDesignCollections(): Promise<
-  { slug: string; name: string; designs: DesignRow[] }[]
+  { slug: string; name: string; coverUrl: string | null; designs: DesignRow[] }[]
 > {
   const [categories, designs] = await Promise.all([
     db.designCategory.findMany({ orderBy: { position: "asc" } }),
     getActiveDesigns(),
   ]);
 
-  return categories
-    .map((c) => ({
-      slug: c.slug,
-      name: c.name,
-      designs: designs.filter((d) => d.categorySlug === c.slug),
-    }))
-    .filter((c) => c.designs.length > 0);
+  return categories.map((c) => ({
+    slug: c.slug,
+    name: c.name,
+    coverUrl: c.imageUrl,
+    designs: designs.filter((d) => d.categorySlug === c.slug),
+  }));
 }
 
 export async function getActiveDesigns(): Promise<DesignRow[]> {
@@ -233,16 +235,22 @@ export async function getActiveDesigns(): Promise<DesignRow[]> {
  * The category is a doorway rather than a filter that survives: by
  * the time someone is choosing artwork they have already said what
  * they own, and the product page asks again anyway because that is
- * where the answer has to be exact. What the category does decide is
- * which collections are worth showing - a kind with nothing cut for
- * phones is not a collection, it is a dead end.
+ * where the answer has to be exact.
+ *
+ * Every collection is shown, empty or not, which is how the live
+ * store reads. I had hidden the empty ones - a kind with nothing in
+ * it looked like a dead end - but hiding them also hides what the
+ * shop does, and the grid inside an empty one says plainly that
+ * there is nothing yet and offers to take a request. The tile image
+ * belongs to the collection for exactly this reason: an empty
+ * collection still has to have a picture.
  */
 
 export type DeviceCollection = {
   slug: string;
   name: string;
   count: number;
-  /** the first design in it, for the tile */
+  /** the collection's own tile, falling back to its first design */
   coverUrl: string | null;
 };
 
@@ -268,10 +276,9 @@ export async function getCollectionsForDevice(
         slug: c.slug,
         name: c.name,
         count: mine.length,
-        coverUrl: mine.find((d) => d.imageUrl)?.imageUrl ?? null,
+        coverUrl: c.imageUrl ?? mine.find((d) => d.imageUrl)?.imageUrl ?? null,
       };
-    })
-    .filter((c) => c.count > 0);
+    });
 }
 
 export type DesignCollectionPage = {

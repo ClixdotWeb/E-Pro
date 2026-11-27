@@ -438,9 +438,11 @@ model Counter {
 // "Neon Dragon" is the same artwork on an iPhone 11 and a Canon R3.
 
 model DesignCategory {
-  slug     String @id
+  slug     String  @id
   name     String
-  position Int    @default(0)
+  position Int     @default(0)
+  /** The tile on "Our Collections". Falls back to the first design. */
+  imageUrl String?
 
   designs Design[]
 }
