@@ -215,7 +215,13 @@ export function CheckoutView({
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <Field id="city" label="City" autoComplete="address-level2" required />
 
-            <div>
+            {/* min-w-0 on the wrapper and the select both.
+                A grid item's min-width is auto, which floors it at
+                the content's min-content width - and a <select>'s is
+                its longest option. "Andaman and Nicobar Islands" is
+                wider than a phone, so the cell refused to shrink and
+                scrolled the whole document sideways. */}
+            <div className="min-w-0">
               <label htmlFor="state" className="block text-[12px] text-text-low">
                 State
               </label>
@@ -225,7 +231,7 @@ export function CheckoutView({
                 defaultValue="Kerala"
                 autoComplete="address-level1"
                 required
-                className="mt-1.5 w-full rounded-[var(--r-md)] border border-hairline bg-surface-0 px-3.5 py-2.5 text-[13px] text-text-hi focus:border-accent"
+                className="mt-1.5 w-full min-w-0 rounded-[var(--r-md)] border border-hairline bg-surface-0 px-3.5 py-2.5 text-[13px] text-text-hi focus:border-accent"
               >
                 {STATES.map((s) => (
                   <option key={s} value={s}>
