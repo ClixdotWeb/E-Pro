@@ -246,6 +246,37 @@ export async function getActiveDesigns(): Promise<DesignRow[]> {
  * collection still has to have a picture.
  */
 
+/**
+ * The collection tiles the live store used, per device.
+ *
+ * A camera page showing a phone mock-up for "Solid Pattern" is the
+ * wrong picture, and most of these collections have no design behind
+ * them yet to borrow one from. The store had a separate image for
+ * each device it bothered to shoot, and these are those files.
+ *
+ * Keyed "<device>:<collection>", falling back to the collection's
+ * own tile and then to its first design. A pairing nobody shot is
+ * simply missing and falls through - that is better than a picture
+ * of the wrong thing.
+ */
+const DEVICE_TILES: Record<string, string> = {
+  "camera:design-patterns": "/brand/styles/design-pattern-camera.jpg",
+  "camera:solid-pattern": "/brand/styles/solid-pattern-camera.jpg",
+  "camera:texture": "/brand/styles/texture-camera.jpg",
+
+  "lens:design-patterns": "/brand/styles/design-pattern-lens.jpg",
+  "lens:texture": "/brand/styles/texture-lens.jpg",
+
+  "laptop:embossed": "/brand/styles/empossed-laptop.jpg",
+  "laptop:design-patterns": "/brand/styles/design-patterns-laptop.jpg",
+  "laptop:solid-pattern": "/brand/styles/solid-pattern-laptop.jpg",
+  "laptop:printed-designs": "/brand/styles/printed-design-laptop-1.jpg",
+
+  "tablet:design-patterns": "/brand/styles/design-pattern-tab.jpg",
+  "tablet:solid-pattern": "/brand/styles/solid-pattern-tab.jpg",
+  "tablet:printed-designs": "/brand/styles/printed-design-tab.jpg",
+};
+
 export type DeviceCollection = {
   slug: string;
   name: string;
@@ -276,7 +307,13 @@ export async function getCollectionsForDevice(
         slug: c.slug,
         name: c.name,
         count: mine.length,
-        coverUrl: c.imageUrl ?? mine.find((d) => d.imageUrl)?.imageUrl ?? null,
+        // A real design beats any stock tile, because it is a
+        // photograph of the thing being sold.
+        coverUrl:
+          mine.find((d) => d.imageUrl)?.imageUrl ??
+          DEVICE_TILES[`${device}:${c.slug}`] ??
+          c.imageUrl ??
+          null,
       };
     });
 }
