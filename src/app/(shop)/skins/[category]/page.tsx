@@ -21,10 +21,10 @@ import { getCollectionsForDevice } from "@/lib/designs";
  * with no phone designs in it is not a collection, it is a dead end -
  * which is what every one of those tiles was on the live store.
  *
- * Browsing by brand still exists under this URL and is linked at the
- * bottom, because someone who arrives knowing only "I have a Canon
- * R3" should not have to look through pictures to find out whether
- * we cut for it.
+ * Browsing by brand still exists under /skins/<category>/<brand>,
+ * but it is not linked from here. The live store sends everybody
+ * through the collections, and a second door under the first one
+ * only makes the page ask two questions at once.
  */
 
 export const dynamic = "force-dynamic";
@@ -144,17 +144,6 @@ export default async function CategoryPage({
             ))}
           </ul>
 
-          {/* The other way in, for someone who knows the device and
-              not the look. */}
-          <p className="mt-10 text-center text-[13px] text-text-low">
-            Know your model already?{" "}
-            <Link
-              href={`/skins/${category}/${brands[0].slug}`}
-              className="text-accent hover:underline"
-            >
-              Browse {label?.toLowerCase()} by brand
-            </Link>
-          </p>
         </section>
       )}
     </div>
