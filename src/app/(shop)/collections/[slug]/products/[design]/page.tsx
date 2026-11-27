@@ -54,7 +54,10 @@ export default async function CollectionProductPage({
 
   return (
     <div className="page py-8 md:py-12">
-      <nav aria-label="Breadcrumb" className="mb-8 text-[13px] text-text-low">
+      <nav
+        aria-label="Breadcrumb"
+        className="mx-auto mb-8 w-full max-w-[1180px] text-[13px] text-text-low"
+      >
         <Link href="/" className="hover:text-accent">
           Home
         </Link>

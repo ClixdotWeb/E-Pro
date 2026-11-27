@@ -154,16 +154,19 @@ export function DesignConfigurator({
           : `Pick a ${chosenDevice.optionLabel.toLowerCase()}`;
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-14 xl:gap-20">
+    // The page container runs to 1600px, which left the artwork and
+    // the questions huddled in the left half of a wide screen with
+    // nothing beside them. Capped and centred instead.
+    <div className="mx-auto grid w-full max-w-[1180px] gap-10 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)] lg:gap-16">
       {/* ---------------- the artwork ---------------- */}
-      <div className="mx-auto w-full max-w-[420px] lg:sticky lg:top-24 lg:self-start">
+      <div className="mx-auto w-full max-w-[460px] lg:sticky lg:top-24 lg:self-start">
         <div className="relative aspect-[4/5] overflow-hidden rounded-[var(--r-md)] border border-hairline bg-white">
           {design.imageUrl && (
             <Image
               src={design.imageUrl}
               alt={design.name}
               fill
-              sizes="(min-width: 1024px) 420px, 100vw"
+              sizes="(min-width: 1024px) 460px, 100vw"
               className="object-contain p-5"
               priority
             />
@@ -178,7 +181,7 @@ export function DesignConfigurator({
       </div>
 
       {/* ---------------- the choices ---------------- */}
-      <div className="min-w-0 max-w-[620px]">
+      <div className="min-w-0">
         <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-accent">
           {design.categoryName}
         </p>
