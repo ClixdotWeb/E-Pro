@@ -154,19 +154,26 @@ export function DesignConfigurator({
           : `Pick a ${chosenDevice.optionLabel.toLowerCase()}`;
 
   return (
-    // The page container runs to 1600px, which left the artwork and
-    // the questions huddled in the left half of a wide screen with
-    // nothing beside them. Capped and centred instead.
-    <div className="mx-auto grid w-full max-w-[1180px] gap-10 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)] lg:gap-16">
+    // Spans the full page container (1600px). It used to sit in an
+    // 1180px box inside it, which left a dead margin down both sides
+    // on a laptop or a desktop while the header ran the full width.
+    //
+    // Both tracks are capped and pushed apart with space-between, so
+    // the artwork lines up with the left edge of the header and the
+    // buy column with the right, and the slack lands in the middle as
+    // breathing room rather than as a gutter outside the content. The
+    // caps also stop the select and the buy button from stretching to
+    // 900px on a wide screen. Below lg the two stack.
+    <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,440px)_minmax(0,620px)] lg:justify-between lg:gap-12 xl:grid-cols-[minmax(0,520px)_minmax(0,680px)] xl:gap-16 2xl:grid-cols-[minmax(0,580px)_minmax(0,720px)]">
       {/* ---------------- the artwork ---------------- */}
-      <div className="mx-auto w-full max-w-[460px] lg:sticky lg:top-24 lg:self-start">
+      <div className="mx-auto w-full max-w-[460px] lg:sticky lg:top-24 lg:max-w-none lg:self-start">
         <div className="relative aspect-[4/5] overflow-hidden rounded-[var(--r-md)] border border-hairline bg-white">
           {design.imageUrl && (
             <Image
               src={design.imageUrl}
               alt={design.name}
               fill
-              sizes="(min-width: 1024px) 460px, 100vw"
+              sizes="(min-width: 1536px) 580px, (min-width: 1280px) 520px, (min-width: 1024px) 440px, (min-width: 460px) 460px, 100vw"
               className="object-contain p-5"
               priority
             />

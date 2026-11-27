@@ -130,6 +130,33 @@ html {
   scroll-behavior: smooth;
 }
 
+/*
+ * Nothing scrolls the page sideways on a phone.
+ *
+ * One over-wide child anywhere in a long page drags the whole
+ * document with it, and the symptom - the header and every section
+ * sliding left under your thumb - looks like the layout is broken
+ * rather than like one element is too wide.
+ *
+ * `clip`, not `hidden`: `overflow: hidden` here turns the document
+ * into a scroll container, and every `position: sticky` inside it
+ * silently stops sticking - which here is the header, the buy box
+ * and the checkout summary. `clip` cuts the overflow without
+ * creating that container, and because the other axis is still
+ * `visible` the page keeps scrolling down normally.
+ *
+ * On the root element only. Putting it on `body` as well is a
+ * common copy-paste and it is one more element that can end up
+ * clipping something it should not.
+ *
+ * This is a backstop, not a licence. An element wider than the
+ * viewport is still a bug; it is just no longer one that makes the
+ * whole site feel broken while it waits to be found.
+ */
+html {
+  overflow-x: clip;
+}
+
 :root[data-theme="light"] {
   color-scheme: light;
 }

@@ -1,6 +1,10 @@
 "use server";
 
-import "server-only";
+// No "server-only" here on purpose. A "use server" module already is
+// server-only, and a client component importing an action from it
+// gets a reference rather than the body - but pairing the two is the
+// kind of thing that bites when the bundler changes its mind about
+// which graph the module belongs to.
 import { db } from "@/lib/db";
 import { offersLogoCutout, FINISH_LABEL } from "@/lib/catalog-shared";
 
