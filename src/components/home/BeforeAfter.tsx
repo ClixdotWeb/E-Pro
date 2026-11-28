@@ -37,11 +37,19 @@ import Image from "next/image";
  * makes the same control keyboard operable and announce a value.
  */
 
-const AFTER_IMAGE = "/brand/Untitled_design_2.png";
-const BEFORE_IMAGE = "/brand/Untitled_design_3.png";
 
-export function BeforeAfter() {
+export function BeforeAfter({
+  beforeImage,
+  afterImage,
+}: {
+  /** the two photographs, read from settings on the server - this
+      component drags a slider, so it cannot read them itself */
+  beforeImage: string;
+  afterImage: string;
+}) {
   const [pos, setPos] = useState(50);
+  const AFTER_IMAGE = afterImage;
+  const BEFORE_IMAGE = beforeImage;
 
   return (
     /* The live comparison is NOT full container width - it is roughly

@@ -1,4 +1,5 @@
 import { VideoHero } from "@/components/home/VideoHero";
+import { getSettings } from "@/lib/settings";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { CollectionStrip } from "@/components/home/CollectionStrip";
 import { RealCustomers } from "@/components/home/RealCustomers";
@@ -32,14 +33,19 @@ import { Newsletter } from "@/components/home/Newsletter";
  * The hero is the exception: as the first section it gets half the top
  * padding, exactly as `.s--banner-spacing` does.
  */
-export default function HomePage() {
+export default async function HomePage() {
+  const settings = await getSettings();
+
   return (
     <>
       <VideoHero />
       <CategoryGrid />
       <CollectionStrip />
       <RealCustomers />
-      <BeforeAfter />
+      <BeforeAfter
+        beforeImage={settings["home.beforeImage"]}
+        afterImage={settings["home.afterImage"]}
+      />
       <Faq />
       <Newsletter />
     </>

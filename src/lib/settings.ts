@@ -50,6 +50,12 @@ export const SETTING_DEFAULTS = {
   "home.customersHeading": "Real Customers - Real Skins",
   "home.customersBlurb":
     "Want to see real photos and videos of our products?",
+  "home.beforeImage": "/brand/Untitled_design_3.png",
+  "home.afterImage": "/brand/Untitled_design_2.png",
+
+  /* ---- footer ---- */
+  "footer.blurb":
+    "Every day is an evolution. Since our launch in 2013, we have explored and curated the tools for your continual transformation - on an emotional, physical, intellectual and spiritual level.",
 } as const;
 
 export type SettingKey = keyof typeof SETTING_DEFAULTS;

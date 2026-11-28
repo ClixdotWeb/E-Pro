@@ -1,3 +1,4 @@
+import { getSettings } from "@/lib/settings";
 import Link from "next/link";
 import Image from "next/image";
 import { IconWithText } from "./IconWithText";
@@ -29,10 +30,12 @@ const HELP = [
   { label: "Contact us", href: "/contact" },
 ];
 
-const INSTAGRAM = "http://instagram.com/eprogadgets";
-const YOUTUBE = "https://www.youtube.com/@eprogadgets";
 
-export function Footer() {
+export async function Footer() {
+  const settings = await getSettings();
+  const INSTAGRAM = settings["contact.instagram"];
+  const YOUTUBE = settings["contact.youtube"];
+
   return (
     <>
       <IconWithText />
@@ -55,10 +58,7 @@ export function Footer() {
             />
 
             <p className="mt-6 max-w-xs text-[13px] leading-relaxed text-text-mid">
-              Every day is an evolution. Since our launch in 2013, we&apos;ve
-              explored and curated the tools for your continual
-              transformation—on an emotional, physical, intellectual and
-              spiritual level.
+              {settings["footer.blurb"]}
             </p>
 
             <div className="mt-6 flex gap-2.5">

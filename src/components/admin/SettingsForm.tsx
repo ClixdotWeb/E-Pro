@@ -37,6 +37,9 @@ export function SettingsForm({ settings }: { settings: Settings }) {
     "home.videoMobile": settings["home.videoMobile"],
     "home.customersHeading": settings["home.customersHeading"],
     "home.customersBlurb": settings["home.customersBlurb"],
+    "home.beforeImage": settings["home.beforeImage"],
+    "home.afterImage": settings["home.afterImage"],
+    "footer.blurb": settings["footer.blurb"],
   }));
   const [pending, start] = useTransition();
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(
@@ -172,7 +175,28 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             value={draft["home.customersBlurb"]}
             onChange={set("home.customersBlurb")}
           />
+          <Field
+            label="Before image"
+            value={draft["home.beforeImage"]}
+            onChange={set("home.beforeImage")}
+            note="The drag-to-compare band. A path under /public."
+          />
+          <Field
+            label="After image"
+            value={draft["home.afterImage"]}
+            onChange={set("home.afterImage")}
+          />
         </div>
+      </Card>
+
+      <Card title="Footer" hint="The paragraph under the logo.">
+        <textarea
+          value={draft["footer.blurb"]}
+          onChange={(e) => set("footer.blurb")(e.target.value)}
+          rows={3}
+          aria-label="Footer paragraph"
+          className="w-full min-w-0 resize-y rounded-[8px] border border-hairline bg-surface-2 px-4 py-2.5 text-[14px] leading-relaxed text-text-hi focus:border-accent focus:outline-none"
+        />
       </Card>
 
       <div className="flex flex-wrap items-center gap-4">
