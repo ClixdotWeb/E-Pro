@@ -23,6 +23,8 @@ import { getSettings, logoCutoutBrandsFrom } from "@/lib/settings";
 
 export type CoverageOption = {
   variantId: string;
+  /** the finish slug, so a caller can pick one without matching text */
+  finish: string | null;
   label: string;
   priceInPaise: number;
   available: boolean;
@@ -90,6 +92,7 @@ export async function getCoveragesFor(
 
       return {
         variantId: v.id,
+        finish,
         label,
         priceInPaise: v.priceInPaise,
         available: !unpriced && !soldOut,

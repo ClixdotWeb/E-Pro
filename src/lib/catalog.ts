@@ -7,6 +7,7 @@ import {
   NOISE_VARIANT,
   UNCATEGORISED,
   brandLabel,
+  compareBrands,
   categoryLabel,
   offersLogoCutout,
   urlSlug,
@@ -333,6 +334,165 @@ export type BrandSummary = {
   /** false when nothing in this brand is on sale yet */
   onSale: boolean;
 };
+
+/**
+ * A photograph of this skin, or nothing.
+ *
+ * Every one of the twelve finish products was seeded with its
+ * device's own stock photo, so all four camera skins carry the same
+ * picture of a camera. Four identical tiles say less than none, and
+ * one of them would be telling the customer that Korean Skin looks
+ * like that. So the placeholder is dropped and the tile is set in
+ * type until somebody photographs the actual films - at which point
+ * the upload lands here on its own.
+ */
+function skinPhoto(url: string | undefined): string | null {
+  if (!url || url.startsWith("/brand/categories/")) return null;
+  return url;
+}
+
+export type DeviceSkin = {
+  /** the finish slug, e.g. "korean-skin" */
+  slug: string;
+  name: string;
+  /** cheapest and dearest this costs across the device's models */
+  fromPaise: number;
+  toPaise: number;
+  /** how many of the device's models we cut it for */
+  models: number;
+  /** a photograph of the films, when the shop has one */
+  imageUrl: string | null;
+};
+
+/**
+ * What this device can actually be skinned in, and for how much.
+ *
+ * This is the shop's catalogue as the price lists write it: a sheet
+ * per brand, a row per model, and a column per thing you can buy -
+ * Printed Skin, Variable Lamination, Korean Skin, Imported Skin for a
+ * camera; Full Wrap, Back With Sides, Back Only for a phone. The
+ * column is the product. It is what has a price.
+ *
+ * It used to be asked last, after a design and a model, which put the
+ * only priced choice at the end of the walk and left the first three
+ * screens unable to quote anything. It is the first choice now.
+ *
+ * A column with no price anywhere - 3M Skin, empty in all 263 rows -
+ * does not appear. The day a price is typed in, it does.
+ */
+export async function getSkinsForCategory(
+  category: string,
+): Promise<DeviceSkin[]> {
+  const variants = await db.variant.findMany({
+    where: {
+      active: true,
+      priceInPaise: { gt: 0 },
+      product: { status: "ACTIVE" },
+      deviceModel: { active: true, category: { slug: category } },
+    },
+    select: {
+      priceInPaise: true,
+      deviceModelId: true,
+      product: {
+        select: {
+          finish: true,
+          title: true,
+          images: { select: { url: true }, orderBy: { position: "asc" }, take: 1 },
+        },
+      },
+    },
+  });
+
+  const by = new Map<
+    string,
+    { prices: number[]; models: Set<string>; imageUrl: string | null }
+  >();
+  for (const v of variants) {
+    const slug = v.product.finish;
+    if (!slug) continue;
+    const row = by.get(slug) ?? {
+      prices: [],
+      models: new Set<string>(),
+      imageUrl: skinPhoto(v.product.images[0]?.url),
+    };
+    row.prices.push(v.priceInPaise);
+    row.models.add(v.deviceModelId);
+    by.set(slug, row);
+  }
+
+  // FINISH_LABEL's own order: materials cheapest first, coverages
+  // from most of the body to least. The same order step 3 used to
+  // use, for the same reason - it is the order the sheets are
+  // written in and the order that reads.
+  return Object.keys(FINISH_LABEL)
+    .filter((slug) => by.has(slug))
+    .map((slug) => {
+      const row = by.get(slug)!;
+      return {
+        slug,
+        name: FINISH_LABEL[slug],
+        fromPaise: Math.min(...row.prices),
+        toPaise: Math.max(...row.prices),
+        models: row.models.size,
+        imageUrl: row.imageUrl,
+      };
+    });
+}
+
+/**
+ * One skin on one device, or null when we do not cut it.
+ *
+ * Used to 404 a made-up URL before the brand list is fetched.
+ */
+export async function getSkinForCategory(
+  category: string,
+  finish: string,
+): Promise<DeviceSkin | null> {
+  const all = await getSkinsForCategory(category);
+  return all.find((s) => s.slug === finish) ?? null;
+}
+
+export type BrandModels = {
+  slug: string;
+  name: string;
+  models: { id: string; name: string }[];
+};
+
+/**
+ * Every brand this device comes in, each with its models.
+ *
+ * One query for the whole tree, because the skin page asks both
+ * questions on one screen: the chips and the dropdown behind them.
+ * Fetching models per brand would mean a round trip on every chip.
+ *
+ * Apple before Poco - see compareBrands. Counting models would bury
+ * it, since Samsung ships forty phones a year and Apple ships four.
+ */
+export async function getBrandModelTree(
+  category: string,
+): Promise<BrandModels[]> {
+  const models = await db.deviceModel.findMany({
+    where: {
+      category: { slug: category },
+      active: true,
+      variants: {
+        some: { active: true, priceInPaise: { gt: 0 }, product: { status: "ACTIVE" } },
+      },
+    },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, brand: true },
+  });
+
+  const by = new Map<string, BrandModels>();
+  for (const m of models) {
+    const slug = urlSlug(m.brand);
+    const row = by.get(slug) ?? { slug, name: brandLabel(m.brand), models: [] };
+    row.models.push({ id: m.id, name: m.name });
+    by.set(slug, row);
+  }
+
+  return [...by.values()].sort((a, b) => compareBrands(a.name, b.name));
+}
 
 export async function getBrandsForCategory(
   category: string,

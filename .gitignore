@@ -53,3 +53,6 @@ next-env.d.ts
 # Designs the shop owner uploads. Keep these on a volume in production,
 # not in the image - a deploy would throw them away.
 /public/uploads/
+
+# Excel lock files, created while a sheet is open in Office.
+~$*
