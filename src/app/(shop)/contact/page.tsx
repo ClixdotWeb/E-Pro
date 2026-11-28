@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { whatsappGeneral } from "@/lib/whatsapp";
+import { getSettings } from "@/lib/settings";
 
 export const metadata: Metadata = {
   title: "Contact us",
@@ -21,8 +22,6 @@ export const metadata: Metadata = {
  * The form posts nowhere yet; pointing `action` at a Server Action is
  * the only change needed.
  */
-
-const WHATSAPP = whatsappGeneral();
 
 const TOPICS = [
   "Custom Skin Request",
@@ -67,7 +66,10 @@ const DETAILS: { title: string; body: string; href?: string; icon: React.ReactNo
   },
 ];
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const settings = await getSettings();
+  const WHATSAPP = whatsappGeneral(undefined, settings["contact.whatsapp"]);
+
   return (
     <>
       <section className="page py-10 md:py-20">

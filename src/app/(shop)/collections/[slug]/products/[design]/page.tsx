@@ -5,6 +5,7 @@ import { DesignConfigurator } from "@/components/designs/DesignConfigurator";
 import { getDesignPage } from "@/lib/designs";
 import { CATEGORY_LABEL } from "@/lib/catalog-shared";
 import { formatPaise } from "@/lib/money";
+import { getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,8 @@ export default async function CollectionProductPage({
   const page = await getDesignPage(design);
   if (!page || page.categorySlug !== slug) notFound();
 
+  const whatsapp = (await getSettings())["contact.whatsapp"];
+
   const query = device ? `?device=${device}` : "";
 
   return (
@@ -79,7 +82,7 @@ export default async function CollectionProductPage({
         <span className="text-text-mid">{page.name}</span>
       </nav>
 
-      <DesignConfigurator design={page} device={device} />
+      <DesignConfigurator design={page} device={device} whatsapp={whatsapp} />
     </div>
   );
 }

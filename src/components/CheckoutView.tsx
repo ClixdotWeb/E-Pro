@@ -8,7 +8,7 @@ import { confirmPayment, startPayment } from "@/app/payment-actions";
 import { openGateway } from "./payment/openGateway";
 import { CatalogMedia } from "./CatalogMedia";
 import { formatPaise } from "@/lib/money";
-import { calculateTotals } from "@/lib/pricing";
+import { calculateTotals, type MoneyRules } from "@/lib/pricing";
 import type { CartLine } from "@/lib/cart";
 
 /**
@@ -71,9 +71,12 @@ const STATES = [
 export function CheckoutView({
   lines,
   payment,
+  rules,
 }: {
   lines: CartLine[];
   payment: PaymentInfo;
+  /** the shop's own shipping and GST rules, read on the server */
+  rules: MoneyRules;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -141,8 +144,10 @@ export function CheckoutView({
           quantity: l.quantity,
           unitInPaise: l.unitInPaise,
         })),
+        null,
+        rules,
       ),
-    [lines],
+    [lines, rules],
   );
 
   if (lines.length === 0) {
@@ -363,7 +368,9 @@ export function CheckoutView({
               </dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-text-low">GST (18%, included)</dt>
+              <dt className="text-text-low">
+                GST ({rules.gstBps / 100}%, included)
+              </dt>
               <dd className="tabular-nums text-text-low">
                 {formatPaise(totals.taxInPaise)}
               </dd>

@@ -3,13 +3,15 @@ import type { Metadata } from "next";
 import { AuthShell } from "@/components/AuthShell";
 import { AuthField } from "@/components/auth/fields";
 import { whatsappGeneral } from "@/lib/whatsapp";
+import { getSettings } from "@/lib/settings";
 
 export const metadata: Metadata = {
   title: "Reset your password",
   robots: { index: false, follow: false },
 };
 
-export default function ForgotPasswordPage() {
+export default async function ForgotPasswordPage() {
+  const settings = await getSettings();
   return (
     <AuthShell
       title="Reset your password"
@@ -53,7 +55,7 @@ export default function ForgotPasswordPage() {
       <p className="mt-6 border-t border-hairline pt-5 text-[12px] text-text-low">
         Still stuck?{" "}
         <a
-          href={whatsappGeneral("signing in")}
+          href={whatsappGeneral("signing in", settings["contact.whatsapp"])}
           target="_blank"
           rel="noopener noreferrer"
           className="text-accent hover:underline"

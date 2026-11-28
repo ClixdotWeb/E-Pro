@@ -20,7 +20,7 @@ import { whatsappRequestModel } from "@/lib/whatsapp";
  * Every label, placeholder and asterisk is the live store's own.
  */
 
-export function RequestModelForm() {
+export function RequestModelForm({ whatsapp }: { whatsapp?: string }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [productType, setProductType] = useState("");
@@ -44,6 +44,7 @@ export function RequestModelForm() {
     message: [message.trim(), email.trim() && `Email: ${email.trim()}`]
       .filter(Boolean)
       .join("\n"),
+    number: whatsapp,
   });
 
   return (

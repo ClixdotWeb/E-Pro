@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { RequestModelForm } from "@/components/RequestModelForm";
+import { getSettings } from "@/lib/settings";
 
 export const metadata: Metadata = {
   title: "Request a Device Model",
@@ -43,7 +44,11 @@ export const metadata: Metadata = {
  * customer keeps a copy of what they asked for.
  */
 
-export default function RequestModelPage() {
+export const dynamic = "force-dynamic";
+
+export default async function RequestModelPage() {
+  const whatsapp = (await getSettings())["contact.whatsapp"];
+
   return (
     <>
       {/* page title */}
@@ -61,7 +66,7 @@ export default function RequestModelPage() {
             work on adding it to our list.
           </h2>
 
-          <RequestModelForm />
+          <RequestModelForm whatsapp={whatsapp} />
         </div>
       </section>
     </>

@@ -7,6 +7,7 @@
 // which graph the module belongs to.
 import { db } from "@/lib/db";
 import { offersLogoCutout, FINISH_LABEL } from "@/lib/catalog-shared";
+import { getSettings, logoCutoutBrandsFrom } from "@/lib/settings";
 
 /**
  * What we can cut for one device.
@@ -61,6 +62,7 @@ export async function getCoveragesFor(
   if (!model) return null;
 
   const category = model.category.slug;
+  const logoBrands = logoCutoutBrandsFrom(await getSettings());
 
   const options: CoverageOption[] = model.variants
     .filter((v) => v.product.status === "ACTIVE")
@@ -88,7 +90,7 @@ export async function getCoveragesFor(
     brand: model.brand,
     category,
     optionLabel: category === "phone" ? "Coverage" : "Material",
-    logoCutout: offersLogoCutout(category, model.brand),
+    logoCutout: offersLogoCutout(category, model.brand, logoBrands),
     options,
   };
 }

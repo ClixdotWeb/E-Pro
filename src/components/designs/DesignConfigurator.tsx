@@ -46,10 +46,13 @@ import type { DesignPage } from "@/lib/designs";
 export function DesignConfigurator({
   design,
   device,
+  whatsapp,
 }: {
   design: DesignPage;
   /** the category the customer came in through, if any */
   device?: string;
+  /** the shop's WhatsApp number, read from settings on the server */
+  whatsapp?: string;
 }) {
   const router = useRouter();
 
@@ -440,6 +443,7 @@ export function DesignConfigurator({
               design: design.name,
               coverage: chosen?.label ?? null,
               logoCutout: chosenDevice?.logoCutout ? logoCutout : null,
+              number: whatsapp,
             })}
             target="_blank"
             rel="noopener noreferrer"

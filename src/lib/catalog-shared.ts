@@ -316,11 +316,21 @@ export function compareBrands(a: string, b: string): number {
 }
 
 /**
- * Apple puts its logo on the back of every iPhone, and a lot of people
- * want it left showing. No other brand in the catalogue has that
- * decision to make, so no other brand is asked.
+ * Apple puts its logo on the back of every iPhone, and a lot of
+ * people want it left showing.
+ *
+ * Which brands get asked is a setting now, not a rule in this file -
+ * the shop owner may well start cutting around the Nothing glyph.
+ * The list is passed in, and the default is what the rule used to
+ * be hard-coded as.
  */
-export function offersLogoCutout(category: string, brand: string): boolean {
-  return category === "phone" && urlSlug(brand) === "iphone";
+export const DEFAULT_LOGO_CUTOUT_BRANDS = ["iphone", "apple"];
+
+export function offersLogoCutout(
+  category: string,
+  brand: string,
+  brands: string[] = DEFAULT_LOGO_CUTOUT_BRANDS,
+): boolean {
+  return category === "phone" && brands.includes(urlSlug(brand));
 }
 

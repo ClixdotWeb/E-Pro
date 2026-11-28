@@ -5,6 +5,7 @@ import { CATEGORY_LABEL } from "@/lib/catalog-shared";
 import { formatPaise } from "@/lib/money";
 import { getModelPage } from "@/lib/catalog";
 import { getDesignsFor } from "@/lib/designs";
+import { getSettings } from "@/lib/settings";
 import { SkinConfigurator } from "@/components/skins/SkinConfigurator";
 
 /**
@@ -40,7 +41,10 @@ export default async function ModelSkinPage({
   const page = await getModelPage(category, brand, model);
   if (!page) notFound();
 
-  const designs = await getDesignsFor(category);
+  const [designs, settings] = await Promise.all([
+    getDesignsFor(category),
+    getSettings(),
+  ]);
 
   return (
     <div className="page py-8 md:py-12">
@@ -71,7 +75,11 @@ export default async function ModelSkinPage({
       </p>
 
       <div className="mt-10">
-        <SkinConfigurator model={page} designs={designs} />
+        <SkinConfigurator
+          model={page}
+          designs={designs}
+          whatsapp={settings["contact.whatsapp"]}
+        />
       </div>
     </div>
   );

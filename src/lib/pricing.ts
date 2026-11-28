@@ -14,9 +14,29 @@ export type DiscountType = "PERCENT" | "FIXED" | "FREE_SHIPPING";
  * The only thing the client gets to choose is variantId + quantity.
  */
 
+/**
+ * The defaults, and only the defaults.
+ *
+ * The live numbers live in the Setting table so the shop owner can
+ * change them without a deploy; these are what a fresh install
+ * starts with and what every caller falls back to. Callers that can
+ * reach the database pass the real rules in - see getMoneyRules.
+ */
 export const FREE_SHIPPING_THRESHOLD_PAISE = 49900; // ₹499
 export const FLAT_SHIPPING_PAISE = 4900; // ₹49
 export const GST_RATE_BPS = 1800; // 18% in basis points
+
+export type MoneyRules = {
+  flatShippingInPaise: number;
+  freeShippingOverPaise: number;
+  gstBps: number;
+};
+
+export const DEFAULT_MONEY_RULES: MoneyRules = {
+  flatShippingInPaise: FLAT_SHIPPING_PAISE,
+  freeShippingOverPaise: FREE_SHIPPING_THRESHOLD_PAISE,
+  gstBps: GST_RATE_BPS,
+};
 
 export type PriceableItem = {
   variantId: string;
@@ -46,6 +66,7 @@ export function lineTotal(item: PriceableItem): Paise {
 export function calculateTotals(
   items: PriceableItem[],
   discount?: AppliedDiscount | null,
+  rules: MoneyRules = DEFAULT_MONEY_RULES,
 ): OrderTotals {
   const subtotalInPaise = sumPaise(items.map(lineTotal));
 
@@ -72,16 +93,16 @@ export function calculateTotals(
   let shippingInPaise = 0;
   if (!freeShipping && discountedSubtotal > 0) {
     shippingInPaise =
-      discountedSubtotal >= FREE_SHIPPING_THRESHOLD_PAISE
+      discountedSubtotal >= rules.freeShippingOverPaise
         ? 0
-        : FLAT_SHIPPING_PAISE;
+        : rules.flatShippingInPaise;
   }
 
   // Prices shown on site are GST-inclusive, so tax is back-calculated
   // for the invoice rather than added on top.
   const taxableBase = discountedSubtotal + shippingInPaise;
   const taxInPaise = Math.round(
-    (taxableBase * GST_RATE_BPS) / (10000 + GST_RATE_BPS),
+    (taxableBase * rules.gstBps) / (10000 + rules.gstBps),
   );
 
   const totalInPaise = discountedSubtotal + shippingInPaise;

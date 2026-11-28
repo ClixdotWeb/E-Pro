@@ -1459,3 +1459,64 @@ export async function moveCategory(
     };
   }
 }
+
+/* ================= settings ================= */
+
+/**
+ * The shop's own rules and details.
+ *
+ * Written one row per setting, in a transaction, so a half-saved
+ * form cannot leave shipping free and GST at zero. Unknown keys are
+ * dropped rather than stored: the form is the only thing that should
+ * be able to name a setting, and a typo should not quietly create a
+ * row nothing reads.
+ */
+export async function saveSettings(
+  values: Record<string, string>,
+): Promise<ActionResult> {
+  await assertCanWrite();
+
+  const { SETTING_DEFAULTS } = await import("@/lib/settings");
+  const known = Object.keys(SETTING_DEFAULTS);
+
+  const writes = Object.entries(values)
+    .filter(([key]) => known.includes(key))
+    .map(([key, value]) => ({ key, value: String(value ?? "").trim() }));
+
+  if (writes.length === 0)
+    return { ok: false, message: "Nothing to save." };
+
+  // Money has to be a number. A blank shipping rate is a shop that
+  // charges NaN.
+  for (const w of writes) {
+    if (!w.key.includes("Paise") && !w.key.includes("Bps")) continue;
+    const n = Number(w.value);
+    if (!Number.isFinite(n) || n < 0)
+      return {
+        ok: false,
+        message: `"${w.value}" is not a number — check the shipping and tax fields.`,
+      };
+  }
+
+  try {
+    await db.$transaction(
+      writes.map((w) =>
+        db.setting.upsert({
+          where: { key: w.key },
+          create: w,
+          update: { value: w.value },
+        }),
+      ),
+    );
+
+    revalidateCatalog();
+    safeRevalidate("/admin/settings");
+
+    return { ok: true, message: "Saved." };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not save the settings.",
+    };
+  }
+}

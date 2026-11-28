@@ -32,9 +32,12 @@ import { whatsappAboutDevice } from "@/lib/whatsapp";
 export function SkinConfigurator({
   model,
   designs,
+  whatsapp,
 }: {
   model: ModelPage;
   designs: DesignRow[];
+  /** the shop's WhatsApp number, read from settings on the server */
+  whatsapp?: string;
 }) {
   const buyable = model.options.filter((o) => !o.pending);
   const [optionId, setOptionId] = useState<string | null>(
@@ -188,7 +191,7 @@ export function SkinConfigurator({
           />
 
           {model.options.length === 0 ? (
-            <Unavailable model={model.name} />
+            <Unavailable model={model.name} whatsapp={whatsapp} />
           ) : (
             <ul className="mt-4 space-y-2.5" role="radiogroup">
               {model.options.map((o) => {
@@ -363,6 +366,7 @@ export function SkinConfigurator({
               design: design?.name ?? null,
               coverage: chosen?.label ?? null,
               logoCutout: model.logoCutout ? logoCutout : null,
+              number: whatsapp,
             })}
             target="_blank"
             rel="noopener noreferrer"
@@ -481,7 +485,13 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Unavailable({ model }: { model: string }) {
+function Unavailable({
+  model,
+  whatsapp,
+}: {
+  model: string;
+  whatsapp?: string;
+}) {
   return (
     <div className="mt-4 rounded-[var(--r-sm)] border border-hairline bg-surface-1 p-6">
       <p className="text-[14px] leading-relaxed text-text-mid">
@@ -493,7 +503,7 @@ function Unavailable({ model }: { model: string }) {
           way round to the same conversation. */}
       <div className="mt-4 flex flex-wrap gap-2.5">
         <a
-          href={whatsappAboutDevice({ device: model })}
+          href={whatsappAboutDevice({ device: model, number: whatsapp })}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex h-11 items-center gap-2 rounded-full bg-accent px-6 text-[14px] font-bold text-accent-ink"

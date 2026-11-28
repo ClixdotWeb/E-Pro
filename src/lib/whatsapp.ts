@@ -8,22 +8,25 @@
  * link opens their WhatsApp with the message already typed, they
  * read it before they send it, and it works on the day it ships.
  *
- * The number lives in one place. It was copy-pasted into four pages
- * with a different hand-encoded message each time, which is three
- * places to forget when it changes.
- *
- * No "use server" and no imports: the number is public - it is
- * printed on the contact page - so client components build these
- * links themselves rather than asking the server for one.
+ * The number is a setting, read on the server and handed to the
+ * components that need it. These builders take it as an argument
+ * with the shipped default as a fallback, so nothing here has to
+ * touch the database - which keeps the whole settings table out of
+ * the browser bundle while leaving one place to change the number.
  */
 
-/** The shop's WhatsApp, in international form, digits only. */
+/** What a fresh install uses until the setting is changed. */
 export const WHATSAPP_NUMBER =
   process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.replace(/\D/g, "") ||
   "919562470470";
 
 /** How a human reads it back. */
 export const WHATSAPP_DISPLAY = "+91 95624 70470";
+
+function digits(number?: string): string {
+  const clean = (number ?? "").replace(/\D/g, "");
+  return clean || WHATSAPP_NUMBER;
+}
 
 /**
  * A wa.me link with the message pre-typed.
@@ -34,6 +37,7 @@ export const WHATSAPP_DISPLAY = "+91 95624 70470";
  */
 export function whatsappLink(
   lines: string | (string | null | undefined)[],
+  number?: string,
 ): string {
   // Only null and undefined are dropped. An empty string is a blank
   // line someone asked for, and filtering it out ran the greeting
@@ -41,15 +45,16 @@ export function whatsappLink(
   const text = Array.isArray(lines)
     ? lines.filter((l) => l !== null && l !== undefined).join("\n")
     : lines;
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+  return `https://wa.me/${digits(number)}?text=${encodeURIComponent(text)}`;
 }
 
 /** The plain "I have a question" link, for a header or a footer. */
-export function whatsappGeneral(about?: string): string {
+export function whatsappGeneral(about?: string, number?: string): string {
   return whatsappLink(
     about
       ? `Hello Epro! I have a question about ${about}.`
       : "Hello Epro! I have a question.",
+    number,
   );
 }
 
@@ -65,6 +70,7 @@ export function whatsappAboutDevice(opts: {
   coverage?: string | null;
   logoCutout?: boolean | null;
   url?: string;
+  number?: string;
 }): string {
   return whatsappLink([
     `Hello Epro! I would like a skin for my ${opts.device}.`,
@@ -76,7 +82,7 @@ export function whatsappAboutDevice(opts: {
       ? null
       : `Apple logo: ${opts.logoCutout ? "cutout" : "covered"}`,
     opts.url ? `Page: ${opts.url}` : null,
-  ]);
+  ], opts.number);
 }
 
 /** "We do not cut this yet - can you?" */
@@ -86,6 +92,7 @@ export function whatsappRequestModel(opts: {
   model?: string;
   name?: string;
   message?: string;
+  number?: string;
 }): string {
   return whatsappLink([
     "Hello Epro! Please add this device to your list.",
@@ -99,8 +106,12 @@ export function whatsappRequestModel(opts: {
 }
 
 /** An enquiry about an order that has already been placed. */
-export function whatsappAboutOrder(orderNumber: string): string {
-  return whatsappLink([
-    `Hello Epro! I have a question about my order ${orderNumber}.`,
-  ]);
+export function whatsappAboutOrder(
+  orderNumber: string,
+  number?: string,
+): string {
+  return whatsappLink(
+    [`Hello Epro! I have a question about my order ${orderNumber}.`],
+    number,
+  );
 }

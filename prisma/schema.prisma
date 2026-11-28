@@ -473,3 +473,15 @@ model Design {
   @@index([categorySlug, position])
   @@index([active])
 }
+
+// ---------------- Settings ----------------
+// Everything the shop owner can change that is not a product: the
+// money rules, the contact details, the homepage copy. One row per
+// setting rather than one wide table, so adding a setting is a write
+// rather than a migration.
+
+model Setting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+}

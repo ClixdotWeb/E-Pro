@@ -5,6 +5,7 @@ import { formatPaise } from "@/lib/money";
 import { notFound } from "next/navigation";
 import { getOrder } from "@/lib/orders";
 import { whatsappAboutOrder } from "@/lib/whatsapp";
+import { getSettings } from "@/lib/settings";
 import { PayNowButton } from "@/components/payment/PayNowButton";
 import { paymentStatus } from "@/lib/payments";
 
@@ -40,6 +41,8 @@ export default async function OrderConfirmationPage({
   const { orderNumber } = await params;
   const order = await getOrder(orderNumber);
   if (!order) notFound();
+
+  const whatsapp = (await getSettings())["contact.whatsapp"];
 
   const lines = order.lines;
 
@@ -198,7 +201,7 @@ export default async function OrderConfirmationPage({
         {/* The order number travels with the enquiry, so nobody has
             to be asked for it. */}
         <a
-          href={whatsappAboutOrder(order.orderNumber)}
+          href={whatsappAboutOrder(order.orderNumber, whatsapp)}
           target="_blank"
           rel="noopener noreferrer"
           className="rounded-[var(--r-md)] border border-hairline px-5 py-3 text-[13px] font-semibold text-text-hi transition-colors hover:border-hairline-strong"

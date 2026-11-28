@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CheckoutView } from "@/components/CheckoutView";
 import { paymentStatus } from "@/lib/payments";
 import { getCart } from "@/lib/cart";
+import { getMoneyRules } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,8 @@ export const metadata: Metadata = {
  * Cashfree, PhonePe or something else.
  */
 export default async function CheckoutPage() {
-  const [status, cart] = [paymentStatus(), await getCart()];
+  const [cart, rules] = await Promise.all([getCart(), getMoneyRules()]);
+  const status = paymentStatus();
 
   return (
     <div className="page py-8 md:py-10">
@@ -35,6 +37,7 @@ export default async function CheckoutPage() {
       <div className="mt-8">
         <CheckoutView
           lines={cart?.lines ?? []}
+          rules={rules}
           payment={{ displayName: status.displayName, live: status.live }}
         />
       </div>

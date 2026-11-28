@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "./db";
+import { getSettings, logoCutoutBrandsFrom } from "./settings";
 import {
   CATEGORY_LABEL,
   FINISH_LABEL,
@@ -519,7 +520,11 @@ export async function getModelPage(
     slug: modelSlug,
     options,
     optionLabel: category === "phone" ? "Coverage" : "Material",
-    logoCutout: offersLogoCutout(category, model.brand),
+    logoCutout: offersLogoCutout(
+      category,
+      model.brand,
+      logoCutoutBrandsFrom(await getSettings()),
+    ),
   };
 }
 

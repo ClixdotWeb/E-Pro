@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { cartToken } from "@/lib/cart";
 import { calculateTotals } from "@/lib/pricing";
 import { paymentStatus } from "@/lib/payments";
+import { getMoneyRules } from "@/lib/settings";
 
 /**
  * Placing an order.
@@ -178,12 +179,16 @@ export async function placeOrder(
         };
     }
 
+    // The shop owner's own shipping and GST rules, read here rather
+    // than compiled in - this is the number that gets charged.
     const totals = calculateTotals(
       lines.map((l) => ({
         variantId: l.variant.id,
         quantity: l.item.quantity,
         unitInPaise: l.unitInPaise,
       })),
+      null,
+      await getMoneyRules(),
     );
 
     const session = await auth();

@@ -1,4 +1,5 @@
-import { whatsappGeneral, WHATSAPP_DISPLAY } from "@/lib/whatsapp";
+import { whatsappGeneral } from "@/lib/whatsapp";
+import { getSettings } from "@/lib/settings";
 
 /**
  * The floating WhatsApp button.
@@ -12,13 +13,17 @@ import { whatsappGeneral, WHATSAPP_DISPLAY } from "@/lib/whatsapp";
  * sticky buy box: that box sits in the page flow on mobile, not
  * pinned, so there is nothing underneath to hide.
  */
-export function WhatsAppButton() {
+export async function WhatsAppButton() {
+  const settings = await getSettings();
+  const number = settings["contact.whatsapp"];
+  const display = settings["contact.whatsappDisplay"];
+
   return (
     <a
-      href={whatsappGeneral()}
+      href={whatsappGeneral(undefined, number)}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`Message us on WhatsApp, ${WHATSAPP_DISPLAY}`}
+      aria-label={`Message us on WhatsApp, ${display}`}
       className="fixed bottom-5 right-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-[#25D366] text-black shadow-[0_8px_28px_rgba(0,0,0,0.45)] transition-transform hover:scale-105 md:bottom-7 md:right-7"
     >
       <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden>

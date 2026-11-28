@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { whatsappGeneral } from "@/lib/whatsapp";
+import { getSettings } from "@/lib/settings";
 
 export const metadata: Metadata = {
   title: "Material",
@@ -34,8 +35,6 @@ export const metadata: Metadata = {
  * This replaces a page that used the generic ContentPage template with
  * copy I had written.
  */
-
-const WHATSAPP = whatsappGeneral("your materials");
 
 /* ---------------- hero ---------------- */
 
@@ -198,7 +197,13 @@ const COMMITMENTS: { q: string; a: string }[] = [
 
 /* ================= page ================= */
 
-export default function MaterialPage() {
+export default async function MaterialPage() {
+  const settings = await getSettings();
+  const WHATSAPP = whatsappGeneral(
+    "your materials",
+    settings["contact.whatsapp"],
+  );
+
   return (
     <>
       {/* ---------- hero ---------- */}
