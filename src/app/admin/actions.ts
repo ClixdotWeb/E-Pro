@@ -1520,3 +1520,123 @@ export async function saveSettings(
     };
   }
 }
+
+/* ================= the FAQ ================= */
+
+/**
+ * Questions and answers.
+ *
+ * Four of these lived in the homepage component and sixteen more in
+ * the /faq page, in two different shapes - so answering a new
+ * question was a code change, and the two lists could disagree
+ * without anyone noticing.
+ */
+export type FaqInput = {
+  /** empty for a new one */
+  id: string;
+  section: string;
+  question: string;
+  answer: string;
+  onHome: boolean;
+  active: boolean;
+};
+
+export async function saveFaq(input: FaqInput): Promise<ActionResult> {
+  await assertCanWrite();
+
+  const question = input.question.trim();
+  const answer = input.answer.trim();
+  if (!question) return { ok: false, message: "A question needs asking." };
+  if (!answer) return { ok: false, message: "And it needs an answer." };
+
+  const data = {
+    section: input.section.trim(),
+    question,
+    answer,
+    onHome: input.onHome,
+    active: input.active,
+  };
+
+  try {
+    if (input.id) {
+      await db.faqItem.update({ where: { id: input.id }, data });
+    } else {
+      const last = await db.faqItem.findFirst({
+        orderBy: { position: "desc" },
+        select: { position: true },
+      });
+      await db.faqItem.create({
+        data: { ...data, position: (last?.position ?? -1) + 1 },
+      });
+    }
+
+    revalidateCatalog();
+    safeRevalidate("/faq");
+    safeRevalidate("/admin/faq");
+
+    return { ok: true, message: input.id ? "Saved." : "Question added." };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not save it.",
+    };
+  }
+}
+
+export async function deleteFaq(id: string): Promise<ActionResult> {
+  await assertCanWrite();
+
+  try {
+    await db.faqItem.delete({ where: { id } });
+    revalidateCatalog();
+    safeRevalidate("/faq");
+    safeRevalidate("/admin/faq");
+    return { ok: true, message: "Deleted." };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not delete it.",
+    };
+  }
+}
+
+/** Move a question up or down the page. */
+export async function moveFaq(
+  id: string,
+  direction: "up" | "down",
+): Promise<ActionResult> {
+  await assertCanWrite();
+
+  try {
+    const all = await db.faqItem.findMany({
+      orderBy: { position: "asc" },
+      select: { id: true },
+    });
+
+    const i = all.findIndex((f) => f.id === id);
+    if (i === -1) return { ok: false, message: "That question is gone." };
+
+    const j = direction === "up" ? i - 1 : i + 1;
+    if (j < 0 || j >= all.length)
+      return { ok: false, message: "It is already at the end." };
+
+    [all[i], all[j]] = [all[j], all[i]];
+
+    await db.$transaction(
+      all.map((f, position) =>
+        db.faqItem.update({ where: { id: f.id }, data: { position } }),
+      ),
+    );
+
+    revalidateCatalog();
+    safeRevalidate("/faq");
+    safeRevalidate("/admin/faq");
+
+    return { ok: true, message: "Moved." };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not move it.",
+    };
+  }
+}

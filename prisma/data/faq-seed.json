@@ -1,0 +1,122 @@
+[
+  {
+    "section": "",
+    "q": "How long does your shipping take?",
+    "a": "Once your order is placed, we strive to process and dispatch it within 1-2 business days. The estimated delivery time may vary depending on your location and the shipping method selected at checkout.",
+    "home": true
+  },
+  {
+    "section": "",
+    "q": "Are the skins easy to apply?",
+    "a": "Yes! Our skins are precision-cut for each specific device model, ensuring accurate fit around buttons, edges, and other details. They’re designed for easy application, with carefully engineered cuts that make alignment simple and provide a clean, professional finish.\n\n(For the best results, apply a small amount of heat using a hairdryer or heat gun to help the skin adhere properly, especially around the edges and curved areas.)",
+    "home": true
+  },
+  {
+    "section": "",
+    "q": "Will the skin damage my device or leave any sticky residue behind?",
+    "a": "Our products have specially Formulated adhesive that does not damage your device nor leave any glue residues. It can be easily removed and replaced at any time to match your new style.",
+    "home": true
+  },
+  {
+    "section": "",
+    "q": "Still Have Questions?",
+    "a": "Have a question? Simply visit our Contact Us page and get in touch with our team. We’re always happy to help!",
+    "home": true
+  },
+  {
+    "section": "Applying your skin",
+    "q": "Is it hard to apply?",
+    "a": "No. Every skin is precision-cut for one specific model, so there is nothing to trim and nothing to measure. Clean the device with the supplied wipe, line up one edge, and lay the rest down slowly. Warming the film with a hairdryer on low helps it settle into curves — that is the only trick worth knowing.",
+    "home": false
+  },
+  {
+    "section": "Applying your skin",
+    "q": "What if I get a bubble?",
+    "a": "Lift that corner and lay it down again. The adhesive is designed to be repositioned several times while you are applying it, so a bubble is not a ruined skin. Push stubborn ones towards the nearest edge with a thumb.",
+    "home": false
+  },
+  {
+    "section": "Applying your skin",
+    "q": "How long does it take?",
+    "a": "Five to ten minutes for a phone or lens, a bit longer for a laptop lid. Do it on a clean table, not on a bed — dust is the only real enemy.",
+    "home": false
+  },
+  {
+    "section": "Applying your skin",
+    "q": "Can I take it off and put it back on?",
+    "a": "Within the first few days, yes. After that the adhesive has fully keyed to the surface and a removed skin will not go back down flat. Plan to apply it once.",
+    "home": false
+  },
+  {
+    "section": "Durability and your device",
+    "q": "Will it damage my device or leave residue?",
+    "a": "The adhesive is a removable automotive-grade layer. It peels off clean even after a couple of years and leaves no residue, which is exactly why resale value holds up.",
+    "home": false
+  },
+  {
+    "section": "Durability and your device",
+    "q": "How long does a skin last?",
+    "a": "Two to three years of daily use before the finish starts to look tired. Corners and the areas your fingers rest on go first, as you would expect.",
+    "home": false
+  },
+  {
+    "section": "Durability and your device",
+    "q": "Is it waterproof?",
+    "a": "The film itself is. It is not a seal though — it does not make a device water-resistant, and it does not cover ports.",
+    "home": false
+  },
+  {
+    "section": "Durability and your device",
+    "q": "Does it protect against drops?",
+    "a": "No, and we will not pretend otherwise. A 0.2 mm film cannot absorb impact. It takes scratches, scuffs and desk rash, which is what actually happens to most devices. If you drop your gear regularly, use a case.",
+    "home": false
+  },
+  {
+    "section": "Durability and your device",
+    "q": "Will it interfere with wireless charging?",
+    "a": "No. The film is thin enough that Qi charging works normally through it.",
+    "home": false
+  },
+  {
+    "section": "Choosing the right one",
+    "q": "What if my device model isn't listed?",
+    "a": "Use Request Model. Tell us the exact model and we template and cut it, usually within a week. There is no extra charge for a first cut, and once cut it joins the catalogue for everyone.",
+    "home": false
+  },
+  {
+    "section": "Choosing the right one",
+    "q": "Does storage size or colour matter?",
+    "a": "Storage size almost never does. Camera layout does, so a Pro and a non-Pro of the same generation are different cuts. If you are unsure, send us a photo of the back of the device.",
+    "home": false
+  },
+  {
+    "section": "Choosing the right one",
+    "q": "I ordered the wrong model. Can I swap it?",
+    "a": "If it is unopened, yes — within 7 days. Once the backing is off, a skin cut for the wrong model is scrap and cannot be resold, so we cannot take it back.",
+    "home": false
+  },
+  {
+    "section": "Shipping and returns",
+    "q": "How long does shipping take?",
+    "a": "Orders are processed within 1–2 business days. Metro deliveries usually land in 2–4 days after dispatch, and the rest of India in 4–7. You get a tracking link by email and WhatsApp the moment it ships.",
+    "home": false
+  },
+  {
+    "section": "Shipping and returns",
+    "q": "Do you ship outside India?",
+    "a": "Not yet. Everything ships from one workshop in Kerala and we only have domestic rates that make sense right now.",
+    "home": false
+  },
+  {
+    "section": "Shipping and returns",
+    "q": "Can I return a skin?",
+    "a": "Unopened skins can be returned within 7 days of delivery. If a skin arrives miscut or lifts within 30 days, we replace it free — just send a photo.",
+    "home": false
+  },
+  {
+    "section": "Shipping and returns",
+    "q": "Do you give GST invoices?",
+    "a": "Yes. Every order gets a GST-compliant invoice, and you can download it from your account at any time. Prices shown on the site already include GST.",
+    "home": false
+  }
+]

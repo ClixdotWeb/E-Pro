@@ -33,6 +33,10 @@ export function SettingsForm({ settings }: { settings: Settings }) {
     "contact.instagram": settings["contact.instagram"],
     "contact.youtube": settings["contact.youtube"],
     "cut.logoCutoutBrands": settings["cut.logoCutoutBrands"],
+    "home.videoDesktop": settings["home.videoDesktop"],
+    "home.videoMobile": settings["home.videoMobile"],
+    "home.customersHeading": settings["home.customersHeading"],
+    "home.customersBlurb": settings["home.customersBlurb"],
   }));
   const [pending, start] = useTransition();
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(
@@ -140,6 +144,35 @@ export function SettingsForm({ settings }: { settings: Settings }) {
           onChange={set("cut.logoCutoutBrands")}
           note="Comma separated, as they appear in the price lists. Apple is the only one today."
         />
+      </Card>
+
+      <Card
+        title="Homepage"
+        hint="The video band at the top and the Instagram band further down."
+      >
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field
+            label="Hero video, desktop"
+            value={draft["home.videoDesktop"]}
+            onChange={set("home.videoDesktop")}
+            note="A path under /public. Its poster is the same name with .jpg."
+          />
+          <Field
+            label="Hero video, phone"
+            value={draft["home.videoMobile"]}
+            onChange={set("home.videoMobile")}
+          />
+          <Field
+            label="Instagram band heading"
+            value={draft["home.customersHeading"]}
+            onChange={set("home.customersHeading")}
+          />
+          <Field
+            label="Instagram band line"
+            value={draft["home.customersBlurb"]}
+            onChange={set("home.customersBlurb")}
+          />
+        </div>
       </Card>
 
       <div className="flex flex-wrap items-center gap-4">

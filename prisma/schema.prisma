@@ -485,3 +485,25 @@ model Setting {
   value     String   @db.Text
   updatedAt DateTime @updatedAt
 }
+
+/**
+ * Questions and answers, for the FAQ page and the homepage.
+ *
+ * A table rather than a JSON blob in Setting: these are a list the
+ * shop owner adds to, reorders and groups, and a form that edits
+ * JSON is a form that lets someone break the homepage with a
+ * missing bracket.
+ */
+model FaqItem {
+  id       String  @id @default(cuid())
+  /** heading it sits under on /faq; blank groups it under no heading */
+  section  String  @default("")
+  question String  @db.Text
+  answer   String  @db.Text
+  position Int     @default(0)
+  active   Boolean @default(true)
+  /** also shown in the short list on the homepage */
+  onHome   Boolean @default(false)
+
+  @@index([active, position])
+}

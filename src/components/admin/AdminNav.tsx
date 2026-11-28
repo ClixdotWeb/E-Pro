@@ -96,6 +96,16 @@ const NAV: { href: string; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
+    href: "/admin/faq",
+    label: "FAQ",
+    icon: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.6 9.3a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3v.4M12 16.6h.01" />
+      </>
+    ),
+  },
+  {
     href: "/admin/reviews",
     label: "Reviews",
     icon: (

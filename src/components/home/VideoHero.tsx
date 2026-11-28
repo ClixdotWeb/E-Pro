@@ -1,3 +1,4 @@
+import { getSettings } from "@/lib/settings";
 /**
  * Hero — rebuilt to match the live Shopify `video_banner` section
  * exactly, after an earlier version invented a layout that did not
@@ -31,12 +32,19 @@
  * files now live in public/brand/video - 13MB desktop, 45MB mobile,
  * byte for byte what the live site serves.
  */
-const HERO_VIDEO_DESKTOP = "/brand/video/hero-desktop.mp4";
-const HERO_POSTER_DESKTOP = "/brand/video/hero-desktop.jpg";
-const HERO_VIDEO_MOBILE = "/brand/video/hero-mobile.mp4";
-const HERO_POSTER_MOBILE = "/brand/video/hero-mobile.jpg";
+// The poster is the video's own path with the extension swapped,
+// which is how the files are named and one fewer thing to set.
+function posterFor(video: string): string {
+  return video.replace(/\.(mp4|webm|mov)$/i, ".jpg");
+}
 
-export function VideoHero() {
+export async function VideoHero() {
+  const settings = await getSettings();
+  const HERO_VIDEO_DESKTOP = settings["home.videoDesktop"];
+  const HERO_VIDEO_MOBILE = settings["home.videoMobile"];
+  const HERO_POSTER_DESKTOP = posterFor(HERO_VIDEO_DESKTOP);
+  const HERO_POSTER_MOBILE = posterFor(HERO_VIDEO_MOBILE);
+
   return (
     /* The live hero is a `.s--banner-spacing` first section:
        padding-block-start = --s-banner-outer-p-y / 2

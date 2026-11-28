@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { getFaqGroups } from "@/lib/faq";
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -19,94 +20,13 @@ export const metadata: Metadata = {
  * messages an FAQ exists to prevent.
  */
 
-const GROUPS: { title: string; items: { q: string; a: string }[] }[] = [
-  {
-    title: "Applying your skin",
-    items: [
-      {
-        q: "Is it hard to apply?",
-        a: "No. Every skin is precision-cut for one specific model, so there is nothing to trim and nothing to measure. Clean the device with the supplied wipe, line up one edge, and lay the rest down slowly. Warming the film with a hairdryer on low helps it settle into curves — that is the only trick worth knowing.",
-      },
-      {
-        q: "What if I get a bubble?",
-        a: "Lift that corner and lay it down again. The adhesive is designed to be repositioned several times while you are applying it, so a bubble is not a ruined skin. Push stubborn ones towards the nearest edge with a thumb.",
-      },
-      {
-        q: "How long does it take?",
-        a: "Five to ten minutes for a phone or lens, a bit longer for a laptop lid. Do it on a clean table, not on a bed — dust is the only real enemy.",
-      },
-      {
-        q: "Can I take it off and put it back on?",
-        a: "Within the first few days, yes. After that the adhesive has fully keyed to the surface and a removed skin will not go back down flat. Plan to apply it once.",
-      },
-    ],
-  },
-  {
-    title: "Durability and your device",
-    items: [
-      {
-        q: "Will it damage my device or leave residue?",
-        a: "The adhesive is a removable automotive-grade layer. It peels off clean even after a couple of years and leaves no residue, which is exactly why resale value holds up.",
-      },
-      {
-        q: "How long does a skin last?",
-        a: "Two to three years of daily use before the finish starts to look tired. Corners and the areas your fingers rest on go first, as you would expect.",
-      },
-      {
-        q: "Is it waterproof?",
-        a: "The film itself is. It is not a seal though — it does not make a device water-resistant, and it does not cover ports.",
-      },
-      {
-        q: "Does it protect against drops?",
-        a: "No, and we will not pretend otherwise. A 0.2 mm film cannot absorb impact. It takes scratches, scuffs and desk rash, which is what actually happens to most devices. If you drop your gear regularly, use a case.",
-      },
-      {
-        q: "Will it interfere with wireless charging?",
-        a: "No. The film is thin enough that Qi charging works normally through it.",
-      },
-    ],
-  },
-  {
-    title: "Choosing the right one",
-    items: [
-      {
-        q: "What if my device model isn't listed?",
-        a: "Use Request Model. Tell us the exact model and we template and cut it, usually within a week. There is no extra charge for a first cut, and once cut it joins the catalogue for everyone.",
-      },
-      {
-        q: "Does storage size or colour matter?",
-        a: "Storage size almost never does. Camera layout does, so a Pro and a non-Pro of the same generation are different cuts. If you are unsure, send us a photo of the back of the device.",
-      },
-      {
-        q: "I ordered the wrong model. Can I swap it?",
-        a: "If it is unopened, yes — within 7 days. Once the backing is off, a skin cut for the wrong model is scrap and cannot be resold, so we cannot take it back.",
-      },
-    ],
-  },
-  {
-    title: "Shipping and returns",
-    items: [
-      {
-        q: "How long does shipping take?",
-        a: "Orders are processed within 1–2 business days. Metro deliveries usually land in 2–4 days after dispatch, and the rest of India in 4–7. You get a tracking link by email and WhatsApp the moment it ships.",
-      },
-      {
-        q: "Do you ship outside India?",
-        a: "Not yet. Everything ships from one workshop in Kerala and we only have domestic rates that make sense right now.",
-      },
-      {
-        q: "Can I return a skin?",
-        a: "Unopened skins can be returned within 7 days of delivery. If a skin arrives miscut or lifts within 30 days, we replace it free — just send a photo.",
-      },
-      {
-        q: "Do you give GST invoices?",
-        a: "Yes. Every order gets a GST-compliant invoice, and you can download it from your account at any time. Prices shown on the site already include GST.",
-      },
-    ],
-  },
-];
 
-export default function FaqPage() {
+
+export const dynamic = "force-dynamic";
+
+export default async function FaqPage() {
+  const GROUPS = await getFaqGroups();
+
   return (
     <div className="page max-w-3xl py-12">
       <p className="kicker">Got questions?</p>
@@ -140,10 +60,10 @@ export default function FaqPage() {
 
             <ul className="mt-4 divide-y divide-hairline border-y border-hairline">
               {g.items.map((f) => (
-                <li key={f.q}>
+                <li key={f.id}>
                   <details className="group">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-sm font-medium text-text-hi marker:content-none">
-                      {f.q}
+                      {f.question}
                       <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-hairline text-text-low transition-transform group-open:rotate-45">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
                           <path d="M12 5v14M5 12h14" />
@@ -151,7 +71,7 @@ export default function FaqPage() {
                       </span>
                     </summary>
                     <p className="pb-5 pr-10 text-[13px] leading-relaxed text-text-mid">
-                      {f.a}
+                      {f.answer}
                     </p>
                   </details>
                 </li>

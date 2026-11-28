@@ -1,3 +1,4 @@
+import { getSettings } from "@/lib/settings";
 import Image from "next/image";
 
 /**
@@ -33,8 +34,6 @@ const STORIES = [
 ];
 
 /** The store's real Instagram, from the button's href. */
-const INSTAGRAM = "http://instagram.com/eprogadgets";
-
 function Track({ hidden }: { hidden?: boolean }) {
   return (
     <div className="moving-image-inner" aria-hidden={hidden || undefined}>
@@ -54,7 +53,10 @@ function Track({ hidden }: { hidden?: boolean }) {
   );
 }
 
-export function RealCustomers() {
+export async function RealCustomers() {
+  const settings = await getSettings();
+  const INSTAGRAM = settings["contact.instagram"];
+
   return (
     <section className="page py-10 md:py-20">
       <div
@@ -82,12 +84,12 @@ export function RealCustomers() {
         {/* centred content */}
         <div className="relative z-[2] flex h-full w-full flex-col items-center justify-center px-6 text-center">
           <h2 className="text-3xl font-bold leading-tight tracking-tight text-white md:text-5xl">
-            Real Customers - Real Skins
+            {settings["home.customersHeading"]}
           </h2>
 
           {/* The live copy is <em><strong> - bold italic. */}
           <p className="mt-4 text-sm font-bold italic text-white md:text-base">
-            Want to see real photos and videos of our products?
+            {settings["home.customersBlurb"]}
           </p>
 
           {/* .btn.btn-large.btn-secondary - 44px tall (--form-field-lg) */}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getHomeFaqs } from "@/lib/faq";
 
 /**
  * FAQ, rebuilt from the live `collapsible_content` section.
@@ -27,32 +28,21 @@ import Link from "next/link";
  * answer is open at a time, which the shared `name` below reproduces
  * natively.
  *
- * All four questions and answers are the store's own words.
+ * The questions come from the FaqItem table, so answering a new
+ * one is a row rather than a code change. They were four
+ * hard-coded here and sixteen more in a different shape on
+ * /faq, which is two lists to keep in step and nobody ever does.
  */
 
-const FAQS = [
-  {
-    q: "How long does your shipping take?",
-    a: ["Once your order is placed, we strive to process and dispatch it within 1-2 business days. The estimated delivery time may vary depending on your location and the shipping method selected at checkout."],
-  },
-  {
-    q: "Are the skins easy to apply?",
-    a: [
-      "Yes! Our skins are precision-cut for each specific device model, ensuring accurate fit around buttons, edges, and other details. They’re designed for easy application, with carefully engineered cuts that make alignment simple and provide a clean, professional finish.",
-      "(For the best results, apply a small amount of heat using a hairdryer or heat gun to help the skin adhere properly, especially around the edges and curved areas.)",
-    ],
-  },
-  {
-    q: "Will the skin damage my device or leave any sticky residue behind?",
-    a: ["Our products have specially Formulated adhesive that does not damage your device nor leave any glue residues. It can be easily removed and replaced at any time to match your new style."],
-  },
-  {
-    q: "Still Have Questions?",
-    a: ["Have a question? Simply visit our Contact Us page and get in touch with our team. We’re always happy to help!"],
-  },
-];
 
-export function Faq() {
+
+/** Blank lines separate paragraphs in a stored answer. */
+const SPLIT_PARAGRAPHS = /\n{2,}/;
+
+export async function Faq() {
+  const faqs = await getHomeFaqs();
+  if (faqs.length === 0) return null;
+
   return (
     <section className="page py-10 md:py-20">
       <div className="flex flex-col gap-10 md:flex-row md:items-start md:gap-20">
@@ -84,9 +74,9 @@ export function Faq() {
 
         {/* ---- accordion ---- */}
         <div className="flex flex-col gap-4 md:w-1/2 md:gap-5">
-          {FAQS.map((f, i) => (
+          {faqs.map((f, i) => (
             <details
-              key={f.q}
+              key={f.id}
               /* one open at a time, as the theme's
                  {"multiple": false} does */
               name="homepage-faq"
@@ -95,7 +85,7 @@ export function Faq() {
             >
               <summary className="flex cursor-pointer list-none items-center gap-3 marker:content-none">
                 <h3 className="flex-1 text-[17px] font-bold leading-snug text-text-hi">
-                  {f.q}
+                  {f.question}
                 </h3>
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-surface-3 text-text-mid transition-colors group-open:bg-accent group-open:text-accent-ink">
                   <svg
@@ -116,7 +106,7 @@ export function Faq() {
               </summary>
 
               <div className="mt-5 space-y-3 border-t border-hairline pt-5">
-                {f.a.map((p) => (
+                {f.answer.split(SPLIT_PARAGRAPHS).map((p) => (
                   <p key={p} className="text-[14px] leading-relaxed text-text-mid">
                     {p}
                   </p>
