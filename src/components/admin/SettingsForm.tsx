@@ -40,6 +40,9 @@ export function SettingsForm({ settings }: { settings: Settings }) {
     "home.beforeImage": settings["home.beforeImage"],
     "home.afterImage": settings["home.afterImage"],
     "footer.blurb": settings["footer.blurb"],
+    "spec.adhesive": settings["spec.adhesive"],
+    "spec.durability": settings["spec.durability"],
+    "spec.application": settings["spec.application"],
   }));
   const [pending, start] = useTransition();
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(
@@ -185,6 +188,29 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             label="After image"
             value={draft["home.afterImage"]}
             onChange={set("home.afterImage")}
+          />
+        </div>
+      </Card>
+
+      <Card
+        title="What the skin is"
+        hint="The specification rows on a product page. What it is cut from and what it is cut for are read off the product itself - these three are the shop's word."
+      >
+        <div className="grid gap-5 sm:grid-cols-3">
+          <Field
+            label="Adhesive"
+            value={draft["spec.adhesive"]}
+            onChange={set("spec.adhesive")}
+          />
+          <Field
+            label="Finish durability"
+            value={draft["spec.durability"]}
+            onChange={set("spec.durability")}
+          />
+          <Field
+            label="How it goes on"
+            value={draft["spec.application"]}
+            onChange={set("spec.application")}
           />
         </div>
       </Card>

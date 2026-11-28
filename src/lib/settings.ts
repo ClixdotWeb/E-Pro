@@ -53,6 +53,14 @@ export const SETTING_DEFAULTS = {
   "home.beforeImage": "/brand/Untitled_design_3.png",
   "home.afterImage": "/brand/Untitled_design_2.png",
 
+  /* ---- product specifications ---- */
+  // The three rows of the spec table that are a claim about the
+  // product rather than a fact we can read off the catalogue. They
+  // were hard-coded; they belong to whoever answers for them.
+  "spec.adhesive": "Removable, automotive-grade",
+  "spec.durability": "2-3 years of daily use",
+  "spec.application": "Dry, no fluid; a hairdryer on low helps on curves",
+
   /* ---- footer ---- */
   "footer.blurb":
     "Every day is an evolution. Since our launch in 2013, we have explored and curated the tools for your continual transformation - on an emotional, physical, intellectual and spiritual level.",

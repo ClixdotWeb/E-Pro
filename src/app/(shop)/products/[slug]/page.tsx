@@ -14,6 +14,11 @@ import {
   getProductBySlug,
   getRelatedProducts,
 } from "@/lib/catalog";
+import { getSettings, type Settings } from "@/lib/settings";
+
+/** The three phone finishes are coverages; the rest are materials. */
+const COVERAGES = new Set(["Full Wrap", "Back With Sides", "Back Only"]);
+const isCoverage = (label: string) => COVERAGES.has(label);
 
 /**
  * Product page in the live theme's layout: media column on the left,
@@ -62,6 +67,10 @@ export default async function ProductPage({
   if (!product || product.status !== "ACTIVE") notFound();
 
   const optionLabel = optionLabelFor(product);
+  const settings = await getSettings();
+  const finishLabel = product.finish
+    ? (FINISH_LABEL[product.finish] ?? product.finish)
+    : null;
   const related = await getRelatedProducts(product);
   const categoryLabel = product.category
     ? (CATEGORY_LABEL[product.category] ?? product.category)
@@ -134,7 +143,13 @@ export default async function ProductPage({
             </div>
           )}
 
-          <SpecTable optionLabel={optionLabel} optionCount={product.variants.length} />
+          <SpecTable
+            optionLabel={optionLabel}
+            optionCount={product.variants.length}
+            finishLabel={finishLabel}
+            categoryLabel={categoryLabel}
+            settings={settings}
+          />
         </div>
 
         {/* ---- buy box ---- */}
@@ -222,20 +237,48 @@ export default async function ProductPage({
   );
 }
 
+/**
+ * The specs, half read off the product and half asked of the owner.
+ *
+ * Every row here used to be the same sentence on every page. Two of
+ * them were wrong often: "Material: cast vinyl film" on a camera
+ * page, where the material is the thing the customer is choosing
+ * between - Printed, Korean, Imported - and "Coverage: back and side
+ * panels" on a Full Wrap, which goes round the whole body.
+ *
+ * So the row that names what this product is now reads the product,
+ * and asks the question its category is priced by: coverage for a
+ * phone, material for everything else. The three that are claims
+ * about the film - adhesive, durability, how it goes on - are
+ * settings, because they are the shop's word and not ours.
+ */
 function SpecTable({
   optionLabel,
   optionCount,
+  finishLabel,
+  categoryLabel,
+  settings,
 }: {
   optionLabel: string;
   optionCount: number;
+  finishLabel: string | null;
+  categoryLabel: string | null;
+  settings: Settings;
 }) {
   const rows: [string, string][] = [
-    ["Material", "Cast vinyl film, 0.2 mm"],
-    ["Adhesive", "Removable, automotive-grade"],
-    ["Finish durability", "2–3 years of daily use"],
+    ...(finishLabel
+      ? ([[isCoverage(finishLabel) ? "Coverage" : "Material", finishLabel]] as [
+          string,
+          string,
+        ][])
+      : []),
+    ...(categoryLabel
+      ? ([["Cut for", categoryLabel]] as [string, string][])
+      : []),
+    ["Adhesive", settings["spec.adhesive"]],
+    ["Finish durability", settings["spec.durability"]],
     [`${optionLabel}s available`, String(optionCount)],
-    ["Coverage", "Back and side panels; cutouts for ports and lenses"],
-    ["Application", "Dry, no fluid; a hairdryer on low helps on curves"],
+    ["Application", settings["spec.application"]],
   ];
 
   return (
