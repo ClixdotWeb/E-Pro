@@ -141,12 +141,7 @@ export default async function CategoryPage({
                         {c.name}
                       </span>
                       <span className="mt-0.5 block text-[11px] text-white/60">
-                        {/* No design photographed on this device yet,
-                            but the tile IS the films - so say what is
-                            on the shelf rather than counting to zero. */}
-                        {c.count === 0
-                          ? "Films in stock"
-                          : `${c.count} ${c.count === 1 ? "design" : "designs"}`}
+                        {c.count} {c.count === 1 ? "design" : "designs"}
                       </span>
                     </span>
                   </span>
