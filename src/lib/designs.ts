@@ -205,12 +205,16 @@ export async function getDesignCollections(): Promise<
     getActiveDesigns(),
   ]);
 
-  return categories.map((c) => ({
-    slug: c.slug,
-    name: c.name,
-    coverUrl: c.imageUrl,
-    designs: designs.filter((d) => d.categorySlug === c.slug),
-  }));
+  return categories
+    .map((c) => ({
+      slug: c.slug,
+      name: c.name,
+      coverUrl: c.imageUrl,
+      designs: designs.filter((d) => d.categorySlug === c.slug),
+    }))
+    // Same rule as the device pages: a collection with nothing in it
+    // is not shown. See getCollectionsForDevice.
+    .filter((c) => c.designs.length > 0);
 }
 
 export async function getActiveDesigns(): Promise<DesignRow[]> {
@@ -237,13 +241,14 @@ export async function getActiveDesigns(): Promise<DesignRow[]> {
  * they own, and the product page asks again anyway because that is
  * where the answer has to be exact.
  *
- * Every collection is shown, empty or not, which is how the live
- * store reads. I had hidden the empty ones - a kind with nothing in
- * it looked like a dead end - but hiding them also hides what the
- * shop does, and the grid inside an empty one says plainly that
- * there is nothing yet and offers to take a request. The tile image
- * belongs to the collection for exactly this reason: an empty
- * collection still has to have a picture.
+ * Only collections that have something in them are shown. The live
+ * store does list its empty ones, but that is its shelves standing
+ * empty rather than a thing to copy - a customer who clicks one
+ * learns only that we have nothing, and three of five read that way.
+ * The rows stay in the dashboard with their tiles, taglines and
+ * order, so the first design filed under one brings it back by
+ * itself. A device we cut but have photographed no design on - the
+ * gimbal today - gets the enquiry card instead of an empty grid.
  */
 
 /**
@@ -315,7 +320,14 @@ export async function getCollectionsForDevice(
           c.imageUrl ??
           null,
       };
-    });
+    })
+    // An empty collection is a tile that says "Coming soon" and a
+    // page with nothing on it. The live store does ship those, but
+    // it is their shelf standing empty, not something to copy: a
+    // customer who clicks one learns only that we have nothing.
+    // The row stays in the dashboard, so the first design added to
+    // it brings the collection back by itself.
+    .filter((c) => c.count > 0);
 }
 
 export type DesignCollectionPage = {
@@ -355,6 +367,11 @@ export async function getCollection(
     orderBy: [{ position: "asc" }, { name: "asc" }],
     include: { category: { select: { name: true } } },
   });
+
+  // Nothing in it, so there is no page. The tiles that lead here are
+  // filtered the same way, which leaves this for typed and stale
+  // URLs - and a 404 tells them the truth faster than an empty grid.
+  if (rows.length === 0) return null;
 
   return { slug: category.slug, name: category.name, designs: rows.map(toRow) };
 }

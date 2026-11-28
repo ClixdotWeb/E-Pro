@@ -86,20 +86,27 @@ export default async function CategoryPage({
         </p>
       </header>
 
-      {brands.length === 0 ? (
+      {brands.length === 0 || collections.length === 0 ? (
+        /* Two different kinds of nothing, and the customer should be
+           told which. No models means we cannot cut this device yet.
+           Models but no designs - gimbals today - means we cut it and
+           have the prices, there is just no design photographed for
+           it, so the enquiry is worth making. Either way the way out
+           is the same button, not a heading over an empty grid. */
         <div className="mx-auto mt-12 max-w-[520px] rounded-[var(--r-md)] border border-hairline bg-surface-1 p-8 text-center">
           <h2 className="text-[18px] font-bold text-text-hi">
-            Not in the list yet
+            {brands.length === 0 ? "Not in the list yet" : "Ask us for a finish"}
           </h2>
           <p className="mt-3 text-[14px] leading-relaxed text-text-mid">
-            We have not added {label?.toLowerCase()} models to the site yet.
-            Tell us what you have and we will cut it.
+            {brands.length === 0
+              ? `We have not added ${label?.toLowerCase()} models to the site yet. Tell us what you have and we will cut it.`
+              : `We cut ${label?.toLowerCase()} skins, but none of our collections are photographed on one yet. Tell us the model and the finish you want and we will quote it.`}
           </p>
           <Link
             href="/request-model"
             className="mt-6 inline-flex h-11 items-center rounded-full bg-accent px-7 text-[14px] font-bold text-accent-ink"
           >
-            Request your model
+            {brands.length === 0 ? "Request your model" : "Ask about your model"}
           </Link>
         </div>
       ) : (
@@ -134,9 +141,7 @@ export default async function CategoryPage({
                         {c.name}
                       </span>
                       <span className="mt-0.5 block text-[11px] text-white/60">
-                        {c.count === 0
-                          ? "Coming soon"
-                          : `${c.count} ${c.count === 1 ? "design" : "designs"}`}
+                        {c.count} {c.count === 1 ? "design" : "designs"}
                       </span>
                     </span>
                   </span>
