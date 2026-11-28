@@ -250,11 +250,21 @@ export async function getNavCategories(): Promise<NavCategory[]> {
     }
   }
 
-  return Object.keys(CATEGORY_LABEL).map((slug) => ({
-    slug,
-    name: CATEGORY_LABEL[slug],
-    count: counts.get(slug) ?? 0,
-    finishes: [...(finishes.get(slug) ?? [])],
+  // The menu is the categories the shop actually has, switched on,
+  // in the order the dashboard put them - not a hard-coded map of
+  // every slug the importer knows about. That map listed ten, six of
+  // which have nothing behind them.
+  const categories = await db.deviceCategory.findMany({
+    where: { active: true, slug: { not: UNCATEGORISED } },
+    orderBy: [{ position: "asc" }, { name: "asc" }],
+    select: { slug: true, name: true },
+  });
+
+  return categories.map((c) => ({
+    slug: c.slug,
+    name: c.name,
+    count: counts.get(c.slug) ?? 0,
+    finishes: [...(finishes.get(c.slug) ?? [])],
   }));
 }
 
@@ -716,11 +726,19 @@ export async function getCategoryTiles(): Promise<CategoryTile[]> {
   return rows;
 }
 
+/**
+ * One category, for its own page.
+ *
+ * Switched-off categories come back null, so their page 404s rather
+ * than standing there with nothing to sell. Taking a category off
+ * the homepage and leaving its URL open is the half-measure that
+ * lets an old link land somewhere embarrassing.
+ */
 export async function getCategoryBySlug(
   slug: string,
 ): Promise<CategoryTile | null> {
-  return db.deviceCategory.findUnique({
-    where: { slug },
+  return db.deviceCategory.findFirst({
+    where: { slug, active: true },
     select: { slug: true, name: true, imageUrl: true, tagline: true },
   });
 }
