@@ -274,6 +274,20 @@ export async function getActiveDesigns(): Promise<DesignRow[]> {
  * simply missing and falls through - that is better than a picture
  * of the wrong thing.
  */
+/**
+ * The shop's own photograph of a collection's films, per device.
+ *
+ * These are rolls standing on the counter - the actual stock. The
+ * live store shows all three on its camera page and both on its lens
+ * page, and shows them whether or not a product has been filed under
+ * them, because the rolls are there either way. A collection we have
+ * a photograph of is a collection we sell; the missing part is only
+ * that nobody has photographed a device wearing one yet.
+ */
+export function deviceTileFor(device: string, collection: string) {
+  return DEVICE_TILES[`${device}:${collection}`] ?? null;
+}
+
 const DEVICE_TILES: Record<string, string> = {
   "camera:design-patterns": "/brand/styles/design-pattern-camera.jpg",
   "camera:solid-pattern": "/brand/styles/solid-pattern-camera.jpg",
@@ -336,19 +350,28 @@ export async function getCollectionsForDevice(
           null,
       };
     })
-    // An empty collection is a tile that says "Coming soon" and a
-    // page with nothing on it. The live store does ship those, but
-    // it is their shelf standing empty, not something to copy: a
-    // customer who clicks one learns only that we have nothing.
-    // The row stays in the dashboard, so the first design added to
-    // it brings the collection back by itself.
-    .filter((c) => c.count > 0);
+    // Shown when there is something to show: a design filed under it,
+    // or a photograph of the films themselves cut for THIS device.
+    // The photograph is the stock - a customer looking at a shelf of
+    // rolls can choose from it without a single device having been
+    // photographed wearing one.
+    //
+    // It has to be the device's own photograph, not the collection's
+    // generic one. Every collection has a generic tile, so accepting
+    // that put all five on every page again - including Solid
+    // Pattern on the lens page, which the live store does not list
+    // because it does not stock those rolls cut for lenses.
+    .filter(
+      (c) => c.count > 0 || DEVICE_TILES[`${device}:${c.slug}`] !== undefined,
+    );
 }
 
 export type DesignCollectionPage = {
   slug: string;
   name: string;
   designs: DesignRow[];
+  /** the films themselves, when nothing has been photographed wearing them */
+  tile: string | null;
 };
 
 /**
@@ -383,10 +406,11 @@ export async function getCollection(
     include: { category: { select: { name: true } } },
   });
 
-  // Nothing in it, so there is no page. The tiles that lead here are
-  // filtered the same way, which leaves this for typed and stale
-  // URLs - and a 404 tells them the truth faster than an empty grid.
-  if (rows.length === 0) return null;
+  // No designs and no photograph of the films either - nothing to
+  // put on a page, and the tiles that lead here are filtered the same
+  // way, so this is a typed or stale URL. A 404 tells them faster.
+  const tile = device ? deviceTileFor(device, kind) : null;
+  if (rows.length === 0 && !tile) return null;
 
   const designs = rows.map(toRow);
 
@@ -407,7 +431,7 @@ export async function getCollection(
     }
   }
 
-  return { slug: category.slug, name: category.name, designs };
+  return { slug: category.slug, name: category.name, designs, tile };
 }
 
 /** Every collection slug, so a route can tell one from a category. */

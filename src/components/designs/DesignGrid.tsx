@@ -32,11 +32,14 @@ export function DesignGrid({
   name,
   designs,
   device,
+  tile,
 }: {
   slug: string;
   name: string;
   designs: DesignRow[];
   device?: string;
+  /** the films on the counter, when no device has been shot wearing one */
+  tile?: string | null;
 }) {
   const [availability, setAvailability] = useState<Availability>("all");
   const [sort, setSort] = useState<Sort>("featured");
@@ -86,54 +89,80 @@ export function DesignGrid({
         )}
       </h1>
 
-      {/* Availability | Price                            N products */}
-      <div className="mt-8 flex flex-wrap items-center gap-3 border-b border-hairline pb-5">
-        <label className="sr-only" htmlFor="availability">
-          Availability
-        </label>
-        <select
-          id="availability"
-          value={availability}
-          onChange={(e) => setAvailability(e.target.value as Availability)}
-          className="h-11 rounded-[6px] border border-hairline bg-surface-1 px-4 text-[13.5px] font-bold text-text-hi focus:border-accent focus:outline-none"
-        >
-          <option value="all">Availability</option>
-          <option value="available">In stock</option>
-        </select>
+      {/* Availability | Price                            N products
+          Hidden when the page is a shelf of films rather than a grid:
+          there is nothing to sort, and "0 products" over a photograph
+          of the stock reads as a contradiction. */}
+      {!(shown.length === 0 && tile) && (
+        <div className="mt-8 flex flex-wrap items-center gap-3 border-b border-hairline pb-5">
+          <label className="sr-only" htmlFor="availability">
+            Availability
+          </label>
+          <select
+            id="availability"
+            value={availability}
+            onChange={(e) => setAvailability(e.target.value as Availability)}
+            className="h-11 rounded-[6px] border border-hairline bg-surface-1 px-4 text-[13.5px] font-bold text-text-hi focus:border-accent focus:outline-none"
+          >
+            <option value="all">Availability</option>
+            <option value="available">In stock</option>
+          </select>
 
-        <label className="sr-only" htmlFor="price-sort">
-          Price
-        </label>
-        <select
-          id="price-sort"
-          value={sort}
-          onChange={(e) => setSort(e.target.value as Sort)}
-          className="h-11 rounded-[6px] border border-hairline bg-surface-1 px-4 text-[13.5px] font-bold text-text-hi focus:border-accent focus:outline-none"
-        >
-          <option value="featured">Price</option>
-          <option value="low">Low to high</option>
-          <option value="high">High to low</option>
-        </select>
+          <label className="sr-only" htmlFor="price-sort">
+            Price
+          </label>
+          <select
+            id="price-sort"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as Sort)}
+            className="h-11 rounded-[6px] border border-hairline bg-surface-1 px-4 text-[13.5px] font-bold text-text-hi focus:border-accent focus:outline-none"
+          >
+            <option value="featured">Price</option>
+            <option value="low">Low to high</option>
+            <option value="high">High to low</option>
+          </select>
 
-        <p className="ml-auto text-[14px] font-bold text-text-hi">
-          {shown.length} {shown.length === 1 ? "product" : "products"}
-        </p>
-      </div>
+          <p className="ml-auto text-[14px] font-bold text-text-hi">
+            {shown.length} {shown.length === 1 ? "product" : "products"}
+          </p>
+        </div>
+      )}
 
       {shown.length === 0 ? (
-        <div className="mx-auto mt-14 max-w-[480px] rounded-[var(--r-md)] border border-hairline bg-surface-1 p-8 text-center">
-          <h2 className="text-[17px] font-bold text-text-hi">
-            Nothing in here yet
-          </h2>
-          <p className="mt-3 text-[14px] leading-relaxed text-text-mid">
-            Ask us what we have — we cut more than is photographed.
-          </p>
-          <Link
-            href="/request-model"
-            className="mt-6 inline-flex h-11 items-center rounded-full bg-accent px-6 text-[14px] font-bold text-accent-ink"
-          >
-            Ask for a design
-          </Link>
+        /* Nothing photographed on a device, but the films are here -
+           so show the films. A shelf of rolls is a real thing to
+           choose from, and it is what the shop would hold up in
+           person. Without even that, there is only the ask. */
+        <div className="mx-auto mt-10 max-w-[720px]">
+          {tile && (
+            <span className="relative block aspect-[4/3] overflow-hidden rounded-[var(--r-md)] border border-hairline">
+              <Image
+                src={tile}
+                alt={`${name} films we stock`}
+                fill
+                sizes="(min-width: 768px) 720px, 100vw"
+                className="object-cover"
+              />
+            </span>
+          )}
+          <div className="mt-6 rounded-[var(--r-md)] border border-hairline bg-surface-1 p-7 text-center">
+            <h2 className="text-[17px] font-bold text-text-hi">
+              {tile
+                ? `${name} — in stock, not yet photographed`
+                : "Nothing in here yet"}
+            </h2>
+            <p className="mt-3 text-[14px] leading-relaxed text-text-mid">
+              {tile
+                ? "These are the rolls on our counter. Nobody has been photographed wearing one yet, so tell us the roll and your model and we will cut it and quote it."
+                : "Ask us what we have — we cut more than is photographed."}
+            </p>
+            <Link
+              href="/request-model"
+              className="mt-6 inline-flex h-11 items-center rounded-full bg-accent px-6 text-[14px] font-bold text-accent-ink"
+            >
+              {tile ? "Ask for one of these" : "Ask for a design"}
+            </Link>
+          </div>
         </div>
       ) : (
         <ul className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
