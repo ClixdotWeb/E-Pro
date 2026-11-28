@@ -158,9 +158,11 @@ export function DesignGrid({
                   {d.name}
                 </span>
                 <span className="mt-0.5 block text-[13px] text-text-mid">
-                  {d.priceInPaise > 0
-                    ? formatPaise(d.priceInPaise)
-                    : "Price by device"}
+                  {d.fromPaise
+                    ? `From ${formatPaise(d.fromPaise)}`
+                    : d.priceInPaise > 0
+                      ? formatPaise(d.priceInPaise)
+                      : "Price by device"}
                 </span>
               </Link>
             </li>

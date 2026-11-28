@@ -33,6 +33,16 @@ export type DesignRow = {
   priceInPaise: number;
   active: boolean;
   position: number;
+  /**
+   * What this costs at its cheapest, once a device is known.
+   *
+   * A design has no price of its own - the price is the device's
+   * cheapest option plus whatever the design adds - so a card with
+   * no device behind it can only say "price by device". Arriving
+   * through a category does give us a device, and then there is a
+   * real number to show.
+   */
+  fromPaise?: number;
 };
 
 export async function getDesignCategories(): Promise<DesignCategoryRow[]> {
@@ -312,11 +322,16 @@ export async function getCollectionsForDevice(
         slug: c.slug,
         name: c.name,
         count: mine.length,
-        // A real design beats any stock tile, because it is a
-        // photograph of the thing being sold.
+        // The shop's own photo for this collection ON THIS DEVICE
+        // comes first. A design's photo looks like the better choice
+        // - it is the thing being sold - but one design serves
+        // several devices, so Black Honeycomb's camera body was
+        // sitting on the Lens page as the face of Texture. A roll of
+        // the actual film, shot for lenses, is about this device; a
+        // camera on a lens page is about the wrong one.
         coverUrl:
-          mine.find((d) => d.imageUrl)?.imageUrl ??
           DEVICE_TILES[`${device}:${c.slug}`] ??
+          mine.find((d) => d.imageUrl)?.imageUrl ??
           c.imageUrl ??
           null,
       };
@@ -373,7 +388,26 @@ export async function getCollection(
   // URLs - and a 404 tells them the truth faster than an empty grid.
   if (rows.length === 0) return null;
 
-  return { slug: category.slug, name: category.name, designs: rows.map(toRow) };
+  const designs = rows.map(toRow);
+
+  // The cheapest thing we cut for this device, so the cards can quote
+  // a figure instead of "price by device". One query for the lot:
+  // every design in a collection sits on the same price list.
+  if (device) {
+    const cheapest = await db.variant.aggregate({
+      _min: { priceInPaise: true },
+      where: {
+        active: true,
+        deviceModel: { active: true, category: { slug: device } },
+      },
+    });
+    const floor = cheapest._min.priceInPaise;
+    if (floor !== null) {
+      for (const d of designs) d.fromPaise = floor + d.priceInPaise;
+    }
+  }
+
+  return { slug: category.slug, name: category.name, designs };
 }
 
 /** Every collection slug, so a route can tell one from a category. */
