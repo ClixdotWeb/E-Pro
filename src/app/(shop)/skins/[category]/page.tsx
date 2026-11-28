@@ -2,41 +2,32 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  getBrandsForCategory,
-  getCategoryBySlug,
-  getSkinsForCategory,
-} from "@/lib/catalog";
-import { formatPaise } from "@/lib/money";
+import { getBrandsForCategory, getCategoryBySlug } from "@/lib/catalog";
+import { getCollectionsForDevice } from "@/lib/designs";
 
 /**
- * The device page: what we can skin this in, and for how much.
+ * The device page: Our Collections.
  *
- * This asked for a design collection first - Texture, Embossed - and
- * put the only priced choice at the very end, after a design, a
- * brand and a model. Four screens before a number. The shop owner
- * said it plainly: a customer picks a skin category, then the skins
- * in it, then the model.
+ * This was a brand grid, which asked the wrong question second. By
+ * the time someone has clicked Phone they have said what they own;
+ * what they want next is to look at artwork, and the exact model is
+ * a detail the product page settles. That is the order the live
+ * store arrived at and it is the order here:
  *
- * The skin category is what the price lists are built on. A sheet
- * per brand, a row per model, a column per thing you can buy:
- * Printed Skin, Variable Lamination, Korean Skin, Imported Skin for
- * a camera; Full Wrap, Back With Sides, Back Only for a phone. The
- * column is the product, because the column is what has a price.
+ *   Categories -> Our Collections -> the grid -> the product
  *
- *   Categories -> this -> brand and model -> cart
+ * A collection with nothing cut for this device is left out. A kind
+ * with no phone designs in it is not a collection, it is a dead end -
+ * which is what every one of those tiles was on the live store.
  *
- * The design collections have not gone anywhere - they are under
- * Designs in the header, where browsing artwork belongs. They are
- * not a step on the way to buying, because no design in the shop is
- * priced; the column is.
- *
- * Browsing by brand still exists under /skins/<category>/<brand>.
- * It is not linked from here: a second door under the first only
- * makes the page ask two questions at once.
+ * Browsing by brand still exists under /skins/<category>/<brand>,
+ * but it is not linked from here. The live store sends everybody
+ * through the collections, and a second door under the first one
+ * only makes the page ask two questions at once.
  */
 
 export const dynamic = "force-dynamic";
+
 
 export async function generateMetadata({
   params,
@@ -58,9 +49,9 @@ export default async function CategoryPage({
 }: PageProps<"/skins/[category]">) {
   const { category } = await params;
 
-  const [row, skins, brands] = await Promise.all([
+  const [row, collections, brands] = await Promise.all([
     getCategoryBySlug(category),
-    getSkinsForCategory(category),
+    getCollectionsForDevice(category),
     getBrandsForCategory(category),
   ]);
   if (!row) notFound();
@@ -95,80 +86,70 @@ export default async function CategoryPage({
         </p>
       </header>
 
-      {skins.length === 0 ? (
+      {brands.length === 0 || collections.length === 0 ? (
+        /* Two different kinds of nothing, and the customer should be
+           told which. No models means we cannot cut this device yet.
+           Models but no designs - gimbals today - means we cut it and
+           have the prices, there is just no design photographed for
+           it, so the enquiry is worth making. Either way the way out
+           is the same button, not a heading over an empty grid. */
         <div className="mx-auto mt-12 max-w-[520px] rounded-[var(--r-md)] border border-hairline bg-surface-1 p-8 text-center">
           <h2 className="text-[18px] font-bold text-text-hi">
-            Not in the list yet
+            {brands.length === 0 ? "Not in the list yet" : "Ask us for a finish"}
           </h2>
           <p className="mt-3 text-[14px] leading-relaxed text-text-mid">
-            We have not priced {label.toLowerCase()} skins on the site yet. Tell
-            us what you have and we will cut it and quote it.
+            {brands.length === 0
+              ? `We have not added ${label?.toLowerCase()} models to the site yet. Tell us what you have and we will cut it.`
+              : `We cut ${label?.toLowerCase()} skins, but none of our collections are photographed on one yet. Tell us the model and the finish you want and we will quote it.`}
           </p>
           <Link
             href="/request-model"
             className="mt-6 inline-flex h-11 items-center rounded-full bg-accent px-7 text-[14px] font-bold text-accent-ink"
           >
-            Request your model
+            {brands.length === 0 ? "Request your model" : "Ask about your model"}
           </Link>
         </div>
       ) : (
         <section className="mt-12 md:mt-16">
           <h2 className="text-center text-[26px] font-bold tracking-tight text-text-hi md:text-[32px]">
-            Choose your skin
+            Our Collections
           </h2>
-          <p className="mx-auto mt-3 max-w-[560px] text-center text-[14px] text-text-mid">
-            {brands.length} brand{brands.length === 1 ? "" : "s"}, cut to the
-            millimetre. Pick a skin, then tell us the model.
-          </p>
 
-          <ul className="mx-auto mt-8 grid max-w-[1000px] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {skins.map((skin) => (
-              <li key={skin.slug}>
+          <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {collections.map((c) => (
+              <li key={c.slug}>
                 <Link
-                  href={`/skins/${category}/${skin.slug}`}
-                  className="group flex h-full flex-col overflow-hidden rounded-[var(--r-md)] border border-hairline bg-surface-1 transition-colors hover:border-accent"
+                  href={`/collections/${c.slug}?device=${category}`}
+                  className="group block overflow-hidden rounded-[var(--r-md)] border border-hairline bg-surface-1 transition-colors hover:border-hairline-strong"
                 >
-                  {/* Nobody has photographed the films yet, and all
-                      twelve finish products carry the same stock
-                      picture of the device - so the tile is set in
-                      type. A photograph takes its place the moment
-                      one is uploaded. */}
-                  {skin.imageUrl && (
-                    <span className="relative block aspect-[4/3] bg-surface-2">
+                  <span className="relative block aspect-square bg-surface-2">
+                    {c.coverUrl && (
                       <Image
-                        src={skin.imageUrl}
+                        src={c.coverUrl}
                         alt=""
                         fill
-                        sizes="(min-width: 1024px) 23vw, (min-width: 640px) 45vw, 92vw"
+                        sizes="(min-width: 1024px) 18vw, 45vw"
                         className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                       />
-                    </span>
-                  )}
-
-                  <span className="flex flex-1 flex-col p-5">
-                    <span className="text-[17px] font-bold leading-tight text-text-hi group-hover:text-accent">
-                      {skin.name}
-                    </span>
-
-                    <span className="mt-3 block text-[22px] font-bold text-accent">
-                      {skin.fromPaise === skin.toPaise
-                        ? formatPaise(skin.fromPaise)
-                        : `From ${formatPaise(skin.fromPaise)}`}
-                    </span>
-                    {skin.fromPaise !== skin.toPaise && (
-                      <span className="mt-1 block text-[12px] text-text-low">
-                        up to {formatPaise(skin.toPaise)}, by model
-                      </span>
                     )}
-
-                    <span className="mt-4 block text-[12px] text-text-mid">
-                      {skin.models} model{skin.models === 1 ? "" : "s"}
+                    <span
+                      aria-hidden
+                      className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent"
+                    />
+                    <span className="absolute bottom-3 left-3 right-3">
+                      <span className="block text-[14px] font-bold leading-tight text-white">
+                        {c.name}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] text-white/60">
+                        {c.count} {c.count === 1 ? "design" : "designs"}
+                      </span>
                     </span>
                   </span>
                 </Link>
               </li>
             ))}
           </ul>
+
         </section>
       )}
     </div>
