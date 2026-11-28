@@ -39,6 +39,19 @@ export type DeviceCoverages = {
   options: CoverageOption[];
 };
 
+/**
+ * Where a finish sits in the price lists' own order.
+ *
+ * FINISH_LABEL is written deliberately: the four materials in rising
+ * price, then the three coverages from most of the body to least.
+ * Anything not in it sorts after, on price.
+ */
+const FINISH_ORDER = Object.values(FINISH_LABEL);
+function finishRank(label: string) {
+  const i = FINISH_ORDER.indexOf(label);
+  return i === -1 ? FINISH_ORDER.length : i;
+}
+
 export async function getCoveragesFor(
   deviceModelId: string,
 ): Promise<DeviceCoverages | null> {
@@ -83,7 +96,18 @@ export async function getCoveragesFor(
         reason: unpriced ? "N/A" : soldOut ? "Out of stock" : null,
       };
     })
-    .sort((a, b) => a.label.localeCompare(b.label));
+    // The order the price lists are written in, which is the order
+    // that reads: materials cheapest first, coverages most first.
+    // Alphabetical put Imported Skin - the dearest - at the head of
+    // every camera and lens page, so the first number a customer saw
+    // was the worst one. Anything unpriced or sold out goes last
+    // whatever its name.
+    .sort(
+      (a, b) =>
+        Number(!a.available) - Number(!b.available) ||
+        finishRank(a.label) - finishRank(b.label) ||
+        a.priceInPaise - b.priceInPaise,
+    );
 
   return {
     deviceName: model.name,
