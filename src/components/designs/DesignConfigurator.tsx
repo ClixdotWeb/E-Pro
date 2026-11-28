@@ -81,6 +81,15 @@ export function DesignConfigurator({
 
   const brand = brandChoices.find((b) => b.slug === brandSlug) ?? null;
 
+  // Which question step 3 is about to ask. Once a model is picked the
+  // server says so outright; before that it is the brand's category,
+  // or - with no brand yet - the categories this design is cut for.
+  const asksCoverage = brand
+    ? brand.category === "phone"
+    : brandChoices.every((b) => b.category === "phone");
+  const optionLabel =
+    chosenDevice?.optionLabel ?? (asksCoverage ? "Coverage" : "Material");
+
   const models = useMemo(() => {
     if (!brand) return [];
     const q = modelQuery.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -297,12 +306,12 @@ export function DesignConfigurator({
         {/* 3. coverage */}
         <Step
           n={3}
-          title={`${chosenDevice?.optionLabel ?? "Coverage"} option`}
+          title={`${optionLabel} option`}
           required
           value={chosen?.label ?? (chosenDevice ? undefined : "Select model first")}
         >
           <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
-            {(chosenDevice?.options ?? PLACEHOLDERS).map((o, i) => {
+            {(chosenDevice?.options ?? placeholdersFor(asksCoverage)).map((o, i) => {
               const real = Boolean(chosenDevice);
               const selected = real && o.variantId === variantId;
 
@@ -457,17 +466,47 @@ export function DesignConfigurator({
   );
 }
 
-/** Shown before a device is chosen, so step 3 is not an empty box. */
-const PLACEHOLDERS = [
-  { variantId: "p1", label: "Full Wrap", priceInPaise: 0, available: false, reason: null },
-  { variantId: "p2", label: "Back With Sides", priceInPaise: 0, available: false, reason: null },
-  { variantId: "p3", label: "Back Only", priceInPaise: 0, available: false, reason: null },
+/**
+ * Shown before a device is chosen, so step 3 is not an empty box.
+ *
+ * A phone is priced by how much of the body the skin covers; a
+ * camera, lens or gimbal is priced by the material it is cut from.
+ * They are different questions, so the greyed-out preview has to
+ * match the one about to be asked - showing "Full Wrap, Back Only"
+ * on a camera page promises a choice the price list does not offer.
+ *
+ * These are the labels the sheets actually quote. The real options,
+ * with real prices and real sold-out reasons, replace them the
+ * moment a model is picked; until then they only say what kind of
+ * question step 3 is.
+ */
+const COVERAGE_PLACEHOLDERS = ["Full Wrap", "Back With Sides", "Back Only"];
+const MATERIAL_PLACEHOLDERS = [
+  "Printed Skin",
+  "Variable Lamination",
+  "Korean Skin",
+  "Imported Skin",
 ];
+
+function placeholdersFor(isPhone: boolean) {
+  const labels = isPhone ? COVERAGE_PLACEHOLDERS : MATERIAL_PLACEHOLDERS;
+  return labels.map((label, i) => ({
+    variantId: `p${i}`,
+    label,
+    priceInPaise: 0,
+    available: false,
+    reason: null as string | null,
+  }));
+}
 
 const COVERAGE_BLURB: Record<string, string> = {
   "Full Wrap": "360° body + sides",
   "Back With Sides": "Rear panel + frame",
   "Back Only": "Back panel only",
+  "Printed Skin": "Printed and laminated",
+  "Variable Lamination": "Shifts with the light",
+  "Korean Skin": "Korean-made film",
+  "Imported Skin": "Imported film",
 };
 
 function Step({
