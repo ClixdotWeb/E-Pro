@@ -1364,3 +1364,98 @@ export async function deleteDesignCategory(
     };
   }
 }
+
+/**
+ * A device category's own presentation.
+ *
+ * Its tile is on the homepage and its tagline is the sentence under
+ * the heading on its page. Both used to be a list in code, which
+ * meant a category added here never reached the homepage and its
+ * picture could not be changed at all.
+ */
+export async function updateCategoryTile(
+  slug: string,
+  input: { name: string; tagline: string; active: boolean },
+  form?: FormData,
+): Promise<ActionResult> {
+  await assertCanWrite();
+
+  const name = input.name.trim();
+  if (!name) return { ok: false, message: "A category needs a name." };
+
+  try {
+    const existing = await db.deviceCategory.findUnique({ where: { slug } });
+    if (!existing) return { ok: false, message: "That category is gone." };
+
+    let imageUrl: string | undefined;
+    const file = form?.get("image");
+    if (file instanceof File && file.size > 0) {
+      const stored = await storeDesignImage(file, `category-${slug}`);
+      if ("error" in stored) return { ok: false, message: stored.error };
+      imageUrl = stored.url;
+    }
+
+    await db.deviceCategory.update({
+      where: { slug },
+      data: {
+        name,
+        tagline: input.tagline.trim() || null,
+        active: input.active,
+        ...(imageUrl ? { imageUrl } : {}),
+      },
+    });
+
+    revalidateCatalog();
+    safeRevalidate("/admin/categories");
+
+    return { ok: true, message: `${name} saved.`, slug };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not save it.",
+    };
+  }
+}
+
+/** Move a category up or down the homepage grid. */
+export async function moveCategory(
+  slug: string,
+  direction: "up" | "down",
+): Promise<ActionResult> {
+  await assertCanWrite();
+
+  try {
+    const all = await db.deviceCategory.findMany({
+      where: { slug: { not: UNCATEGORISED } },
+      orderBy: [{ position: "asc" }, { name: "asc" }],
+      select: { slug: true },
+    });
+
+    const i = all.findIndex((c) => c.slug === slug);
+    if (i === -1) return { ok: false, message: "That category is gone." };
+
+    const j = direction === "up" ? i - 1 : i + 1;
+    if (j < 0 || j >= all.length)
+      return { ok: false, message: "It is already at the end." };
+
+    [all[i], all[j]] = [all[j], all[i]];
+
+    // Rewriting every position is cheap on ten rows and leaves no
+    // gaps or ties for the next move to trip over.
+    await db.$transaction(
+      all.map((c, position) =>
+        db.deviceCategory.update({ where: { slug: c.slug }, data: { position } }),
+      ),
+    );
+
+    revalidateCatalog();
+    safeRevalidate("/admin/categories");
+
+    return { ok: true, message: "Moved." };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not move it.",
+    };
+  }
+}

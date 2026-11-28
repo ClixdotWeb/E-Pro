@@ -2,8 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CATEGORY_INTRO, CATEGORY_LABEL } from "@/lib/catalog-shared";
-import { getBrandsForCategory } from "@/lib/catalog";
+import { getBrandsForCategory, getCategoryBySlug } from "@/lib/catalog";
 import { getCollectionsForDevice } from "@/lib/designs";
 
 /**
@@ -29,39 +28,41 @@ import { getCollectionsForDevice } from "@/lib/designs";
 
 export const dynamic = "force-dynamic";
 
-function introFor(category: string) {
-  return (
-    CATEGORY_INTRO[category] ?? {
-      eyebrow: "Choose your style",
-      heading: `${CATEGORY_LABEL[category] ?? category} Skins`,
-      blurb: "Precision-cut protective skins, made for your exact model.",
-    }
-  );
-}
 
 export async function generateMetadata({
   params,
 }: PageProps<"/skins/[category]">): Promise<Metadata> {
   const { category } = await params;
-  if (!CATEGORY_LABEL[category]) return { title: "Not found" };
+  const row = await getCategoryBySlug(category);
+  if (!row) return { title: "Not found" };
 
-  const intro = introFor(category);
-  return { title: intro.heading, description: intro.blurb };
+  return {
+    title: `${row.name} Skins`,
+    description:
+      row.tagline ??
+      `Precision-cut protective skins, made for your exact ${row.name.toLowerCase()}.`,
+  };
 }
 
 export default async function CategoryPage({
   params,
 }: PageProps<"/skins/[category]">) {
   const { category } = await params;
-  if (!CATEGORY_LABEL[category]) notFound();
 
-  const intro = introFor(category);
-  const [collections, brands] = await Promise.all([
+  const [row, collections, brands] = await Promise.all([
+    getCategoryBySlug(category),
     getCollectionsForDevice(category),
     getBrandsForCategory(category),
   ]);
+  if (!row) notFound();
 
-  const label = CATEGORY_LABEL[category];
+  // Both the heading and the sentence under it are the category's
+  // own, editable in the dashboard. They used to be a map in code,
+  // which meant a category added there had no words of its own.
+  const label = row.name;
+  const blurb =
+    row.tagline ??
+    `Precision-cut protective skins, made for your exact ${label.toLowerCase()}.`;
 
   return (
     <div className="page py-10 md:py-16">
@@ -75,13 +76,13 @@ export default async function CategoryPage({
 
       <header className="mx-auto max-w-[720px] text-center">
         <span className="text-[13px] font-bold uppercase tracking-[0.12em] text-accent">
-          {intro.eyebrow}
+          Choose your style
         </span>
         <h1 className="mt-3 text-[32px] font-bold leading-tight text-text-hi md:text-[44px]">
-          {intro.heading}
+          {label} Skins
         </h1>
         <p className="mt-4 text-[15px] leading-relaxed text-text-mid">
-          {intro.blurb}
+          {blurb}
         </p>
       </header>
 

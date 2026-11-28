@@ -165,10 +165,16 @@ model CollectionProduct {
 }
 
 model DeviceCategory {
-  id       String @id @default(cuid())
-  slug     String @unique
+  id       String  @id @default(cuid())
+  slug     String  @unique
   name     String
-  position Int    @default(0)
+  position Int     @default(0)
+  /** The tile in "Categories" on the homepage. */
+  imageUrl String?
+  /** The sentence under the heading on the device page. */
+  tagline  String?
+  /** Off keeps the page but takes the tile off the homepage. */
+  active   Boolean @default(true)
 
   models DeviceModel[]
 }

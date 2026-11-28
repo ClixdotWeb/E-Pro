@@ -678,3 +678,44 @@ export async function getCategoryChoices(): Promise<
     .filter((c) => c.slug !== UNCATEGORISED)
     .map((c) => ({ slug: c.slug, name: c.name, models: c._count.models }));
 }
+
+/* ================= the homepage's category tiles ================= */
+
+/**
+ * The "Categories" grid, read from the database.
+ *
+ * It was a hard-coded array of ten with the image found by
+ * convention from the slug, which meant a category added in the
+ * dashboard never reached the homepage and its picture could not be
+ * changed at all. Everything that array held - the order, the
+ * label, the tile - belongs to the row it describes.
+ *
+ * A category with nothing in it still gets a tile: its page offers
+ * to cut the model on request, so it is not a dead end, and hiding
+ * it would hide that the shop does drones at all. Switching one off
+ * in the dashboard is the way to take it down.
+ */
+export type CategoryTile = {
+  slug: string;
+  name: string;
+  imageUrl: string | null;
+  tagline: string | null;
+};
+
+export async function getCategoryTiles(): Promise<CategoryTile[]> {
+  const rows = await db.deviceCategory.findMany({
+    where: { active: true, slug: { not: UNCATEGORISED } },
+    orderBy: [{ position: "asc" }, { name: "asc" }],
+    select: { slug: true, name: true, imageUrl: true, tagline: true },
+  });
+  return rows;
+}
+
+export async function getCategoryBySlug(
+  slug: string,
+): Promise<CategoryTile | null> {
+  return db.deviceCategory.findUnique({
+    where: { slug },
+    select: { slug: true, name: true, imageUrl: true, tagline: true },
+  });
+}
