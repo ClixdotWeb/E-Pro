@@ -144,6 +144,36 @@ const NAV: { href: string; label: string; icon: React.ReactNode }[] = [
   },
 ];
 
+/**
+ * Thirteen destinations is too many to scan as one list, so they sit
+ * in the three jobs the dashboard actually does: take the money,
+ * keep the catalogue right, and look after the rest of the site.
+ *
+ * Grouped by href rather than by restructuring NAV, so the icons stay
+ * where they are and adding a screen is one line in one place.
+ */
+const GROUPS: { title: string; hrefs: string[] }[] = [
+  {
+    title: "Selling",
+    hrefs: ["/admin", "/admin/orders", "/admin/customers"],
+  },
+  {
+    title: "Catalogue",
+    hrefs: [
+      "/admin/categories",
+      "/admin/models",
+      "/admin/designs",
+      "/admin/products",
+      "/admin/pricing",
+      "/admin/stock",
+    ],
+  },
+  {
+    title: "The site",
+    hrefs: ["/admin/faq", "/admin/reviews", "/admin/discounts", "/admin/settings"],
+  },
+];
+
 export function AdminNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -182,7 +212,7 @@ export function AdminNav() {
             onClick={() => setOpen(false)}
             className="absolute inset-0 bg-black/70"
           />
-          <div className="absolute inset-y-0 left-0 w-[80%] max-w-xs overflow-y-auto border-r border-hairline bg-surface-1 p-5">
+          <div className="absolute inset-y-0 left-0 w-[80%] max-w-xs overflow-y-auto border-r border-hairline bg-surface-1 px-4 py-5">
             <Brand />
             <List pathname={pathname} />
           </div>
@@ -190,7 +220,7 @@ export function AdminNav() {
       )}
 
       {/* desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col border-r border-hairline bg-surface-1 p-5 md:flex">
+      <aside className="sticky top-0 hidden h-screen w-[232px] shrink-0 flex-col overflow-y-auto border-r border-hairline bg-surface-1 px-4 py-5 md:flex">
         <Brand />
         <List pathname={pathname} />
 
@@ -210,7 +240,7 @@ export function AdminNav() {
 
 function Brand() {
   return (
-    <Link href="/admin" className="mb-7 block">
+    <Link href="/admin" className="mb-6 block px-3">
       <Image
         src="/brand/Epro_LOGO_LIGHT-01.png"
         alt="Epro Gadgets"
@@ -224,47 +254,68 @@ function Brand() {
 }
 
 function List({ pathname }: { pathname: string }) {
-  return (
-    <nav aria-label="Dashboard">
-      <ul className="space-y-1">
-        {NAV.map((item) => {
-          // Overview must match exactly, or it stays lit on every page.
-          const active =
-            item.href === "/admin"
-              ? pathname === "/admin"
-              : pathname.startsWith(item.href);
+  const byHref = new Map(NAV.map((item) => [item.href, item]));
 
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-[8px] px-3 py-2.5 text-[14px] transition-colors ${
-                  active
-                    ? "bg-accent-soft font-bold text-accent"
-                    : "text-text-mid hover:bg-surface-2 hover:text-text-hi"
-                }`}
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                  className="shrink-0"
-                >
-                  {item.icon}
-                </svg>
-                {item.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+  return (
+    <nav aria-label="Dashboard" className="space-y-6">
+      {GROUPS.map((group) => (
+        <div key={group.title}>
+          <p className="mb-2 px-3 text-[10.5px] font-bold uppercase tracking-[0.12em] text-text-low">
+            {group.title}
+          </p>
+          <ul className="space-y-0.5">
+            {group.hrefs.map((href) => {
+              const item = byHref.get(href);
+              if (!item) return null;
+
+              // Overview must match exactly, or it stays lit on
+              // every page under /admin.
+              const active =
+                href === "/admin"
+                  ? pathname === "/admin"
+                  : pathname.startsWith(href);
+
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    aria-current={active ? "page" : undefined}
+                    className={`relative flex items-center gap-3 rounded-[8px] py-2 pl-3 pr-3 text-[13.5px] transition-colors ${
+                      active
+                        ? "bg-accent-soft font-bold text-accent"
+                        : "text-text-mid hover:bg-surface-2 hover:text-text-hi"
+                    }`}
+                  >
+                    {/* the same accent edge the overview uses for
+                        the thing that needs attention */}
+                    {active && (
+                      <span
+                        aria-hidden
+                        className="absolute inset-y-1 left-0 w-[3px] rounded-full bg-accent"
+                      />
+                    )}
+                    <svg
+                      width="17"
+                      height="17"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                      className="shrink-0"
+                    >
+                      {item.icon}
+                    </svg>
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
     </nav>
   );
 }
