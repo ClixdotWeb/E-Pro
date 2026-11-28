@@ -41,7 +41,12 @@ export const metadata: Metadata = {
     siteName: "Epro Gadgets",
     locale: "en_IN",
   },
-  icons: { icon: "/brand/Epro_gadgets_Favicon_image.png" },
+  // No `icons` here on purpose. src/app/icon.png, apple-icon.png and
+  // favicon.ico are the file convention, and Next links all three
+  // with their own hashes - but only while this field is absent,
+  // because an explicit `icons` overrides the convention entirely.
+  // The old value pointed at the 1942px source artwork, which the
+  // browser then downscaled to 16px itself, badly.
 };
 
 export const viewport: Viewport = {
